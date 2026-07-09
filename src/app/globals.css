@@ -116,6 +116,21 @@ body {
   transition: background-color 0.6s ease, color 0.6s ease;
 }
 
+/* Every interactive control declares its cursor explicitly, so the pointer
+   never disappears when moving between a focused field and other controls. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+textarea {
+  cursor: text;
+}
+button:not(:disabled),
+select:not(:disabled),
+input[type="checkbox"],
+input[type="radio"],
+[role="button"],
+[role="switch"] {
+  cursor: pointer;
+}
+
 /* Keep surfaces, borders and glow colors from snapping instantly when the
    theme toggles, so the whole page reads as one seamless cross-fade. */
 .glass,
@@ -502,6 +517,179 @@ body {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+}
+
+/* ── Infinite horizontal marquee (content duplicated once, slides 50%) ── */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee-x var(--marquee-duration, 28s) linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+/* Hide scrollbars on horizontal filter/carousel rails */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Subtle dot-grid backdrop for hero sections */
+.bg-dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--foreground) 10%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 35%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 35%, black 30%, transparent 75%);
+}
+
+/* ── Cinematic mesh hero: animated aurora panel for explorer pages ──── */
+@keyframes mesh-drift {
+  0%, 100% { background-position: 0% 50%, 100% 50%, 50% 100%, 0 0; }
+  50% { background-position: 100% 50%, 0% 50%, 50% 0%, 0 0; }
+}
+.mesh-hero {
+  background-color: #0b0a1f;
+  background-image:
+    radial-gradient(42% 52% at 18% 22%, rgba(108, 77, 255, 0.5) 0%, transparent 62%),
+    radial-gradient(38% 48% at 82% 24%, rgba(6, 182, 212, 0.35) 0%, transparent 60%),
+    radial-gradient(52% 60% at 50% 96%, rgba(192, 38, 211, 0.26) 0%, transparent 65%),
+    linear-gradient(180deg, #0d0c22 0%, #100e2c 60%, #0b0a1f 100%);
+  background-size: 160% 160%, 160% 160%, 170% 170%, 100% 100%;
+  animation: mesh-drift 18s ease-in-out infinite;
+}
+
+/* Gradient text with a slow shimmer sweeping through it */
+@keyframes text-shimmer {
+  to { background-position: 200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(110deg, #a89dff 20%, #ece9ff 40%, #67e8f9 55%, #a89dff 75%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 4.5s linear infinite;
+}
+
+/* Fine grid lines fading out towards the edges */
+.luxe-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 85% 80% at 50% 20%, black 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 20%, black 25%, transparent 78%);
+}
+
+/* ── Light aurora hero: airy pastel mesh panel for explorer pages ────
+   Built from theme tokens so it stays luminous in light mode and
+   deepens gracefully when the dark theme swaps the surface colors. */
+.mesh-hero-light {
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(46% 56% at 10% 8%, color-mix(in srgb, var(--brand-400) 20%, transparent) 0%, transparent 62%),
+    radial-gradient(42% 52% at 90% 14%, color-mix(in srgb, var(--accent-400) 16%, transparent) 0%, transparent 60%),
+    radial-gradient(50% 62% at 82% 94%, color-mix(in srgb, #e879f9 13%, transparent) 0%, transparent 62%),
+    radial-gradient(44% 54% at 6% 92%, color-mix(in srgb, var(--brand-300) 15%, transparent) 0%, transparent 60%),
+    linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  background-size: 150% 150%, 150% 150%, 160% 160%, 150% 150%, 100% 100%;
+  animation: mesh-drift 16s ease-in-out infinite;
+}
+
+/* Fine theme-aware grid lines fading towards the panel edges */
+.hero-grid-light {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse 90% 85% at 50% 8%, black 22%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 85% at 50% 8%, black 22%, transparent 78%);
+}
+
+/* Brand-ink gradient text with a slow shimmer — legible on light surfaces */
+.shimmer-text-ink {
+  background: linear-gradient(110deg, var(--brand-600) 18%, var(--accent-600) 38%, var(--brand-400) 52%, var(--brand-600) 72%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 5.5s linear infinite;
+}
+:root[data-theme="dark"] .shimmer-text-ink {
+  background-image: linear-gradient(110deg, #a89dff 20%, #ece9ff 40%, #67e8f9 55%, #a89dff 75%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shimmer-text-ink {
+    background-image: linear-gradient(110deg, #a89dff 20%, #ece9ff 40%, #67e8f9 55%, #a89dff 75%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/* Theme-aware streak travelling along the hero panel's top edge */
+.hero-topline {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-topline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand-500) 80%, transparent), color-mix(in srgb, var(--accent-500) 80%, transparent), transparent);
+  animation: luxe-streak 5.5s ease-in-out infinite;
+}
+
+/* Slow conic halo spinning behind the hero showcase card */
+.hero-halo {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--brand-400) 55%, transparent) 80deg,
+    color-mix(in srgb, var(--accent-400) 50%, transparent) 160deg,
+    transparent 240deg,
+    color-mix(in srgb, #e879f9 40%, transparent) 300deg,
+    transparent 360deg
+  );
+  animation: ring-rotate 16s linear infinite;
+}
+
+/* Light streak that periodically travels along the panel's top edge */
+@keyframes luxe-streak {
+  0% { transform: translateX(-100%); }
+  55%, 100% { transform: translateX(100%); }
+}
+.luxe-topline {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.luxe-topline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(196, 181, 253, 0.85), rgba(103, 232, 249, 0.85), transparent);
+  animation: luxe-streak 5.5s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

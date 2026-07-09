@@ -19,7 +19,8 @@ export default async function ProjectsPage() {
   }));
 
   const mentorCount = new Set(showcaseProjects.map((p) => p.mentor)).size;
-  const categoryCount = new Set(showcaseProjects.flatMap((p) => p.tags)).size;
+  const categories = [...new Set(showcaseProjects.flatMap((p) => p.tags))];
+  const students = [...new Set(showcaseProjects.map((p) => p.student))];
 
   return (
     <Section className="pt-14 sm:pt-16">
@@ -27,7 +28,9 @@ export default async function ProjectsPage() {
         <ProjectsHero
           projectCount={showcaseProjects.length}
           mentorCount={mentorCount}
-          categoryCount={categoryCount}
+          categoryCount={categories.length}
+          categories={categories}
+          students={students}
         />
 
         <div className="mt-14 sm:mt-16">

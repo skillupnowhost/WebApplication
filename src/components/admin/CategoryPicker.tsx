@@ -92,6 +92,10 @@ export function CategoryPicker({
                     if (queryIsNew) pick(query.trim());
                     else if (matches[0]) pick(matches[0].name);
                   }
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    setOpen(false);
+                  }
                 }}
                 placeholder="Search or type a new category…"
                 className="w-full rounded-xl border border-border-soft bg-surface px-3.5 py-2 text-sm outline-none transition-all placeholder:text-muted focus:border-brand-400"

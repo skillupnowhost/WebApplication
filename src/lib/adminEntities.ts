@@ -24,7 +24,7 @@ async function uniqueSlug(base: string, exists: (slug: string) => Promise<boolea
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 
 /** Tutor.boards is stored as a JSON string array — expose it as "A, B". */
-function boardsToText(raw: string) {
+function boardsToText(raw: string): string {
   try {
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr.join(", ") : raw;

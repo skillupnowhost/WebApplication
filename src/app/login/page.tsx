@@ -6,36 +6,72 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, KeyRound, LogIn, Mail, Smartphone } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/validation";
 import { formatPhoneDisplay } from "@/lib/whatsapp";
 import { cn } from "@/lib/cn";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { GlassCard } from "@/components/ui/Card";
-import { IconBadge } from "@/components/ui/IconBadge";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { OtpInput } from "@/components/ui/OtpInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { AnimatedLock } from "@/components/ui/icons/AnimatedLock";
+import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
+import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
+import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { AnimatedGraduation } from "@/components/ui/icons/AnimatedGraduation";
+import { AnimatedRocket } from "@/components/ui/icons/AnimatedRocket";
+import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
 
 type Mode = "password" | "otp";
-type Channel = "phone" | "email";
+type Channel = "email" | "phone";
 type OtpStep = "enter" | "verify";
 
+const easeOut = [0.16, 1, 0.3, 1] as const;
+
 const panelVariants = {
-  enter: { opacity: 0, x: 16 },
-  center: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -16 },
+  enter: { opacity: 0, x: 24, filter: "blur(4px)" },
+  center: { opacity: 1, x: 0, filter: "blur(0px)" },
+  exit: { opacity: 0, x: -24, filter: "blur(4px)" },
 };
+
+const listVariants = {
+  center: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+};
+
+const itemVariants = {
+  enter: { opacity: 0, y: 14 },
+  center: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeOut } },
+  exit: { opacity: 0, y: -8 },
+};
+
+function Spinner() {
+  return (
+    <motion.span
+      className="inline-block h-4.5 w-4.5 rounded-full border-2 border-white/40 border-t-white"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+    />
+  );
+}
+
+function ArrowGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
+      <path d="M4.5 12h15m0 0-6-6m6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const [otpStep, setOtpStep] = useState<OtpStep>("enter");
-  const [channel, setChannel] = useState<Channel>("phone");
+  const [channel, setChannel] = useState<Channel>("email");
   const [phone, setPhone] = useState("");
   const [otpEmail, setOtpEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -45,19 +81,27 @@ export default function LoginPage() {
   const [cooldown, setCooldown] = useState(0);
   const [devCode, setDevCode] = useState<string | null>(null);
 
-  const identifier = channel === "phone" ? phone : otpEmail;
+  const identifier = channel === "phone" ? phone : otpEmail.trim().toLowerCase();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
+  } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), mode: "onTouched" });
 
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  function celebrateAndGo(role: string) {
+    setSuccess(true);
+    setTimeout(() => {
+      router.push(role === "ADMIN" ? "/admin" : "/dashboard");
+      router.refresh();
+    }, 1000);
+  }
 
   async function onPasswordSubmit(data: LoginInput) {
     setServerError(null);
@@ -73,8 +117,7 @@ export default function LoginPage() {
         setServerError(json.error ?? "Something went wrong");
         return;
       }
-      router.push(json.user.role === "ADMIN" ? "/admin" : "/dashboard");
-      router.refresh();
+      celebrateAndGo(json.user.role);
     } finally {
       setSubmitting(false);
     }
@@ -83,6 +126,10 @@ export default function LoginPage() {
   async function requestLoginCode() {
     if (!identifier) {
       setOtpError(channel === "phone" ? "Enter your phone number" : "Enter your email address");
+      return;
+    }
+    if (channel === "email" && !/^\S+@\S+\.\S+$/.test(identifier)) {
+      setOtpError("Enter a valid email address");
       return;
     }
     setOtpError(null);
@@ -123,8 +170,7 @@ export default function LoginPage() {
         setOtpError(json.error ?? "Invalid code");
         return;
       }
-      router.push(json.user.role === "ADMIN" ? "/admin" : "/dashboard");
-      router.refresh();
+      celebrateAndGo(json.user.role);
     } finally {
       setVerifying(false);
     }
@@ -139,213 +185,324 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-5 py-16">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,var(--brand-100),transparent_70%)] dark:bg-[radial-gradient(50%_50%_at_50%_0%,rgba(108,77,255,0.14),transparent_70%)]" />
+    <AuthShell
+      badge="Secure sign in"
+      heading={
+        <>
+          Welcome back to <span className="brand-gradient-text">MyLoginn</span>
+        </>
+      }
+      subline="Pick up right where you left off — courses, live tutoring, internships and real projects, all in one place."
+      features={[
+        {
+          icon: <AnimatedShield className="h-10 w-10" />,
+          title: "OTP-protected sign in",
+          desc: "One-time codes by email or SMS keep your account safe.",
+        },
+        {
+          icon: <AnimatedGraduation className="h-10 w-10" />,
+          title: "Continue learning",
+          desc: "Your courses, streaks and progress are waiting for you.",
+        },
+        {
+          icon: <AnimatedRocket className="h-10 w-10" />,
+          title: "Grow your career",
+          desc: "Apply to internships and showcase real project work.",
+        },
+      ]}
+    >
+      <AnimatePresence mode="wait">
+        {success ? (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: easeOut }}
+            className="flex flex-col items-center py-12 text-center"
+          >
+            <AnimatedSuccess once className="h-16 w-16" />
+            <h1 className="mt-5 text-xl font-semibold">Welcome back!</h1>
+            <p className="mt-2 text-sm text-muted">Taking you to your dashboard…</p>
+          </motion.div>
+        ) : (
+          <motion.div key="form" exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+            <div className="flex items-center gap-3">
+              <AnimatedLock className="h-11 w-11 shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Welcome back</h1>
+                <p className="text-sm text-muted">Log in to continue your progress.</p>
+              </div>
+            </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-md"
-      >
-        <GlassCard className="p-6 sm:p-8">
-          <div className="flex items-center gap-2">
-            <IconBadge size="sm" className="text-brand-500 dark:text-brand-400">
-              {mode === "password" ? <LogIn className="h-6.5 w-6.5" /> : <KeyRound className="h-6.5 w-6.5" />}
-            </IconBadge>
-            <h1 className="text-xl font-semibold">Welcome back</h1>
-          </div>
-          <p className="mt-2 text-sm text-muted">Log in to continue your progress.</p>
-
-          <div className="mt-6 flex gap-1 rounded-full bg-surface-2 p-1">
-            {(["password", "otp"] as Mode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => switchMode(m)}
-                className={cn(
-                  "relative flex-1 cursor-pointer rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200",
-                  mode === m ? "text-white" : "text-muted hover:text-foreground"
-                )}
-              >
-                {mode === m && (
-                  <motion.span
-                    layoutId="login-mode-pill"
-                    className="brand-gradient-bg absolute inset-0 rounded-full"
-                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                  />
-                )}
-                <span className="relative z-10">{m === "password" ? "Password" : "Log in with OTP"}</span>
-              </button>
-            ))}
-          </div>
-
-          <AnimatePresence mode="wait">
-            {mode === "password" ? (
-              <motion.div
-                key="password"
-                variants={panelVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <form onSubmit={handleSubmit(onPasswordSubmit)} className="mt-6 flex flex-col gap-4">
-                  <Input label="Email address" type="email" placeholder="you@example.com" {...register("email")} error={errors.email?.message} />
-                  <PasswordInput label="Password" placeholder="••••••••" {...register("password")} error={errors.password?.message} />
-
-                  {serverError && (
-                    <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{serverError}</p>
+            {/* Mode toggle */}
+            <div className="mt-6 flex gap-1 rounded-full bg-surface-2 p-1">
+              {(["password", "otp"] as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => switchMode(m)}
+                  className={cn(
+                    "relative flex-1 cursor-pointer rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200",
+                    mode === m ? "text-white" : "text-muted hover:text-foreground"
                   )}
+                >
+                  {mode === m && (
+                    <motion.span
+                      layoutId="login-mode-pill"
+                      className="brand-gradient-bg absolute inset-0 rounded-full shadow-[var(--shadow-lift)]"
+                      transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                    />
+                  )}
+                  <span className="relative z-10">{m === "password" ? "Password" : "OTP code"}</span>
+                </button>
+              ))}
+            </div>
 
-                  <Button type="submit" size="lg" className="mt-1 w-full" disabled={submitting} icon={<ArrowRight className="h-5.5 w-5.5" />}>
-                    {submitting ? "Logging in…" : "Log in"}
-                  </Button>
-                </form>
+            <AnimatePresence mode="wait">
+              {mode === "password" ? (
+                <motion.form
+                  key="password"
+                  variants={{
+                    ...panelVariants,
+                    center: {
+                      ...panelVariants.center,
+                      transition: { duration: 0.3, ease: easeOut, ...listVariants.center.transition },
+                    },
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  onSubmit={handleSubmit(onPasswordSubmit)}
+                  className="mt-6 flex flex-col gap-4"
+                >
+                  <motion.div variants={itemVariants}>
+                    <Input
+                      label="Email address"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      {...register("email")}
+                      error={errors.email?.message}
+                    />
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <PasswordInput
+                      label="Password"
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      {...register("password")}
+                      error={errors.password?.message}
+                    />
+                  </motion.div>
 
-                <p className="mt-4 text-center text-xs text-muted">
-                  Demo admin: <strong>admin@myloginn.ai</strong> / <strong>Admin@123</strong>
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="otp"
-                variants={panelVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-6"
-              >
-                <AnimatePresence mode="wait">
-                  {otpStep === "enter" ? (
-                    <motion.div
-                      key="enter"
-                      variants={panelVariants}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.25 }}
-                      className="flex flex-col gap-4"
+                  <AnimatePresence>
+                    {serverError && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto", x: [0, -8, 8, -5, 5, 0] }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="overflow-hidden rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger"
+                      >
+                        {serverError}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="mt-1 w-full"
+                      disabled={submitting}
+                      icon={submitting ? <Spinner /> : <ArrowGlyph />}
                     >
-                      <div className="flex gap-2">
-                        {(["phone", "email"] as Channel[]).map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => {
-                              setChannel(c);
-                              setOtpError(null);
-                            }}
-                            className={cn(
-                              "group flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200",
-                              channel === c
-                                ? "border-brand-400 bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300"
-                                : "border-border-soft text-muted hover:border-brand-300"
-                            )}
+                      {submitting ? "Logging in…" : "Log in"}
+                    </Button>
+                  </motion.div>
+
+                  <motion.p variants={itemVariants} className="text-center text-xs text-muted">
+                    Forgot your password?{" "}
+                    <button
+                      type="button"
+                      onClick={() => switchMode("otp")}
+                      className="cursor-pointer font-medium text-brand-500 hover:underline"
+                    >
+                      Log in with an OTP instead
+                    </button>
+                  </motion.p>
+                </motion.form>
+              ) : (
+                <motion.div
+                  key="otp"
+                  variants={panelVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.3, ease: easeOut }}
+                  className="mt-6"
+                >
+                  <AnimatePresence mode="wait">
+                    {otpStep === "enter" ? (
+                      <motion.div
+                        key="enter"
+                        variants={panelVariants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.25 }}
+                        className="flex flex-col gap-4"
+                      >
+                        <div className="grid grid-cols-2 gap-2">
+                          {(["email", "phone"] as Channel[]).map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => {
+                                setChannel(c);
+                                setOtpError(null);
+                              }}
+                              className={cn(
+                                "relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                                channel === c
+                                  ? "border-brand-400 bg-brand-50 text-brand-600 shadow-[var(--shadow-soft)] dark:bg-brand-900/20 dark:text-brand-300"
+                                  : "border-border-soft text-muted hover:border-brand-300"
+                              )}
+                            >
+                              {c === "email" ? (
+                                <AnimatedMail className="h-5.5 w-5.5" />
+                              ) : (
+                                <AnimatedPhone className="h-5.5 w-5.5" />
+                              )}
+                              {c === "email" ? "Email" : "Phone"}
+                            </button>
+                          ))}
+                        </div>
+
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={channel}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.2 }}
                           >
-                            {c === "phone" ? (
-                              <Smartphone className="h-4.5 w-4.5 transition-transform duration-300 group-hover:scale-110" />
+                            {channel === "phone" ? (
+                              <PhoneInput
+                                label="Phone number"
+                                value={phone}
+                                onChange={setPhone}
+                                error={otpError && channel === "phone" ? otpError : undefined}
+                              />
                             ) : (
-                              <Mail className="h-4.5 w-4.5 transition-transform duration-300 group-hover:scale-110" />
+                              <Input
+                                label="Email address"
+                                type="email"
+                                autoComplete="email"
+                                placeholder="you@example.com"
+                                value={otpEmail}
+                                onChange={(e) => setOtpEmail(e.target.value)}
+                                error={otpError && channel === "email" ? otpError : undefined}
+                              />
                             )}
-                            {c === "phone" ? "Phone" : "Email"}
-                          </button>
-                        ))}
-                      </div>
+                          </motion.div>
+                        </AnimatePresence>
 
-                      {channel === "phone" ? (
-                        <PhoneInput
-                          label="Phone number"
-                          value={phone}
-                          onChange={setPhone}
-                          error={otpError && channel === "phone" ? otpError : undefined}
-                        />
-                      ) : (
-                        <Input
-                          label="Email address"
-                          type="email"
-                          placeholder="you@example.com"
-                          value={otpEmail}
-                          onChange={(e) => setOtpEmail(e.target.value)}
-                          error={otpError && channel === "email" ? otpError : undefined}
-                        />
-                      )}
-
-                      <Button
-                        size="lg"
-                        className="w-full"
-                        onClick={requestLoginCode}
-                        disabled={requesting}
-                        icon={<ArrowRight className="h-5.5 w-5.5" />}
-                      >
-                        {requesting ? "Sending code…" : "Send code"}
-                      </Button>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="verify"
-                      variants={panelVariants}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.25 }}
-                      className="flex flex-col gap-4"
-                    >
-                      <p className="text-sm text-muted">
-                        Enter the 6-digit code we sent to{" "}
-                        <strong>{channel === "phone" ? formatPhoneDisplay(phone) : otpEmail}</strong>.
-                      </p>
-                      {devCode && (
-                        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-                          Dev mode — no {channel === "phone" ? "Twilio" : "Resend"} credentials configured yet, so
-                          nothing was actually {channel === "phone" ? "texted" : "emailed"}. Your code is{" "}
-                          <strong className="tracking-widest">{devCode}</strong>.
-                        </p>
-                      )}
-                      <OtpInput
-                        value={otp}
-                        onChange={setOtp}
-                        onComplete={verifyLoginCode}
-                        error={otpError ?? undefined}
-                        disabled={verifying}
-                      />
-                      <Button
-                        size="lg"
-                        className="w-full"
-                        onClick={() => verifyLoginCode(otp)}
-                        disabled={otp.length !== 6 || verifying}
-                      >
-                        {verifying ? "Verifying…" : "Verify & log in"}
-                      </Button>
-                      <div className="flex items-center justify-between text-sm">
-                        <button type="button" onClick={() => setOtpStep("enter")} className="cursor-pointer font-medium text-brand-500">
-                          Change contact
-                        </button>
-                        <button
-                          type="button"
+                        <Button
+                          size="lg"
+                          className="w-full"
                           onClick={requestLoginCode}
-                          disabled={cooldown > 0 || requesting}
-                          className="cursor-pointer font-medium text-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={requesting}
+                          icon={requesting ? <Spinner /> : <ArrowGlyph />}
                         >
-                          {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                          {requesting ? "Sending code…" : "Send code"}
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="verify"
+                        variants={panelVariants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.25 }}
+                        className="flex flex-col gap-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          {channel === "email" ? (
+                            <AnimatedMail className="h-9 w-9 shrink-0" />
+                          ) : (
+                            <AnimatedPhone className="h-9 w-9 shrink-0" />
+                          )}
+                          <p className="text-sm text-muted">
+                            Enter the 6-digit code we sent to{" "}
+                            <strong className="text-foreground">
+                              {channel === "phone" ? formatPhoneDisplay(phone) : otpEmail}
+                            </strong>
+                            .
+                          </p>
+                        </div>
 
-          <p className="mt-6 text-center text-sm text-muted">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-medium text-brand-500">
-              Create one
-            </Link>
-          </p>
-        </GlassCard>
-      </motion.div>
-    </div>
+                        {devCode && (
+                          <motion.p
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning"
+                          >
+                            Dev mode — no {channel === "phone" ? "SMS" : "email"} provider configured yet, so nothing
+                            was actually sent. Your code is <strong className="tracking-widest">{devCode}</strong>.
+                          </motion.p>
+                        )}
+
+                        <OtpInput
+                          value={otp}
+                          onChange={setOtp}
+                          onComplete={verifyLoginCode}
+                          error={otpError ?? undefined}
+                          disabled={verifying}
+                        />
+                        <Button
+                          size="lg"
+                          className="w-full"
+                          onClick={() => verifyLoginCode(otp)}
+                          disabled={otp.length !== 6 || verifying}
+                          icon={verifying ? <Spinner /> : undefined}
+                        >
+                          {verifying ? "Verifying…" : "Verify & log in"}
+                        </Button>
+                        <div className="flex items-center justify-between text-sm">
+                          <button
+                            type="button"
+                            onClick={() => setOtpStep("enter")}
+                            className="cursor-pointer font-medium text-brand-500 hover:underline"
+                          >
+                            Change contact
+                          </button>
+                          <button
+                            type="button"
+                            onClick={requestLoginCode}
+                            disabled={cooldown > 0 || requesting}
+                            className="cursor-pointer font-medium text-brand-500 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="mt-6 border-t border-border-soft pt-5 text-center text-sm text-muted">
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="font-medium text-brand-500 hover:underline">
+                Create one
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </AuthShell>
   );
 }

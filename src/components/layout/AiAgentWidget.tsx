@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Send, X } from "lucide-react";
-import { AnimatedAgent } from "@/components/ui/icons/AnimatedAgent";
+import { AnimatedChatbot } from "@/components/ui/icons/AnimatedChatbot";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
 import { cn } from "@/lib/cn";
 
@@ -137,7 +137,7 @@ export function AiAgentWidget() {
             <div className="relative flex items-center gap-3 border-b border-border-soft px-4 py-3">
               <span className="relative flex h-10 w-10 items-center justify-center">
                 <span className="pointer-events-none absolute inset-0 rounded-full brand-gradient-bg opacity-20 blur-md animate-pulse" />
-                <AnimatedAgent className="h-8 w-8" />
+                <AnimatedChatbot className="h-9 w-9" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold leading-tight">MyLoginn AI Agent</p>
@@ -267,7 +267,7 @@ export function AiAgentWidget() {
               transition={{ duration: 0.2 }}
               className="relative transition-transform duration-300 group-hover:scale-110"
             >
-              <AnimatedAgent className="h-9 w-9" />
+              <AnimatedChatbot className="h-10 w-10" />
             </motion.span>
           )}
         </AnimatePresence>
@@ -280,7 +280,7 @@ function AgentBubble({ text, typing }: { text: string; typing?: boolean }) {
   return (
     <div className="flex items-end gap-2">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center">
-        <AnimatedAgent className="h-6 w-6" />
+        <AnimatedChatbot className="h-7 w-7" />
       </span>
       <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border-soft bg-surface-2/70 px-3.5 py-2.5 text-sm">
         {typing ? (

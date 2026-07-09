@@ -33,7 +33,7 @@ export default async function InternshipsPage() {
   }));
 
   const paidCount = cards.filter((c) => c.paid).length;
-  const companyCount = new Set(cards.map((c) => c.company)).size;
+  const companies = [...new Set(cards.map((c) => c.company))];
   const avgWeeks = cards.length
     ? Math.round(cards.reduce((sum, c) => sum + c.durationWeeks, 0) / cards.length)
     : 0;
@@ -44,8 +44,9 @@ export default async function InternshipsPage() {
         <InternshipsHero
           total={cards.length}
           paidCount={paidCount}
-          companyCount={companyCount}
+          companyCount={companies.length}
           avgWeeks={avgWeeks}
+          companies={companies}
         />
 
         <div className="mt-14 sm:mt-16">

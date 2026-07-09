@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
@@ -92,6 +92,7 @@ export type ConfirmState = {
 
 export function ConfirmDialog({ state, onClose }: { state: ConfirmState; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   async function run() {
     if (!state) return;
@@ -103,6 +104,28 @@ export function ConfirmDialog({ state, onClose }: { state: ConfirmState; onClose
       setBusy(false);
     }
   }
+
+  // Keyboard: Enter confirms, Escape cancels. Captured on document so the
+  // underlying modal's own Escape handler never fires while this is open.
+  useEffect(() => {
+    if (!state) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!busy) onClose();
+      } else if (e.key === "Enter") {
+        // Let Tab-focused buttons inside the dialog keep native Enter behaviour.
+        if (panelRef.current?.contains(document.activeElement)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (!busy) void run();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, busy, onClose]);
 
   return (
     <AnimatePresence>
@@ -117,6 +140,7 @@ export function ConfirmDialog({ state, onClose }: { state: ConfirmState; onClose
             onClick={busy ? undefined : onClose}
           />
           <motion.div
+            ref={panelRef}
             role="alertdialog"
             aria-modal="true"
             initial={{ opacity: 0, scale: 0.92, y: 10 }}

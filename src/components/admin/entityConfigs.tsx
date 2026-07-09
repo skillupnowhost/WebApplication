@@ -223,7 +223,7 @@ export const mentorConfig: EntityConfig = {
   ] as Column[],
   createFields: [
     { name: "name", label: "Full name", type: "text", required: true },
-    { name: "subject", label: "Subject", type: "text", required: true },
+    { name: "subject", label: "Subject", type: "text", required: true, suggestionsFrom: "subject", hint: "Pick an existing subject or type a new one" },
     { name: "qualification", label: "Qualification", type: "text", required: true },
     { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60, required: true },
     { name: "rating", label: "Rating", type: "number", min: 0, max: 5, step: "0.1" },
@@ -232,7 +232,7 @@ export const mentorConfig: EntityConfig = {
   ],
   editFields: [
     { name: "name", label: "Full name", type: "text", required: true },
-    { name: "subject", label: "Subject", type: "text", required: true },
+    { name: "subject", label: "Subject", type: "text", required: true, suggestionsFrom: "subject", hint: "Pick an existing subject or type a new one" },
     { name: "qualification", label: "Qualification", type: "text", required: true },
     { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60 },
     { name: "rating", label: "Rating", type: "number", min: 0, max: 5, step: "0.1" },

@@ -26,4 +26,6 @@ description: How to build, launch, and drive this Next.js app to verify UI chang
 - Log in as `admin@myloginn.ai` / `Admin@123` (from prisma/seed.ts) — login redirects ADMIN users to /admin.
 - The admin shell suppresses the site navbar/footer; its mobile hamburger is `button[aria-label="Open menu"]`, the drawer is `aside.z-50`.
 - `PageTransition` is skipped on /admin: its animated `filter`/`transform` would otherwise become the containing block for the admin shell's fixed overlays (drawer, modals, toasts) and pin them to the page instead of the viewport. Don't re-wrap admin routes in animated containers.
-- Every admin add/edit/delete goes through a ConfirmDialog — automation must click "Yes, …" in the popup after submitting a form.
+- Every admin add/edit/delete goes through a ConfirmDialog — automation must click "Yes, …" in the popup after submitting a form (or press Enter: Enter confirms, Escape cancels the popup).
+- Esc on an entity form with unsaved edits opens a "Discard changes?" ConfirmDialog instead of closing; a pristine form closes immediately.
+- Dialog exit springs take ~1s to unmount — wait ≥1000ms before asserting a `[role="dialog"]`/`[role="alertdialog"]` is gone, or you get false negatives.

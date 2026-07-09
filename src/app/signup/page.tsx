@@ -6,27 +6,65 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Mail, Smartphone, UserPlus } from "lucide-react";
 import { signupSchema, type SignupInput } from "@/lib/validation";
 import { formatPhoneDisplay } from "@/lib/whatsapp";
 import { cn } from "@/lib/cn";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { GlassCard } from "@/components/ui/Card";
-import { IconBadge } from "@/components/ui/IconBadge";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { OtpInput } from "@/components/ui/OtpInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { PasswordStrength } from "@/components/auth/PasswordStrength";
+import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
+import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
+import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
+import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
+import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
+import { AnimatedBriefcase } from "@/components/ui/icons/AnimatedBriefcase";
+import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
 
 type Step = "details" | "verify" | "success";
-type Channel = "phone" | "email";
+type Channel = "email" | "phone";
+
+const easeOut = [0.16, 1, 0.3, 1] as const;
 
 const stepVariants = {
-  enter: { opacity: 0, x: 16 },
-  center: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -16 },
+  enter: { opacity: 0, x: 24, filter: "blur(4px)" },
+  center: { opacity: 1, x: 0, filter: "blur(0px)" },
+  exit: { opacity: 0, x: -24, filter: "blur(4px)" },
 };
+
+const itemVariants = {
+  enter: { opacity: 0, y: 14 },
+  center: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeOut } },
+  exit: { opacity: 0, y: -8 },
+};
+
+const steps: { key: Step; label: string }[] = [
+  { key: "details", label: "Your details" },
+  { key: "verify", label: "Verify" },
+  { key: "success", label: "Done" },
+];
+
+function Spinner() {
+  return (
+    <motion.span
+      className="inline-block h-4.5 w-4.5 rounded-full border-2 border-white/40 border-t-white"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+    />
+  );
+}
+
+function ArrowGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
+      <path d="M4.5 12h15m0 0-6-6m6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -36,7 +74,7 @@ export default function SignupPage() {
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [channel, setChannel] = useState<Channel>("phone");
+  const [channel, setChannel] = useState<Channel>("email");
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -49,13 +87,17 @@ export default function SignupPage() {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
+    mode: "onTouched",
     defaultValues: { role: "STUDENT", phone: "" },
   });
 
+  const passwordValue = watch("password") ?? "";
   const identifier = channel === "phone" ? phone : email;
+  const stepIndex = steps.findIndex((s) => s.key === step);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -102,10 +144,10 @@ export default function SignupPage() {
       }
       setEmail(data.email);
       setPhone(data.phone);
-      setChannel("phone");
+      setChannel("email");
       setOtp("");
       setStep("verify");
-      await requestCode("phone", data.phone);
+      await requestCode("email", data.email);
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +171,7 @@ export default function SignupPage() {
       setTimeout(() => {
         router.push("/dashboard");
         router.refresh();
-      }, 1100);
+      }, 1300);
     } finally {
       setVerifying(false);
     }
@@ -144,205 +186,278 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-5 py-16">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,var(--brand-100),transparent_70%)] dark:bg-[radial-gradient(50%_50%_at_50%_0%,rgba(108,77,255,0.14),transparent_70%)]" />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-md"
-      >
-        <GlassCard className="p-6 sm:p-8">
-          {step !== "success" && (
-            <div className="mb-6 flex gap-2">
-              {(["details", "verify"] as Step[]).map((s, i) => (
-                <motion.div
-                  key={s}
-                  className={cn(
-                    "h-1.5 flex-1 rounded-full",
-                    (s === "details" && (step === "details" || step === "verify")) ||
-                      (s === "verify" && step === "verify")
-                      ? "brand-gradient-bg"
-                      : "bg-surface-2"
-                  )}
-                  initial={false}
-                  animate={{ opacity: i === 0 || step === "verify" ? 1 : 0.5 }}
-                />
-              ))}
-            </div>
-          )}
-
-          <AnimatePresence mode="wait">
-            {step === "details" && (
-              <motion.div
-                key="details"
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="flex items-center gap-2">
-                  <IconBadge size="sm" className="text-brand-500 dark:text-brand-400">
-                    <UserPlus className="h-6.5 w-6.5" />
-                  </IconBadge>
-                  <h1 className="text-xl font-semibold">Create your account</h1>
-                </div>
-                <p className="mt-2 text-sm text-muted">
-                  Join MyLoginn to start learning, tutoring or applying for internships.
-                </p>
-
-                <form onSubmit={handleSubmit(onDetailsSubmit)} className="mt-7 flex flex-col gap-4">
-                  <Input label="Full name" placeholder="Aarav Sharma" {...register("name")} error={errors.name?.message} />
-                  <Input label="Email address" type="email" placeholder="you@example.com" {...register("email")} error={errors.email?.message} />
-                  <Controller
-                    control={control}
-                    name="phone"
-                    render={({ field }) => (
-                      <PhoneInput
-                        label="Phone number"
-                        hint="We'll text a verification code here — real-time via SMS."
-                        value={field.value}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        onCountryChange={(iso2) => setValue("country", iso2)}
-                        error={errors.phone?.message}
-                      />
-                    )}
-                  />
-                  <PasswordInput label="Password" placeholder="••••••••" {...register("password")} error={errors.password?.message} />
-                  <PasswordInput
-                    label="Confirm password"
-                    placeholder="••••••••"
-                    {...register("confirmPassword")}
-                    error={errors.confirmPassword?.message}
-                  />
-                  <Select
-                    label="I am joining as"
-                    options={[
-                      { label: "Student / Learner", value: "STUDENT" },
-                      { label: "Mentor", value: "MENTOR" },
-                    ]}
-                    {...register("role")}
-                  />
-
-                  {serverError && (
-                    <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{serverError}</p>
-                  )}
-
-                  <Button type="submit" size="lg" className="mt-1 w-full" disabled={submitting} icon={<ArrowRight className="h-5.5 w-5.5" />}>
-                    {submitting ? "Creating account…" : "Create account"}
-                  </Button>
-                </form>
-
-                <p className="mt-6 text-center text-sm text-muted">
-                  Already have an account?{" "}
-                  <Link href="/login" className="font-medium text-brand-500">
-                    Log in
-                  </Link>
-                </p>
-              </motion.div>
-            )}
-
-            {step === "verify" && (
-              <motion.div
-                key="verify"
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="flex items-center gap-2">
-                  <IconBadge size="sm" className="text-brand-500 dark:text-brand-400">
-                    <motion.span
-                      animate={requesting ? { scale: [1, 1.15, 1] } : { scale: 1 }}
-                      transition={{ duration: 1, repeat: requesting ? Infinity : 0 }}
-                      className="flex"
-                    >
-                      {channel === "phone" ? <Smartphone className="h-6.5 w-6.5" /> : <Mail className="h-6.5 w-6.5" />}
-                    </motion.span>
-                  </IconBadge>
-                  <h1 className="text-xl font-semibold">
-                    {channel === "phone" ? "Verify your phone" : "Verify your email"}
-                  </h1>
-                </div>
-                <p className="mt-2 text-sm text-muted">
-                  Enter the 6-digit code we sent to{" "}
-                  <strong>{channel === "phone" ? formatPhoneDisplay(phone) : email}</strong>.
-                </p>
-
-                {devCode && (
-                  <p className="mt-3 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-                    Dev mode — no {channel === "phone" ? "Twilio" : "Resend"} credentials configured yet, so nothing
-                    was actually {channel === "phone" ? "texted" : "emailed"}. Your code is{" "}
-                    <strong className="tracking-widest">{devCode}</strong>.
-                  </p>
+    <AuthShell
+      badge="Join for free"
+      heading={
+        <>
+          Start your journey with <span className="brand-gradient-text">MyLoginn</span>
+        </>
+      }
+      subline="One account for AI-powered courses, live tutoring, internships and real project experience."
+      features={[
+        {
+          icon: <AnimatedSparkle className="h-10 w-10" />,
+          title: "AI-powered learning",
+          desc: "Courses and an AI mentor that adapt to how you learn.",
+        },
+        {
+          icon: <AnimatedUsers className="h-10 w-10" />,
+          title: "Learn with mentors",
+          desc: "Live tutoring for CBSE, State Board and beyond.",
+        },
+        {
+          icon: <AnimatedBriefcase className="h-10 w-10" />,
+          title: "Real-world experience",
+          desc: "Internships and projects that build your portfolio.",
+        },
+      ]}
+    >
+      {/* Step progress */}
+      {step !== "success" && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            {steps.slice(0, 2).map((s, i) => (
+              <span
+                key={s.key}
+                className={cn(
+                  "text-xs font-semibold tracking-wide uppercase transition-colors duration-300",
+                  i <= stepIndex ? "text-brand-500 dark:text-brand-300" : "text-muted"
                 )}
-
-                <div className="mt-6 flex flex-col gap-4">
-                  <OtpInput
-                    value={otp}
-                    onChange={setOtp}
-                    onComplete={verifyCode}
-                    error={otpError ?? undefined}
-                    disabled={verifying}
-                  />
-                  <Button
-                    size="lg"
-                    className="w-full"
-                    onClick={() => verifyCode(otp)}
-                    disabled={otp.length !== 6 || verifying}
-                  >
-                    {verifying ? "Verifying…" : "Verify & continue"}
-                  </Button>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <button
-                      type="button"
-                      onClick={switchChannel}
-                      className="cursor-pointer font-medium text-brand-500"
-                    >
-                      Verify by {channel === "phone" ? "email" : "phone"} instead
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => requestCode(channel, identifier)}
-                      disabled={cooldown > 0 || requesting}
-                      className="cursor-pointer font-medium text-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {step === "success" && (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center py-6 text-center"
               >
-                <motion.div
-                  initial={{ scale: 0, rotate: -20 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
-                >
-                  <IconBadge size="lg" className="text-success">
-                    <CheckCircle2 className="h-9 w-9" />
-                  </IconBadge>
-                </motion.div>
-                <h1 className="mt-4 text-xl font-semibold">You&apos;re all set!</h1>
-                <p className="mt-2 text-sm text-muted">Taking you to your dashboard…</p>
+                {s.label}
+              </span>
+            ))}
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+            <motion.div
+              className="brand-gradient-bg h-full rounded-full"
+              initial={false}
+              animate={{ width: step === "details" ? "50%" : "100%" }}
+              transition={{ duration: 0.5, ease: easeOut }}
+            />
+          </div>
+        </div>
+      )}
+
+      <AnimatePresence mode="wait">
+        {step === "details" && (
+          <motion.div
+            key="details"
+            variants={{
+              ...stepVariants,
+              center: {
+                ...stepVariants.center,
+                transition: { duration: 0.3, ease: easeOut, staggerChildren: 0.06, delayChildren: 0.05 },
+              },
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            <div className="flex items-center gap-3">
+              <AnimatedUser className="h-11 w-11 shrink-0" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Create your account</h1>
+                <p className="text-sm text-muted">Learn, get mentored, land internships.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit(onDetailsSubmit)} className="mt-6 flex flex-col gap-4">
+              <motion.div variants={itemVariants}>
+                <Input
+                  label="Full name"
+                  autoComplete="name"
+                  placeholder="Full name"
+                  {...register("name")}
+                  error={errors.name?.message}
+                />
               </motion.div>
+              <motion.div variants={itemVariants}>
+                <Input
+                  label="Email address"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  hint="We'll email a verification code here — 100% free."
+                  {...register("email")}
+                  error={errors.email?.message}
+                />
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field }) => (
+                    <PhoneInput
+                      label="Phone number"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      onCountryChange={(iso2) => setValue("country", iso2)}
+                      error={errors.phone?.message}
+                    />
+                  )}
+                />
+              </motion.div>
+              <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
+                <PasswordInput
+                  label="Password"
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                  error={errors.password?.message}
+                />
+                <PasswordStrength value={passwordValue} />
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <PasswordInput
+                  label="Confirm password"
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  {...register("confirmPassword")}
+                  error={errors.confirmPassword?.message}
+                />
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <Select
+                  label="I am joining as"
+                  options={[
+                    { label: "Student / Learner", value: "STUDENT" },
+                    { label: "Mentor", value: "MENTOR" },
+                  ]}
+                  {...register("role")}
+                />
+              </motion.div>
+
+              <AnimatePresence>
+                {serverError && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto", x: [0, -8, 8, -5, 5, 0] }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="overflow-hidden rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger"
+                  >
+                    {serverError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <motion.div variants={itemVariants}>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="mt-1 w-full"
+                  disabled={submitting}
+                  icon={submitting ? <Spinner /> : <ArrowGlyph />}
+                >
+                  {submitting ? "Creating account…" : "Create account"}
+                </Button>
+              </motion.div>
+            </form>
+
+            <div className="mt-6 border-t border-border-soft pt-5 text-center text-sm text-muted">
+              Already have an account?{" "}
+              <Link href="/login" className="font-medium text-brand-500 hover:underline">
+                Log in
+              </Link>
+            </div>
+          </motion.div>
+        )}
+
+        {step === "verify" && (
+          <motion.div
+            key="verify"
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.3, ease: easeOut }}
+          >
+            <div className="flex items-center gap-3">
+              {channel === "email" ? (
+                <AnimatedMail className="h-11 w-11 shrink-0" />
+              ) : (
+                <AnimatedPhone className="h-11 w-11 shrink-0" />
+              )}
+              <div>
+                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+                  {channel === "email" ? "Verify your email" : "Verify your phone"}
+                </h1>
+                <p className="text-sm text-muted">
+                  Code sent to{" "}
+                  <strong className="text-foreground">
+                    {channel === "phone" ? formatPhoneDisplay(phone) : email}
+                  </strong>
+                </p>
+              </div>
+            </div>
+
+            {devCode && (
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning"
+              >
+                Dev mode — no {channel === "phone" ? "SMS" : "email"} provider configured yet, so nothing was
+                actually sent. Your code is <strong className="tracking-widest">{devCode}</strong>.
+              </motion.p>
             )}
-          </AnimatePresence>
-        </GlassCard>
-      </motion.div>
-    </div>
+
+            <div className="mt-6 flex flex-col gap-4">
+              <OtpInput
+                value={otp}
+                onChange={setOtp}
+                onComplete={verifyCode}
+                error={otpError ?? undefined}
+                disabled={verifying}
+              />
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={() => verifyCode(otp)}
+                disabled={otp.length !== 6 || verifying}
+                icon={verifying ? <Spinner /> : undefined}
+              >
+                {verifying ? "Verifying…" : "Verify & continue"}
+              </Button>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={switchChannel}
+                  disabled={requesting}
+                  className="cursor-pointer font-medium text-brand-500 hover:underline disabled:opacity-50"
+                >
+                  Verify by {channel === "phone" ? "email" : "phone"} instead
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requestCode(channel, identifier)}
+                  disabled={cooldown > 0 || requesting}
+                  className="cursor-pointer font-medium text-brand-500 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {step === "success" && (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: easeOut }}
+            className="flex flex-col items-center py-12 text-center"
+          >
+            <AnimatedSuccess once className="h-16 w-16" />
+            <h1 className="mt-5 text-xl font-semibold">You&apos;re all set!</h1>
+            <p className="mt-2 text-sm text-muted">Taking you to your dashboard…</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </AuthShell>
   );
 }
