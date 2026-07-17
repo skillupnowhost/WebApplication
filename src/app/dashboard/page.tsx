@@ -18,6 +18,9 @@ import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
 import type { CourseIconKey } from "@/lib/courseIcons";
 import { recordDailyActivity, getStreakSummary, toDayKey } from "@/lib/streak";
+import { canAccessRecording } from "@/lib/tutoring-access";
+import { ClassCalendar, type ClassCardData } from "@/components/classes/ClassCalendar";
+import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 
 export const metadata = { title: "Dashboard — MyLoginn" };
 
@@ -30,12 +33,45 @@ export default async function DashboardPage() {
   await recordDailyActivity(user.id);
 
   const streak = await getStreakSummary(user.id);
-  const [enrollments, applications, projects, bookings] = await Promise.all([
+  const [enrollments, applications, projects, bookings, classBookings] = await Promise.all([
     prisma.enrollment.findMany({ where: { userId: user.id }, include: { course: true }, orderBy: { enrolledAt: "desc" } }),
     prisma.internshipApplication.findMany({ where: { userId: user.id }, include: { internship: true }, orderBy: { appliedAt: "desc" } }),
     prisma.project.findMany({ where: { userId: user.id }, include: { mentor: true }, orderBy: { updatedAt: "desc" } }),
     prisma.tutoringBooking.findMany({ where: { userId: user.id }, include: { tutor: true }, orderBy: { createdAt: "desc" } }),
+    prisma.classBooking.findMany({
+      where: { userId: user.id, status: { not: "cancelled" } },
+      include: {
+        tutorClass: {
+          include: { tutor: { select: { name: true, userId: true } }, recordings: { orderBy: { createdAt: "desc" }, take: 1 } },
+        },
+      },
+    }),
   ]);
+
+  const myClasses: ClassCardData[] = classBookings.map((b) => {
+    const c = b.tutorClass;
+    const hasRecording = c.recordings.length > 0;
+    return {
+      id: c.id,
+      title: c.title,
+      subject: c.subject,
+      mentorName: c.tutor.name,
+      startsAt: c.startsAt.toISOString(),
+      endsAt: c.endsAt.toISOString(),
+      status: c.status,
+      joinUrl: c.joinUrl,
+      googleEventLink: c.googleEventLink,
+      recordingAccessTier: c.recordingAccessTier,
+      hasRecording,
+      canAccessRecording: hasRecording
+        ? canAccessRecording(
+            { id: user.id, role: user.role, tutoringTier: user.tutoringTier },
+            { mentorUserId: c.tutor.userId, recordingAccessTier: c.recordingAccessTier }
+          )
+        : false,
+      isEnrolled: true,
+    };
+  });
 
   const deadlines = [
     ...applications
@@ -55,7 +91,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <Section className="pt-12">
+    <Section className="pt-12 sm:pt-12">
       <Container>
         <FadeIn id="profile" className="scroll-mt-24 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -188,6 +224,19 @@ export default async function DashboardPage() {
                     </Card>
                   ))}
                 </div>
+              )}
+            </FadeIn>
+
+            <FadeIn delay={0.22}>
+              <h2 className="mb-4 flex items-center gap-2 font-semibold">
+                <AnimatedVideoCamera className="h-5.5 w-5.5" /> My live classes
+              </h2>
+              {myClasses.length === 0 ? (
+                <EmptyState label="No classes booked yet." href="/tutoring" cta="Browse classes" />
+              ) : (
+                <Card className="p-5">
+                  <ClassCalendar classes={myClasses} variant="student" />
+                </Card>
               )}
             </FadeIn>
           </div>

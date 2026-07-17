@@ -2,23 +2,33 @@
 
 import { motion } from "framer-motion";
 
-const steps = [
+export type TimelineStep = { title: string; description: string };
+
+const defaultSteps: TimelineStep[] = [
   { title: "Discovery call", description: "We learn your goals, audience and budget." },
   { title: "AI campaign design", description: "Creative, targeting and channel mix are planned." },
   { title: "Launch & optimize", description: "Campaigns go live with continuous AI tuning." },
   { title: "Transparent reporting", description: "A live dashboard shows exactly what's working." },
 ];
 
-export function HowItWorksTimeline() {
+export function HowItWorksTimeline({
+  title = "How it works",
+  steps = defaultSteps,
+  className = "mt-10",
+}: {
+  title?: string;
+  steps?: TimelineStep[];
+  className?: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-10 rounded-2xl border border-border-soft bg-surface-2/60 p-6"
+      className={`rounded-2xl border border-border-soft bg-surface-2/60 p-6 ${className}`}
     >
-      <h2 className="font-semibold">How it works</h2>
+      <h2 className="font-semibold">{title}</h2>
       <ol className="relative mt-6 flex flex-col gap-8">
         <motion.div
           initial={{ scaleY: 0 }}

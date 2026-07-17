@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ApplyForm } from "@/components/internships/ApplyForm";
 import { AnimatedMapPin } from "@/components/ui/icons/AnimatedMapPin";
 import { AnimatedClock } from "@/components/ui/icons/AnimatedClock";
@@ -30,8 +31,12 @@ export default async function InternshipDetailsPage({
   const deadline = internship.applyDeadline;
 
   return (
-    <Section className="pt-14">
+    <Section className="pt-14 sm:pt-14">
       <Container>
+        <Breadcrumbs
+          items={[{ label: "Internships", href: "/internships" }, { label: internship.title }]}
+          className="mb-6"
+        />
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Eyebrow>{internship.type} Internship</Eyebrow>

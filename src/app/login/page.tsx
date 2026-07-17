@@ -71,7 +71,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState(false);
 
   const [otpStep, setOtpStep] = useState<OtpStep>("enter");
-  const [channel, setChannel] = useState<Channel>("email");
+  const [channel, setChannel] = useState<Channel>("phone");
   const [phone, setPhone] = useState("");
   const [otpEmail, setOtpEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -354,7 +354,7 @@ export default function LoginPage() {
                         className="flex flex-col gap-4"
                       >
                         <div className="grid grid-cols-2 gap-2">
-                          {(["email", "phone"] as Channel[]).map((c) => (
+                          {(["phone", "email"] as Channel[]).map((c) => (
                             <button
                               key={c}
                               type="button"

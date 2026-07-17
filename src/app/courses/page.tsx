@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { CoursesExplorer } from "@/components/courses/CoursesExplorer";
 import type { CourseCardData } from "@/components/courses/CourseCard";
 
@@ -48,8 +49,9 @@ export default async function CoursesPage() {
     .map((c) => c.id);
 
   return (
-    <Section className="pt-14">
+    <Section className="pt-14 sm:pt-14">
       <Container>
+        <Breadcrumbs items={[{ label: "Courses" }]} className="mb-6" />
         <div className="mx-auto max-w-2xl text-center">
           <div className="flex justify-center">
             <Eyebrow>Learning Paths</Eyebrow>

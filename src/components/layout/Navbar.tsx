@@ -24,10 +24,13 @@ import { AnimatedMegaphone } from "@/components/ui/icons/AnimatedMegaphone";
 import { AnimatedCode } from "@/components/ui/icons/AnimatedCode";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
+import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
+import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
 import { ProfileMenu, type ProfileUser } from "./ProfileMenu";
+import { NotificationBell } from "./NotificationBell";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import logo from "@/images/Logos/Logo-trimmed.png";
+import logo from "@/images/Loginn Logo.png";
 
 type NavUser = ProfileUser | null;
 
@@ -35,6 +38,7 @@ const primaryLinks = [
   { href: "/courses", label: "Courses" },
   { href: "/internships", label: "Internships" },
   { href: "/projects", label: "Projects" },
+  { href: "/astrology", label: "Astrology" },
 ];
 
 const serviceLinks = [
@@ -55,6 +59,7 @@ const mobileMainLinks: MobileLink[] = [
   { href: "/courses", label: "Courses", desc: "Learn job-ready skills", icon: AnimatedBook },
   { href: "/internships", label: "Internships", desc: "Real-world experience", icon: AnimatedBriefcase },
   { href: "/projects", label: "Projects", desc: "Build your portfolio", icon: AnimatedFolder },
+  { href: "/astrology", label: "Astrology", desc: "Your divine horoscope", icon: AnimatedMoonStar },
 ];
 
 const mobileServiceLinks: MobileLink[] = [
@@ -111,13 +116,16 @@ export function Navbar({ user }: { user: NavUser }) {
         scrolled || mobileOpen ? "glass-nav border-b border-border-soft shadow-[var(--shadow-soft)]" : "bg-transparent"
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
-        <Link href="/" className="flex items-center transition-transform duration-300 ease-out hover:scale-[1.04] active:scale-[0.97]">
+      <nav className="mx-auto flex h-28 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <Link
+          href="/"
+          className="flex items-center transition-transform duration-300 ease-out hover:scale-[1.04] active:scale-[0.97]"
+        >
           <Image
             src={logo}
             alt="MyLoginn"
             preload
-            className="h-9 w-auto select-none object-contain sm:h-10"
+            className="h-12 w-auto select-none object-contain sm:h-14 lg:h-16"
           />
         </Link>
 
@@ -181,7 +189,10 @@ export function Navbar({ user }: { user: NavUser }) {
 
         <div className="hidden lg:flex items-center gap-3">
           {user ? (
-            <ProfileMenu user={user} />
+            <>
+              <NotificationBell />
+              <ProfileMenu user={user} />
+            </>
           ) : (
             <>
               <Button href="/login" variant="ghost" size="sm">
@@ -196,7 +207,10 @@ export function Navbar({ user }: { user: NavUser }) {
 
         <div className="flex items-center gap-2.5 lg:hidden">
           {user ? (
-            <ProfileMenu user={user} onOpen={() => setMobileOpen(false)} />
+            <>
+              <NotificationBell />
+              <ProfileMenu user={user} onOpen={() => setMobileOpen(false)} />
+            </>
           ) : (
             <Link
               href="/login"
@@ -291,7 +305,7 @@ function MobileMenu({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             onClick={onClose}
-            className="fixed inset-0 top-16 z-40 bg-black/45 backdrop-blur-sm"
+            className="fixed inset-0 top-28 z-40 bg-black/45 backdrop-blur-sm"
           />
 
           <motion.div
@@ -299,7 +313,7 @@ function MobileMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -18, scale: 0.97, transition: { duration: 0.2 } }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="fixed inset-x-3 top-[4.75rem] z-50 origin-top overflow-hidden rounded-3xl border border-border-soft bg-surface shadow-[var(--shadow-lift)]"
+            className="fixed inset-x-3 top-32 z-50 origin-top overflow-hidden rounded-3xl border border-border-soft bg-surface shadow-[var(--shadow-lift)]"
           >
             {/* ambient gradient glow inside the sheet */}
             <div className="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(108,77,255,0.22),transparent_70%)]" />
@@ -309,7 +323,7 @@ function MobileMenu({
               variants={listVariants}
               initial="closed"
               animate="open"
-              className="relative max-h-[calc(100dvh-6.5rem)] overflow-y-auto overscroll-contain px-4 pb-5 pt-4"
+              className="relative max-h-[calc(100dvh-9.75rem)] overflow-y-auto overscroll-contain px-4 pb-5 pt-4"
             >
               <motion.p variants={itemVariants} className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
                 Explore
@@ -421,6 +435,11 @@ function MobileUserActions({ user }: { user: ProfileUser }) {
       {user.role === "ADMIN" && (
         <Button href="/admin" variant="secondary" icon={<ShieldCheck className="h-4 w-4" />}>
           Admin
+        </Button>
+      )}
+      {user.role === "MENTOR" && (
+        <Button href="/mentor" variant="secondary" icon={<AnimatedVideoCamera className="h-4 w-4" />}>
+          Mentor dashboard
         </Button>
       )}
       <Button variant="ghost" onClick={handleLogout} icon={<LogOut className="h-4 w-4" />} className="text-danger hover:bg-danger/10">

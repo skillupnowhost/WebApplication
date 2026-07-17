@@ -75,6 +75,30 @@ export const tutoringBookingSchema = z.object({
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
+export const birthDetailsSchema = z.object({
+  fullName: z.string().trim().min(2, "Enter your full name"),
+  gender: z.string().trim().optional().or(z.literal("")),
+  birthDate: z.string().min(1, "Select your date of birth"),
+  birthTime: z.string().min(1, "Select your time of birth"),
+  birthTimeKnown: z.boolean().default(true),
+  birthPlace: z.string().trim().min(2, "Enter your place of birth"),
+  parentsNames: z.string().trim().max(200).optional().or(z.literal("")),
+  occupation: z.string().trim().max(120).optional().or(z.literal("")),
+  customNotes: z.string().trim().max(1000).optional().or(z.literal("")),
+  depth: z.enum(["SUMMARY", "FULL"]),
+  voice: z.enum(["STORYTELLING", "PROFESSIONAL", "ANIMATED"]),
+  language: z.enum(["en", "ta"]),
+});
+
+export const reportRequestSchema = z.object({
+  chartDataId: z.string().min(1),
+  depth: z.enum(["SUMMARY", "FULL"]),
+  voice: z.enum(["STORYTELLING", "PROFESSIONAL", "ANIMATED"]),
+  language: z.enum(["en", "ta"]),
+});
+
 export type SignupInput = z.input<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type LeadInput = z.infer<typeof leadSchema>;
+export type BirthDetailsInput = z.input<typeof birthDetailsSchema>;
+export type ReportRequestInput = z.infer<typeof reportRequestSchema>;

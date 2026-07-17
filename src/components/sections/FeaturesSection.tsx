@@ -42,7 +42,7 @@ export function FeaturesSection() {
           </h2>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 sm:gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
@@ -50,13 +50,19 @@ export function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.55, delay: i * 0.1 }}
-              className="text-center sm:text-left"
+              className="flex items-start gap-4 text-left sm:block"
             >
-              <IconBadge size="xl" className="mx-auto text-brand-500 dark:text-brand-400 sm:mx-0" delay={i * 0.1}>
-                <ContentIcon keyword={f.iconKey} className="h-13 w-13 sm:h-14 sm:w-14" />
+              <IconBadge
+                size="xl"
+                className="h-12 w-12 shrink-0 text-brand-500 dark:text-brand-400 sm:h-22 sm:w-22"
+                delay={i * 0.1}
+              >
+                <ContentIcon keyword={f.iconKey} className="h-7 w-7 sm:h-14 sm:w-14" />
               </IconBadge>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm text-muted">{f.description}</p>
+              <div>
+                <h3 className="font-semibold sm:mt-4">{f.title}</h3>
+                <p className="mt-1 text-sm text-muted sm:mt-2">{f.description}</p>
+              </div>
             </motion.div>
           ))}
         </div>

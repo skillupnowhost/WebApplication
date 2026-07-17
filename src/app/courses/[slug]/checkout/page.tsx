@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { CheckoutPanel } from "@/components/courses/CheckoutPanel";
 
 export default async function CheckoutPage({
@@ -22,9 +23,17 @@ export default async function CheckoutPage({
   if (enrollment) redirect(`/courses/${slug}`);
 
   return (
-    <Section className="pt-14">
+    <Section className="pt-14 sm:pt-14">
       <Container>
         <div className="mx-auto max-w-xl">
+          <Breadcrumbs
+            items={[
+              { label: "Courses", href: "/courses" },
+              { label: course.title, href: `/courses/${course.slug}` },
+              { label: "Checkout" },
+            ]}
+            className="mb-6"
+          />
           <CheckoutPanel
             course={{
               id: course.id,

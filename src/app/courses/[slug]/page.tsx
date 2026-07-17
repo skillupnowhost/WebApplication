@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Percent, ListChecks } from "lucide-react";
@@ -35,8 +36,12 @@ export default async function CourseDetailPage({
       : null;
 
   return (
-    <Section className="pt-14">
+    <Section className="pt-14 sm:pt-14">
       <Container>
+        <Breadcrumbs
+          items={[{ label: "Courses", href: "/courses" }, { label: course.title }]}
+          className="mb-6"
+        />
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-4">

@@ -11,6 +11,7 @@ import {
   applicationConfig,
   projectConfig,
   tutoringConfig,
+  classConfig,
   leadConfig,
   paymentConfig,
 } from "@/components/admin/entityConfigs";
@@ -25,6 +26,7 @@ const configs: Record<string, EntityConfig> = {
   applications: applicationConfig,
   projects: projectConfig,
   tutoring: tutoringConfig,
+  classes: classConfig,
   leads: leadConfig,
   payments: paymentConfig,
 };

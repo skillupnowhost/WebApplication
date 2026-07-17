@@ -1,4 +1,5 @@
 import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { prisma } from "@/lib/prisma";
 import type { ShowcaseProject } from "@/lib/showcaseProjects";
 import { ProjectsHero } from "@/components/projects/ProjectsHero";
@@ -25,6 +26,7 @@ export default async function ProjectsPage() {
   return (
     <Section className="pt-14 sm:pt-16">
       <Container>
+        <Breadcrumbs items={[{ label: "Projects" }]} className="mb-6" />
         <ProjectsHero
           projectCount={showcaseProjects.length}
           mentorCount={mentorCount}

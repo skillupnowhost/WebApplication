@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Settings, Camera, LogOut } from "lucide-react";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
 import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarUploadModal } from "./AvatarUploadModal";
 
@@ -70,6 +71,9 @@ export function ProfileMenu({ user, onOpen }: { user: ProfileUser; onOpen?: () =
             />
             {user.role === "ADMIN" && (
               <MenuLink href="/admin" icon={<AnimatedShield className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />} label="Admin" onClick={() => setOpen(false)} />
+            )}
+            {user.role === "MENTOR" && (
+              <MenuLink href="/mentor" icon={<AnimatedVideoCamera className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />} label="Mentor dashboard" onClick={() => setOpen(false)} />
             )}
             <div className="my-1 h-px bg-border-soft" />
             <button

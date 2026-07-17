@@ -13,6 +13,30 @@ enum Role {
   ADMIN
 }
 
+enum FeeTier {
+  FREE
+  STANDARD
+  PREMIUM
+}
+
+enum ClassStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ReportDepth {
+  SUMMARY
+  FULL
+}
+
+enum ReportVoice {
+  STORYTELLING
+  PROFESSIONAL
+  ANIMATED
+}
+
 model User {
   id            String   @id @default(cuid())
   name          String
@@ -27,6 +51,7 @@ model User {
   avatarUrl     String?
   grade         String?
   board         String?
+  tutoringTier  FeeTier  @default(FREE)
   points        Int      @default(0)
   currentStreak Int      @default(0)
   longestStreak Int      @default(0)
@@ -44,6 +69,10 @@ model User {
   payments           Payment[]
   dailyActivities    DailyActivity[]
   pointsTransactions PointsTransaction[]
+  mentorProfile      Tutor?         @relation("MentorAccount")
+  googleAccount      GoogleAccount?
+  classBookings      ClassBooking[]
+  astrologyProfiles  AstrologyProfile[]
 }
 
 model DailyActivity {
@@ -166,8 +195,70 @@ model Tutor {
   rating      Float   @default(4.9)
   avatarColor String  @default("#22c55e")
   boards      String
+  grades      String  @default("[\"1st Grade\",\"2nd Grade\",\"3rd Grade\",\"4th Grade\",\"5th Grade\",\"6th Grade\",\"7th Grade\",\"8th Grade\",\"9th Grade\",\"10th Grade\",\"11th Grade\",\"12th Grade\"]")
+  userId      String? @unique
+  user        User?   @relation("MentorAccount", fields: [userId], references: [id])
 
   bookings TutoringBooking[]
+  classes  TutorClass[]
+}
+
+model GoogleAccount {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accessToken  String
+  refreshToken String
+  scope        String
+  expiryDate   DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model TutorClass {
+  id                  String      @id @default(cuid())
+  tutorId             String
+  subject             String
+  title               String
+  description         String?
+  startsAt            DateTime
+  endsAt              DateTime
+  status              ClassStatus @default(SCHEDULED)
+  roomSlug            String      @unique
+  joinUrl             String
+  googleEventId       String?
+  googleEventLink     String?
+  recordingAccessTier FeeTier     @default(FREE)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  tutor      Tutor            @relation(fields: [tutorId], references: [id])
+  bookings   ClassBooking[]
+  recordings ClassRecording[]
+}
+
+model ClassBooking {
+  id        String   @id @default(cuid())
+  classId   String
+  userId    String
+  status    String   @default("registered")
+  createdAt DateTime @default(now())
+
+  tutorClass TutorClass @relation(fields: [classId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([classId, userId])
+}
+
+model ClassRecording {
+  id               String   @id @default(cuid())
+  classId          String
+  driveFileId      String
+  driveWebViewLink String
+  createdAt        DateTime @default(now())
+
+  tutorClass TutorClass @relation(fields: [classId], references: [id])
 }
 
 model TutoringBooking {
@@ -261,4 +352,78 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model GeocodeCache {
+  id        String   @id @default(cuid())
+  query     String   @unique
+  latitude  Float
+  longitude Float
+  timezone  String
+  label     String
+  createdAt DateTime @default(now())
+}
+
+model AstrologyProfile {
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+
+  fullName       String
+  gender         String?
+  birthDate      DateTime
+  birthTimeKnown Boolean  @default(true)
+  birthPlace     String
+  latitude       Float
+  longitude      Float
+  timezone       String
+
+  parentsNames   String?
+  occupation     String?
+  customNotes    String?
+
+  chart          ChartData?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ChartData {
+  id             String   @id @default(cuid())
+  profileId      String   @unique
+  profile        AstrologyProfile @relation(fields: [profileId], references: [id])
+
+  ayanamsaUsed   Float
+  planetsJson    String
+  ascendantJson  String
+  dashaJson      String
+  numerologyJson String
+  computedAt     DateTime @default(now())
+
+  reports        HoroscopeReport[]
+}
+
+model HoroscopeReport {
+  id            String      @id @default(cuid())
+  chartDataId   String
+  chartData     ChartData   @relation(fields: [chartDataId], references: [id])
+
+  depth         ReportDepth
+  voice         ReportVoice
+  language      String
+  narrativeJson String
+  createdAt     DateTime    @default(now())
+
+  @@index([chartDataId])
+  @@unique([chartDataId, depth, voice, language])
+}
+
+model MatchRequest {
+  id            String   @id @default(cuid())
+  profileAId    String
+  profileBId    String
+  ashtakootJson String
+  narrativeJson String
+  language      String
+  createdAt     DateTime @default(now())
 }

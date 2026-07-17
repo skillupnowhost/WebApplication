@@ -14,6 +14,11 @@ import { ContentIcon } from "@/components/ui/ContentIcon";
 import { CourseIconThumb } from "@/components/courses/CourseIconThumb";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
 import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
+import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
+import { AnimatedGraduation } from "@/components/ui/icons/AnimatedGraduation";
+import { AnimatedBook } from "@/components/ui/icons/AnimatedBook";
+import { AnimatedClock } from "@/components/ui/icons/AnimatedClock";
+import { AnimatedRupee } from "@/components/ui/icons/AnimatedRupee";
 import { useTiltSpotlight } from "@/hooks/useTiltSpotlight";
 import { tutoringBookingSchema } from "@/lib/validation";
 import { z } from "zod";
@@ -28,9 +33,9 @@ export type TutorData = {
   rating: number;
   avatarColor: string;
   boards: string[];
+  grades: string[];
 };
 
-const grades = ["1st Grade", "2nd Grade", "3rd Grade", "4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade", "11th Grade", "12th Grade"];
 const slots = ["Weekday Mornings", "Weekday Evenings", "Weekend Mornings", "Weekend Evenings"];
 
 type BookingForm = z.infer<typeof tutoringBookingSchema>;
@@ -113,7 +118,11 @@ function TutorCard({ tutor, index, onBook }: { tutor: TutorData; index: number; 
         style={{ rotateX, rotateY }}
         className="group relative h-full"
       >
-        <Card className="relative flex h-full flex-col overflow-hidden p-6 transition-shadow duration-300 group-hover:shadow-[var(--shadow-lift)] group-hover:-translate-y-1">
+        <Card className="relative flex h-full flex-col overflow-hidden p-6 pt-7 transition-shadow duration-300 group-hover:shadow-[var(--shadow-lift)] group-hover:-translate-y-1">
+          <span
+            className="absolute inset-x-0 top-0 h-1.5 opacity-90"
+            style={{ background: `linear-gradient(90deg, ${tutor.avatarColor}, var(--brand-500))` }}
+          />
           <motion.div
             className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             style={{ background: spotlightBg }}
@@ -139,12 +148,17 @@ function TutorCard({ tutor, index, onBook }: { tutor: TutorData; index: number; 
           </div>
 
           <p className="relative z-10 mt-4 flex-1 text-sm text-muted">{tutor.bio}</p>
-          <div className="relative z-10 mt-4 flex items-center justify-between text-xs text-muted">
-            <span>{tutor.qualification}</span>
+
+          <div className="relative z-10 mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
+            <span className="font-medium text-foreground/80">{tutor.qualification}</span>
+            <span className="flex items-center gap-1">
+              <AnimatedGraduation className="h-4.5 w-4.5" /> {tutor.experienceYears}+ yrs
+            </span>
             <span className="flex items-center gap-1">
               <AnimatedStar className="h-5 w-5 transition-transform duration-300 group-hover:scale-125" /> {tutor.rating.toFixed(1)}
             </span>
           </div>
+
           <div className="relative z-10 mt-3 flex flex-wrap gap-1.5">
             {tutor.boards.map((b) => (
               <span
@@ -155,8 +169,14 @@ function TutorCard({ tutor, index, onBook }: { tutor: TutorData; index: number; 
               </span>
             ))}
           </div>
-          <Button className="relative z-10 mt-5 w-full" size="sm" onClick={onBook}>
-            Book a free class
+
+          <div className="relative z-10 mt-4 flex items-center gap-1.5 rounded-xl bg-surface-2/70 px-3 py-2 text-[11px] font-medium text-muted">
+            <AnimatedRupee className="h-4.5 w-4.5" />
+            Paid 1:1 mentorship &mdash; fee shared on your intro call
+          </div>
+
+          <Button className="relative z-10 mt-4 w-full" size="sm" onClick={onBook} icon={<AnimatedCalendar className="h-4.5 w-4.5" />}>
+            Book a class
           </Button>
         </Card>
       </motion.div>
@@ -221,11 +241,19 @@ function BookingModal({
         className="glass-panel w-full max-w-md rounded-2xl p-7"
       >
         <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Book a class with {tutor.name}</h3>
-            <p className="mt-1 text-sm text-muted">{tutor.subject} · {tutor.qualification}</p>
+          <div className="flex items-center gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+              style={{ background: tutor.avatarColor }}
+            >
+              {tutor.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+            </span>
+            <div>
+              <h3 className="text-lg font-semibold leading-tight">Book a class with {tutor.name}</h3>
+              <p className="mt-0.5 text-sm text-muted">{tutor.subject} · {tutor.qualification}</p>
+            </div>
           </div>
-          <button onClick={onClose} className="group cursor-pointer rounded-full p-1.5 transition-colors hover:bg-surface-2">
+          <button onClick={onClose} className="group shrink-0 cursor-pointer rounded-full p-1.5 transition-colors hover:bg-surface-2">
             <X className="h-5.5 w-5.5 transition-transform duration-300 group-hover:rotate-90" />
           </button>
         </div>
@@ -235,30 +263,51 @@ function BookingModal({
             <AnimatedSuccess once className="h-12.5 w-12.5" />
             <p className="font-medium">Request sent!</p>
             <p className="text-sm text-muted">
-              {tutor.name} will reach out to confirm your first free class.
+              {tutor.name} will reach out to confirm your session &mdash; including schedule and fee.
             </p>
             <Button size="sm" variant="secondary" onClick={onClose}>
               Close
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
-            <input type="hidden" {...register("tutorId")} />
-            <Select label="Grade" placeholder="Select grade" options={grades.map((g) => ({ label: g, value: g }))} {...register("grade")} error={errors.grade?.message} />
-            <Select
-              label="Board"
-              placeholder="Select board"
-              options={tutor.boards.map((b) => ({ label: b, value: b }))}
-              {...register("board")}
-              error={errors.board?.message}
-            />
-            <Select label="Preferred slot" placeholder="Select a slot" options={slots.map((s) => ({ label: s, value: s }))} {...register("preferredSlot")} error={errors.preferredSlot?.message} />
-            <Textarea label="Notes (optional)" placeholder="Anything specific you'd like to cover?" rows={3} {...register("notes")} />
-            {serverError && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{serverError}</p>}
-            <Button type="submit" className="w-full">
-              {isLoggedIn ? "Confirm request" : "Log in to book"}
-            </Button>
-          </form>
+          <>
+            <div className="mt-5 flex items-center gap-2 rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-xs font-medium text-muted">
+              <AnimatedRupee className="h-5 w-5 shrink-0" />
+              This is a paid 1:1 mentorship session &mdash; {tutor.name.split(" ")[0]} will confirm the fee and schedule with you directly.
+            </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-5 flex flex-col gap-4">
+              <input type="hidden" {...register("tutorId")} />
+              <div className="flex items-start gap-3">
+                <AnimatedGraduation className="mt-7 h-6 w-6 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <Select label="Grade" placeholder="Select grade" options={tutor.grades.map((g) => ({ label: g, value: g }))} {...register("grade")} error={errors.grade?.message} />
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <AnimatedBook className="mt-7 h-6 w-6 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <Select
+                    label="Board"
+                    placeholder="Select board"
+                    options={tutor.boards.map((b) => ({ label: b, value: b }))}
+                    {...register("board")}
+                    error={errors.board?.message}
+                  />
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <AnimatedClock className="mt-7 h-6 w-6 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <Select label="Preferred slot" placeholder="Select a slot" options={slots.map((s) => ({ label: s, value: s }))} {...register("preferredSlot")} error={errors.preferredSlot?.message} />
+                </div>
+              </div>
+              <Textarea label="Notes (optional)" placeholder="Anything specific you'd like to cover?" rows={3} {...register("notes")} />
+              {serverError && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{serverError}</p>}
+              <Button type="submit" className="w-full">
+                {isLoggedIn ? "Confirm request" : "Log in to book"}
+              </Button>
+            </form>
+          </>
         )}
       </motion.div>
     </motion.div>

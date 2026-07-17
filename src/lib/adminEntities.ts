@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { updateClass, deleteClass } from "@/lib/classes";
 import { z } from "zod";
 
 /**
@@ -23,8 +24,8 @@ async function uniqueSlug(base: string, exists: (slug: string) => Promise<boolea
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 
-/** Tutor.boards is stored as a JSON string array — expose it as "A, B". */
-function boardsToText(raw: string): string {
+/** Tutor.boards / Tutor.grades are stored as JSON string arrays — expose them as "A, B". */
+function jsonListToText(raw: string): string {
   try {
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr.join(", ") : raw;
@@ -33,7 +34,7 @@ function boardsToText(raw: string): string {
   }
 }
 
-function textToBoards(text: string) {
+function textToJsonList(text: string) {
   return JSON.stringify(
     text
       .split(",")
@@ -54,6 +55,7 @@ const userCreate = z.object({
 });
 const userUpdate = userCreate.partial().omit({ password: true }).extend({
   points: z.coerce.number().int().min(0).optional(),
+  tutoringTier: z.enum(["FREE", "STANDARD", "PREMIUM"]).optional(),
 });
 
 const courseCreate = z.object({
@@ -77,6 +79,8 @@ const mentorCreate = z.object({
   experienceYears: z.coerce.number().int().min(0).max(60),
   rating: z.coerce.number().min(0).max(5).default(4.9),
   boards: z.string().trim().default("CBSE"),
+  grades: z.string().trim().default("6th Grade, 7th Grade, 8th Grade, 9th Grade, 10th Grade"),
+  userId: z.string().trim().optional().nullable(),
 });
 const mentorUpdate = mentorCreate.partial();
 
@@ -119,6 +123,14 @@ const bookingUpdate = z.object({
   notes: z.string().trim().optional().nullable(),
 });
 
+const classUpdate = z.object({
+  title: z.string().trim().min(3).optional(),
+  startsAt: z.coerce.date().optional(),
+  endsAt: z.coerce.date().optional(),
+  status: z.enum(["SCHEDULED", "LIVE", "COMPLETED", "CANCELLED"]).optional(),
+  recordingAccessTier: z.enum(["FREE", "STANDARD", "PREMIUM"]).optional(),
+});
+
 const leadUpdate = z.object({
   status: z.enum(["new", "contacted", "closed"]),
 });
@@ -154,6 +166,7 @@ export const adminEntities: Record<string, EntityDef> = {
         emailVerified: u.emailVerified,
         points: u.points,
         streak: u.currentStreak,
+        tutoringTier: u.tutoringTier,
         enrollments: u._count.enrollments,
         projects: u._count.projects,
         createdAt: iso(u.createdAt),
@@ -185,6 +198,7 @@ export const adminEntities: Record<string, EntityDef> = {
           ...(data.role !== undefined && { role: data.role }),
           ...(data.emailVerified !== undefined && { emailVerified: data.emailVerified }),
           ...(data.points !== undefined && { points: data.points }),
+          ...(data.tutoringTier !== undefined && { tutoringTier: data.tutoringTier }),
         },
         select: { id: true },
       });
@@ -274,7 +288,7 @@ export const adminEntities: Record<string, EntityDef> = {
     list: async () => {
       const tutors = await prisma.tutor.findMany({
         orderBy: { name: "asc" },
-        include: { _count: { select: { bookings: true } } },
+        include: { _count: { select: { bookings: true } }, user: { select: { name: true, email: true } } },
       });
       return tutors.map((t) => ({
         id: t.id,
@@ -283,25 +297,44 @@ export const adminEntities: Record<string, EntityDef> = {
         qualification: t.qualification,
         experienceYears: t.experienceYears,
         rating: t.rating,
-        boards: boardsToText(t.boards),
+        boards: jsonListToText(t.boards),
+        grades: jsonListToText(t.grades),
         bookings: t._count.bookings,
         bio: t.bio,
+        userId: t.userId,
+        account: t.user ? `${t.user.name} (${t.user.email})` : "— not linked —",
       }));
     },
     create: async (body) => {
-      const data = mentorCreate.parse(body);
-      return prisma.tutor.create({ data: { ...data, boards: textToBoards(data.boards) }, select: { id: true } });
+      const { userId, ...data } = mentorCreate.parse(body);
+      return prisma.tutor.create({
+        data: {
+          ...data,
+          boards: textToJsonList(data.boards),
+          grades: textToJsonList(data.grades),
+          userId: userId || null,
+        },
+        select: { id: true },
+      });
     },
     update: async (id, body) => {
-      const data = mentorUpdate.parse(body);
+      const { userId, ...data } = mentorUpdate.parse(body);
       return prisma.tutor.update({
         where: { id },
-        data: { ...data, ...(data.boards !== undefined && { boards: textToBoards(data.boards) }) },
+        data: {
+          ...data,
+          ...(data.boards !== undefined && { boards: textToJsonList(data.boards) }),
+          ...(data.grades !== undefined && { grades: textToJsonList(data.grades) }),
+          ...(userId !== undefined && { userId: userId || null }),
+        },
         select: { id: true },
       });
     },
     remove: async (id) => {
       await prisma.$transaction([
+        prisma.classBooking.deleteMany({ where: { tutorClass: { tutorId: id } } }),
+        prisma.classRecording.deleteMany({ where: { tutorClass: { tutorId: id } } }),
+        prisma.tutorClass.deleteMany({ where: { tutorId: id } }),
         prisma.tutoringBooking.deleteMany({ where: { tutorId: id } }),
         prisma.tutor.delete({ where: { id } }),
       ]);
@@ -460,6 +493,37 @@ export const adminEntities: Record<string, EntityDef> = {
     },
     remove: async (id) => {
       await prisma.tutoringBooking.delete({ where: { id } });
+    },
+  },
+
+  classes: {
+    list: async () => {
+      const rows = await prisma.tutorClass.findMany({
+        orderBy: { startsAt: "desc" },
+        include: { tutor: { select: { name: true } }, _count: { select: { bookings: true, recordings: true } } },
+      });
+      return rows.map((c) => ({
+        id: c.id,
+        title: c.title,
+        mentor: c.tutor.name,
+        subject: c.subject,
+        startsAt: iso(c.startsAt),
+        endsAt: iso(c.endsAt),
+        status: c.status,
+        recordingAccessTier: c.recordingAccessTier,
+        joinUrl: c.joinUrl,
+        googleEventLink: c.googleEventLink,
+        bookings: c._count.bookings,
+        recordings: c._count.recordings,
+      }));
+    },
+    update: async (id, body) => {
+      const data = classUpdate.parse(body);
+      const updated = await updateClass(id, data);
+      return { id: updated.id };
+    },
+    remove: async (id) => {
+      await deleteClass(id);
     },
   },
 

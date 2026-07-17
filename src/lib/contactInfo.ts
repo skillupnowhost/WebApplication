@@ -12,3 +12,6 @@ export const CONTACT_PHONES = [
 export const WHATSAPP_PHONE = "+919655560555";
 
 export const CONTACT_HOURS = "Mon–Sat, 9am–7pm IST";
+
+/** Machine-readable form of CONTACT_HOURS, in Asia/Kolkata — used to compute live open/closed status. */
+export const CONTACT_HOURS_RANGE = { startHour: 9, endHour: 19, days: [1, 2, 3, 4, 5, 6] } as const;

@@ -9,6 +9,8 @@ import { AnimatedPlus } from "@/components/ui/icons/AnimatedPlus";
 import { AnimatedEdit } from "@/components/ui/icons/AnimatedEdit";
 import { AnimatedTrash } from "@/components/ui/icons/AnimatedTrash";
 import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
+import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
+import { ToggleChipGroup } from "@/components/ui/ToggleChipGroup";
 import { useLiveData } from "@/components/admin/useLiveData";
 import { CategoryPicker } from "@/components/admin/CategoryPicker";
 import { DataTable, LiveIndicator, type Column, type Row } from "@/components/admin/DataTable";
@@ -17,7 +19,7 @@ import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/
 export type FieldDef = {
   name: string;
   label: string;
-  type: "text" | "email" | "password" | "number" | "textarea" | "select" | "checkbox" | "date" | "category";
+  type: "text" | "email" | "password" | "number" | "textarea" | "select" | "checkbox" | "date" | "datetime-local" | "category" | "checkboxGroup" | "rating";
   options?: { label: string; value: string }[];
   required?: boolean;
   placeholder?: string;
@@ -29,6 +31,8 @@ export type FieldDef = {
   step?: string;
   /** Row key whose existing values are offered as autocomplete suggestions (new values stay allowed). */
   suggestionsFrom?: string;
+  /** For "select" fields: an API endpoint returning `{ options: {label,value}[] }`, fetched once when the form opens. */
+  optionsEndpoint?: string;
 };
 
 export type EntityConfig = {
@@ -47,6 +51,8 @@ export type EntityConfig = {
   canDelete?: boolean;
   /** Select-type fields offered in the bulk-edit modal for multi-selected rows. */
   bulkFields?: FieldDef[];
+  /** API path prefix — defaults to "/api/admin"; lets non-admin screens (e.g. mentor dashboard) reuse this component. */
+  basePath?: string;
 };
 
 type FormValues = Record<string, unknown>;
@@ -57,7 +63,12 @@ function initialValues(fields: FieldDef[], source?: Row, defaults?: Record<strin
     const raw = source?.[f.name] ?? defaults?.[f.name];
     if (f.type === "checkbox") values[f.name] = Boolean(raw);
     else if (f.type === "date" && typeof raw === "string") values[f.name] = raw.slice(0, 10);
-    else values[f.name] = raw ?? "";
+    else if (f.type === "datetime-local" && typeof raw === "string") {
+      // Render the local-time wall clock the <input type="datetime-local"> control expects,
+      // not the UTC digits from the stored ISO string (those would be off by the tz offset).
+      const d = new Date(raw);
+      values[f.name] = new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+    } else values[f.name] = raw ?? "";
   }
   return values;
 }
@@ -175,14 +186,50 @@ function FieldControl({
   value,
   onChange,
   suggestions,
+  dynamicOptions,
   autoFocus,
 }: {
   field: FieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
   suggestions?: string[];
+  dynamicOptions?: { label: string; value: string }[];
   autoFocus?: boolean;
 }) {
+  if (field.type === "rating") {
+    const current = Number(value ?? 0);
+    return (
+      <div>
+        <span className="mb-2 block text-sm font-medium">{field.label}</span>
+        <div className="flex items-center gap-1.5 rounded-xl border border-border-soft bg-surface px-4 py-3">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(n)}
+              aria-label={`${n} star${n === 1 ? "" : "s"}`}
+              className="cursor-pointer transition-transform duration-150 hover:scale-125 active:scale-90"
+            >
+              <AnimatedStar className={`h-6 w-6 ${n <= Math.round(current) ? "opacity-100" : "opacity-25"}`} />
+            </button>
+          ))}
+          <span className="ml-2 text-sm font-semibold tabular-nums text-muted">{current.toFixed(1)}</span>
+        </div>
+        {field.hint && <p className="mt-1.5 text-xs text-muted">{field.hint}</p>}
+      </div>
+    );
+  }
+  if (field.type === "checkboxGroup") {
+    return (
+      <ToggleChipGroup
+        label={field.label}
+        options={field.options ?? []}
+        value={String(value ?? "")}
+        onChange={onChange}
+        hint={field.hint}
+      />
+    );
+  }
   if (field.type === "textarea") {
     return (
       <Textarea
@@ -216,7 +263,7 @@ function FieldControl({
     return (
       <Select
         label={field.label}
-        options={field.options ?? []}
+        options={field.options ?? dynamicOptions ?? []}
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -264,10 +311,12 @@ function FieldControl({
 export function EntityManager({ config }: { config: EntityConfig }) {
   const { entity, titleSingular, titlePlural, description, columns, createFields, editFields, createDefaults, nameKey, bulkFields } = config;
   const canDelete = config.canDelete !== false;
+  const basePath = config.basePath ?? "/api/admin";
 
-  const { data, error, loading, updatedAt, refresh } = useLiveData<{ rows: Row[] }>(`/api/admin/${entity}`);
+  const { data, error, loading, updatedAt, refresh } = useLiveData<{ rows: Row[] }>(`${basePath}/${entity}`);
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const toast = useToast();
+  const [dynamicOptions, setDynamicOptions] = useState<Record<string, { label: string; value: string }[]>>({});
 
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingRow, setEditingRow] = useState<Row | null>(null);
@@ -307,6 +356,20 @@ export function EntityManager({ config }: { config: EntityConfig }) {
   }, [rows]);
 
   const activeFields = formMode === "create" ? createFields ?? [] : editFields ?? [];
+
+  // Fetch each field's optionsEndpoint once per form-open — mirrors suggestionsFrom, but for
+  // select dropdowns backed by a live list from another entity (e.g. linkable user accounts).
+  useEffect(() => {
+    if (formMode === null) return;
+    for (const f of activeFields) {
+      if (!f.optionsEndpoint || dynamicOptions[f.name]) continue;
+      fetch(f.optionsEndpoint)
+        .then((res) => res.json())
+        .then((json) => setDynamicOptions((prev) => ({ ...prev, [f.name]: json.options ?? [] })))
+        .catch(() => setDynamicOptions((prev) => ({ ...prev, [f.name]: [] })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formMode]);
 
   function openCreate() {
     const v = initialValues(createFields ?? [], undefined, createDefaults);
@@ -368,7 +431,7 @@ export function EntityManager({ config }: { config: EntityConfig }) {
   }
 
   async function send(method: "POST" | "PATCH" | "DELETE", id: string | null, body?: FormValues) {
-    const url = id ? `/api/admin/${entity}/${encodeURIComponent(id)}` : `/api/admin/${entity}`;
+    const url = id ? `${basePath}/${entity}/${encodeURIComponent(id)}` : `${basePath}/${entity}`;
     const res = await fetch(url, {
       method,
       headers: body ? { "Content-Type": "application/json" } : undefined,
@@ -579,6 +642,7 @@ export function EntityManager({ config }: { config: EntityConfig }) {
                   value={values[f.name]}
                   onChange={(v) => setValues((prev) => ({ ...prev, [f.name]: v }))}
                   suggestions={suggestionsByField[f.name]}
+                  dynamicOptions={dynamicOptions[f.name]}
                   autoFocus={i === 0}
                 />
               </div>

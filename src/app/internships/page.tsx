@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { InternshipsHero } from "@/components/internships/InternshipsHero";
 import { InternshipsExplorer } from "@/components/internships/InternshipsExplorer";
 import type { InternshipCardData } from "@/components/internships/InternshipCard";
@@ -41,6 +42,7 @@ export default async function InternshipsPage() {
   return (
     <Section className="pt-14 sm:pt-16">
       <Container>
+        <Breadcrumbs items={[{ label: "Internships" }]} className="mb-6" />
         <InternshipsHero
           total={cards.length}
           paidCount={paidCount}

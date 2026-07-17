@@ -8,10 +8,13 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
 import { AnimatedChat } from "@/components/ui/icons/AnimatedChat";
-import { AnimatedRocket } from "@/components/ui/icons/AnimatedRocket";
+import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
+import { AnimatedGraduation } from "@/components/ui/icons/AnimatedGraduation";
+import { AnimatedBriefcase } from "@/components/ui/icons/AnimatedBriefcase";
+import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
 import { toWhatsAppLink } from "@/lib/whatsapp";
 import { CONTACT_EMAIL, CONTACT_PHONES, WHATSAPP_PHONE } from "@/lib/contactInfo";
-import logo from "@/images/Logos/Logo-trimmed.png";
+import logo from "@/images/Loginn Logo.png";
 
 /* ── Gradient social glyphs ─────────────────────────────────────────── */
 
@@ -82,6 +85,7 @@ const socials = [
 const columns = [
   {
     title: "Learn",
+    Icon: AnimatedGraduation,
     links: [
       { href: "/courses", label: "Courses" },
       { href: "/internships", label: "Internships" },
@@ -91,6 +95,7 @@ const columns = [
   },
   {
     title: "Services",
+    Icon: AnimatedBriefcase,
     links: [
       { href: "/services/digital-marketing", label: "Digital Marketing" },
       { href: "/services/app-web-development", label: "App & Web Development" },
@@ -99,6 +104,7 @@ const columns = [
   },
   {
     title: "Account",
+    Icon: AnimatedUser,
     links: [
       { href: "/dashboard", label: "Dashboard" },
       { href: "/login", label: "Log in" },
@@ -122,91 +128,101 @@ const contactLinks = [
 
 export function Footer() {
   return (
-    <footer className="relative mt-20 overflow-hidden">
-      {/* Gradient hairline */}
-      <div className="h-px w-full brand-gradient-bg opacity-70" />
+    <footer className="relative mt-20 overflow-hidden border-t border-border-soft">
+      {/* Full-bleed CTA banner */}
+      <div className="relative overflow-hidden brand-gradient-bg text-white">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-25"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+            maskImage: "radial-gradient(ellipse 70% 100% at 50% 50%, black 30%, transparent 85%)",
+            WebkitMaskImage: "radial-gradient(ellipse 70% 100% at 50% 50%, black 30%, transparent 85%)",
+          }}
+        />
+        <div className="pointer-events-none absolute -top-20 right-[10%] h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-[5%] h-64 w-64 rounded-full bg-black/10 blur-3xl" />
 
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(108,77,255,0.14),transparent_70%)]" />
-      <div className="pointer-events-none absolute -bottom-40 -right-24 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.12),transparent_70%)]" />
-      <div className="pointer-events-none absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(217,70,239,0.1),transparent_70%)]" />
-
-      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-        {/* CTA band */}
-        <Reveal scale className="pt-14">
-          <div className="card-shine relative overflow-hidden rounded-3xl brand-gradient-bg px-6 py-8 text-white shadow-[0_16px_48px_rgba(108,77,255,0.35)] sm:px-10">
-            <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-            <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <AnimatedRocket className="h-11 w-11 shrink-0" />
-                <div>
-                  <p className="text-lg font-semibold sm:text-xl">Ready to level up your skills?</p>
-                  <p className="mt-1 text-sm text-white/80">Join learners building real careers with MyLoginn.</p>
-                </div>
-              </div>
-              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="shrink-0">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-600 shadow-lg transition-shadow duration-300 hover:shadow-xl"
-                >
-                  Get started — it&apos;s free
-                </Link>
-              </motion.div>
+        <Reveal scale className="relative mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="flex flex-col items-start gap-7 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-2xl font-bold tracking-tight sm:text-3xl">Ready to level up your skills?</p>
+              <p className="mt-2 text-sm text-white/80 sm:text-base">
+                Join learners building real careers with MyLoginn.
+              </p>
             </div>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="shrink-0">
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-600 shadow-xl transition-shadow duration-300 hover:shadow-2xl"
+              >
+                Get started — it&apos;s free
+                <AnimatedArrow className="h-4 w-4" />
+              </Link>
+            </motion.div>
           </div>
         </Reveal>
+      </div>
 
-        {/* Main grid */}
-        <div className="grid gap-12 py-14 lg:grid-cols-[1.1fr_2fr]">
+      {/* Main content */}
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="grid gap-x-10 gap-y-14 py-16 md:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
           {/* Brand + contact */}
-          <Reveal direction="up">
-            <Link href="/" className="inline-flex items-center transition-transform duration-300 hover:scale-[1.03]">
-              <Image src={logo} alt="MyLoginn" className="h-9 w-auto select-none object-contain" />
+          <Reveal direction="up" className="md:border-r md:border-border-soft md:pr-10">
+            <Link
+              href="/"
+              className="inline-flex items-center transition-transform duration-300 hover:scale-[1.03]"
+            >
+              <Image src={logo} alt="MyLoginn" className="h-20 w-auto select-none object-contain" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
               AI-powered learning, tutoring, internships and growth services &mdash; built for students,
               professionals and businesses.
             </p>
 
-            <ul className="mt-6 flex flex-col gap-3">
+            <ul className="mt-7 flex flex-col gap-4">
               {contactLinks.map((c) => (
                 <li key={c.label}>
                   <a
                     href={c.href}
                     {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="group inline-flex items-center gap-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:text-brand-500"
+                    className="group inline-flex items-center gap-3 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground"
                   >
-                    <c.Icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-6" />
-                    <span className="underline-offset-4 group-hover:underline">{c.label}</span>
+                    <c.Icon className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
+                    {c.label}
                   </a>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-6 flex items-center gap-3">
-              {socials.map(({ label, href, Icon }, i) => (
+            <div className="mt-7 flex items-center gap-5">
+              {socials.map(({ label, href, Icon }) => (
                 <motion.a
                   key={label}
                   href={href}
                   aria-label={label}
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-                  whileHover={{ scale: 1.18, rotate: 8, y: -4 }}
+                  whileHover={{ scale: 1.15, y: -3 }}
                   whileTap={{ scale: 0.9 }}
                   className="inline-flex"
                 >
-                  <Icon className="h-8 w-8 drop-shadow-sm" />
+                  <Icon className="h-7 w-7" />
                 </motion.a>
               ))}
             </div>
           </Reveal>
 
           {/* Link columns */}
-          <RevealGroup className="grid grid-cols-2 gap-10 sm:grid-cols-3" stagger={0.12}>
+          <RevealGroup
+            className="grid gap-x-8 gap-y-10 [grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr))]"
+            stagger={0.12}
+          >
             {columns.map((col) => (
               <RevealItem key={col.title}>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] brand-gradient-text">{col.title}</p>
-                <ul className="mt-4 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <col.Icon className="h-5 w-5 shrink-0" />
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] brand-gradient-text">{col.title}</p>
+                </div>
+                <ul className="mt-5 flex flex-col gap-3">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link
@@ -228,8 +244,9 @@ export function Footer() {
 
         {/* Bottom bar */}
         <Reveal direction="none" duration={0.9}>
-          <div className="flex flex-col items-center gap-3 border-t border-border-soft py-7 text-xs text-muted sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-center gap-4 border-t border-border-soft py-7 text-xs text-muted sm:flex-row sm:justify-between">
             <p>&copy; {new Date().getFullYear()} MyLoginn. All rights reserved.</p>
+
             <p className="inline-flex items-center gap-1.5">
               Made with
               <motion.span

@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContentIcon } from "@/components/ui/ContentIcon";
 import type { Column, Row } from "@/components/admin/DataTable";
 import type { EntityConfig } from "@/components/admin/EntityManager";
+import { SUBJECT_OPTIONS, BOARD_OPTIONS, GRADE_OPTIONS, FEE_TIER_OPTIONS } from "@/lib/tutoringOptions";
 
 const nfIN = new Intl.NumberFormat("en-IN");
 
@@ -13,6 +14,13 @@ function fmtDate(v: unknown) {
 }
 
 const dateCell = (key: string) => (row: Row) => <span className="text-muted">{fmtDate(row[key])}</span>;
+
+function fmtDateTime(v: unknown) {
+  if (!v) return "—";
+  return new Date(String(v)).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
+
+const dateTimeCell = (key: string) => (row: Row) => <span className="text-muted">{fmtDateTime(row[key])}</span>;
 
 const rupeeCell = (key: string) => (row: Row) => (
   <span className="font-semibold tabular-nums">₹{nfIN.format(Number(row[key] ?? 0))}</span>
@@ -138,6 +146,7 @@ export const userConfig: EntityConfig = {
     { key: "role", label: "Role", render: (r) => <StatusBadge status={String(r.role).toLowerCase()} /> },
     { key: "emailVerified", label: "Verified", hideBelow: "sm", render: boolCell("emailVerified") },
     { key: "points", label: "Points", align: "right", hideBelow: "md" },
+    { key: "tutoringTier", label: "Tutoring tier", hideBelow: "lg", render: (r) => <StatusBadge status={String(r.tutoringTier ?? "").toLowerCase()} /> },
     { key: "enrollments", label: "Enrollments", align: "right", hideBelow: "lg" },
     { key: "createdAt", label: "Joined", hideBelow: "lg", render: dateCell("createdAt") },
   ] as Column[],
@@ -174,6 +183,13 @@ export const userConfig: EntityConfig = {
     },
     { name: "points", label: "Points", type: "number", min: 0 },
     { name: "emailVerified", label: "Email verified", type: "checkbox" },
+    {
+      name: "tutoringTier",
+      label: "Tutoring fee tier",
+      type: "select",
+      options: FEE_TIER_OPTIONS,
+      hint: "Controls which class recordings this student can access.",
+    },
   ],
   createDefaults: { role: "STUDENT", emailVerified: false },
   bulkFields: [
@@ -219,27 +235,66 @@ export const mentorConfig: EntityConfig = {
         </span>
       ),
     },
+    {
+      key: "grades",
+      label: "Grades",
+      hideBelow: "xl",
+      render: (r) => (
+        <span className="flex flex-wrap gap-1">
+          {String(r.grades ?? "")
+            .split(", ")
+            .filter(Boolean)
+            .map((g) => (
+              <span key={g} className="rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium">
+                {g}
+              </span>
+            ))}
+        </span>
+      ),
+    },
+    { key: "account", label: "Login account", hideBelow: "lg", className: "text-muted" },
     { key: "bookings", label: "Bookings", align: "right" },
   ] as Column[],
   createFields: [
     { name: "name", label: "Full name", type: "text", required: true },
-    { name: "subject", label: "Subject", type: "text", required: true, suggestionsFrom: "subject", hint: "Pick an existing subject or type a new one" },
-    { name: "qualification", label: "Qualification", type: "text", required: true },
+    { name: "subject", label: "Subject", type: "select", options: SUBJECT_OPTIONS, required: true },
+    { name: "qualification", label: "Qualification", type: "text", required: true, hint: "e.g. M.Sc Mathematics, B.Ed" },
     { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60, required: true },
-    { name: "rating", label: "Rating", type: "number", min: 0, max: 5, step: "0.1" },
-    { name: "boards", label: "Boards", type: "text", hint: "Comma separated, e.g. CBSE, State Board, ICSE" },
+    { name: "rating", label: "Rating", type: "rating" },
+    { name: "boards", label: "Boards taught", type: "checkboxGroup", options: BOARD_OPTIONS },
+    { name: "grades", label: "Grades taught", type: "checkboxGroup", options: GRADE_OPTIONS, required: true },
+    {
+      name: "userId",
+      label: "Linked login account",
+      type: "select",
+      optionsEndpoint: "/api/admin/mentors/linkable-users",
+      hint: "Create the mentor's account on the Users screen first (role: Mentor), then link it here so they can access their own dashboard.",
+    },
     { name: "bio", label: "Bio", type: "textarea", required: true, full: true },
   ],
   editFields: [
     { name: "name", label: "Full name", type: "text", required: true },
-    { name: "subject", label: "Subject", type: "text", required: true, suggestionsFrom: "subject", hint: "Pick an existing subject or type a new one" },
+    { name: "subject", label: "Subject", type: "select", options: SUBJECT_OPTIONS, required: true },
     { name: "qualification", label: "Qualification", type: "text", required: true },
     { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60 },
-    { name: "rating", label: "Rating", type: "number", min: 0, max: 5, step: "0.1" },
-    { name: "boards", label: "Boards", type: "text", hint: "Comma separated, e.g. CBSE, State Board, ICSE" },
+    { name: "rating", label: "Rating", type: "rating" },
+    { name: "boards", label: "Boards taught", type: "checkboxGroup", options: BOARD_OPTIONS },
+    { name: "grades", label: "Grades taught", type: "checkboxGroup", options: GRADE_OPTIONS },
+    {
+      name: "userId",
+      label: "Linked login account",
+      type: "select",
+      optionsEndpoint: "/api/admin/mentors/linkable-users",
+      hint: "Create the mentor's account on the Users screen first (role: Mentor), then link it here so they can access their own dashboard.",
+    },
     { name: "bio", label: "Bio", type: "textarea", full: true },
   ],
-  createDefaults: { rating: 4.9, boards: "CBSE" },
+  createDefaults: {
+    subject: SUBJECT_OPTIONS[0].value,
+    rating: 4.9,
+    boards: "CBSE",
+    grades: "6th Grade, 7th Grade, 8th Grade, 9th Grade, 10th Grade",
+  },
 };
 
 export const enrollmentConfig: EntityConfig = {
@@ -462,6 +517,103 @@ export const tutoringConfig: EntityConfig = {
       ],
     },
   ],
+};
+
+export const classConfig: EntityConfig = {
+  entity: "classes",
+  titleSingular: "Class",
+  titlePlural: "Classes",
+  description: "Every scheduled live class across all mentors — reschedule, cancel or gate recording access.",
+  nameKey: "title",
+  canDelete: true,
+  columns: [
+    { key: "title", label: "Title", className: "font-medium" },
+    { key: "mentor", label: "Mentor" },
+    { key: "subject", label: "Subject", hideBelow: "md" },
+    { key: "startsAt", label: "Starts", hideBelow: "lg", render: dateTimeCell("startsAt") },
+    { key: "status", label: "Status", render: (r) => <StatusBadge status={String(r.status ?? "").toLowerCase()} /> },
+    {
+      key: "recordingAccessTier",
+      label: "Recording tier",
+      hideBelow: "xl",
+      render: (r) => <StatusBadge status={String(r.recordingAccessTier ?? "").toLowerCase()} />,
+    },
+    { key: "bookings", label: "Enrolled", align: "right", hideBelow: "sm" },
+    { key: "recordings", label: "Recordings", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  editFields: [
+    { name: "title", label: "Title", type: "text", required: true },
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { label: "Scheduled", value: "SCHEDULED" },
+        { label: "Live", value: "LIVE" },
+        { label: "Completed", value: "COMPLETED" },
+        { label: "Cancelled", value: "CANCELLED" },
+      ],
+    },
+    { name: "recordingAccessTier", label: "Recording access tier", type: "select", options: FEE_TIER_OPTIONS },
+  ],
+  bulkFields: [
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { label: "Scheduled", value: "SCHEDULED" },
+        { label: "Live", value: "LIVE" },
+        { label: "Completed", value: "COMPLETED" },
+        { label: "Cancelled", value: "CANCELLED" },
+      ],
+    },
+  ],
+};
+
+export const mentorClassConfig: EntityConfig = {
+  entity: "classes",
+  basePath: "/api/mentor",
+  titleSingular: "Class",
+  titlePlural: "My classes",
+  description: "Classes you're scheduled to teach — synced to your Google Calendar once connected.",
+  nameKey: "title",
+  columns: [
+    { key: "title", label: "Title", className: "font-medium" },
+    { key: "subject", label: "Subject" },
+    { key: "startsAt", label: "Starts", hideBelow: "md", render: dateTimeCell("startsAt") },
+    { key: "status", label: "Status", render: (r) => <StatusBadge status={String(r.status ?? "").toLowerCase()} /> },
+    { key: "recordingAccessTier", label: "Recording tier", hideBelow: "lg", render: (r) => <StatusBadge status={String(r.recordingAccessTier ?? "").toLowerCase()} /> },
+    { key: "bookings", label: "Enrolled", align: "right", hideBelow: "sm" },
+  ] as Column[],
+  createFields: [
+    { name: "title", label: "Class title", type: "text", required: true },
+    { name: "subject", label: "Subject", type: "select", options: SUBJECT_OPTIONS, required: true },
+    { name: "startsAt", label: "Starts at", type: "datetime-local", required: true },
+    { name: "endsAt", label: "Ends at", type: "datetime-local", required: true },
+    { name: "recordingAccessTier", label: "Recording access tier", type: "select", options: FEE_TIER_OPTIONS },
+    { name: "description", label: "Description", type: "textarea", full: true },
+  ],
+  editFields: [
+    { name: "title", label: "Class title", type: "text", required: true },
+    { name: "subject", label: "Subject", type: "select", options: SUBJECT_OPTIONS, required: true },
+    { name: "startsAt", label: "Starts at", type: "datetime-local", required: true },
+    { name: "endsAt", label: "Ends at", type: "datetime-local", required: true },
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { label: "Scheduled", value: "SCHEDULED" },
+        { label: "Live", value: "LIVE" },
+        { label: "Completed", value: "COMPLETED" },
+        { label: "Cancelled", value: "CANCELLED" },
+      ],
+    },
+    { name: "recordingAccessTier", label: "Recording access tier", type: "select", options: FEE_TIER_OPTIONS },
+    { name: "description", label: "Description", type: "textarea", full: true },
+  ],
+  createDefaults: { subject: SUBJECT_OPTIONS[0].value, recordingAccessTier: "FREE" },
 };
 
 export const leadConfig: EntityConfig = {

@@ -1,86 +1,144 @@
-import { Section, Container, Eyebrow } from "@/components/ui/Section";
-import { Card } from "@/components/ui/Card";
+import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { Reveal } from "@/components/ui/Reveal";
 import { LeadForm } from "@/components/services/LeadForm";
-import { IconBadge } from "@/components/ui/IconBadge";
-import { ContentIcon } from "@/components/ui/ContentIcon";
-import type { CourseIconKey } from "@/lib/courseIcons";
+import { AppWebDevHero } from "@/components/services/AppWebDevHero";
+import { FeatureBentoGrid, type Feature } from "@/components/services/FeatureBentoGrid";
+import { PillRow } from "@/components/services/PillRow";
+import { HowItWorksTimeline, type TimelineStep } from "@/components/services/HowItWorksTimeline";
+import { EngagementTiers, type EngagementTier } from "@/components/services/EngagementTiers";
+import { FaqAccordion } from "@/components/ui/FaqAccordion";
 
-const features: { iconKey: CourseIconKey; title: string; description: string }[] = [
+export const metadata = { title: "App & Website Development — MyLoginn" };
+
+const features: Feature[] = [
   {
     iconKey: "webdev",
     title: "Full-stack development",
     description: "Modern, scalable apps and websites built end-to-end by senior engineers.",
+    span: true,
   },
   {
-    iconKey: "ai",
-    title: "Smooth animations",
-    description: "Premium, cinematic interactions that feel fast on every device.",
-  },
-  {
-    iconKey: "devops",
-    title: "Server maintenance",
-    description: "Ongoing monitoring, patching and scaling so you never worry about uptime.",
+    iconKey: "cloud",
+    title: "Cloud infrastructure & DevOps",
+    description: "CI/CD, monitoring and auto-scaling so you never worry about uptime.",
   },
   {
     iconKey: "network",
-    title: "Real-time updates",
+    title: "Real-time features",
     description: "Live data sync across dashboards, apps and admin panels out of the box.",
+  },
+  {
+    iconKey: "cyber",
+    title: "Security by default",
+    description: "Auth, data protection and best practices baked into every build.",
+  },
+  {
+    iconKey: "testing",
+    title: "Tested & maintained",
+    description: "Automated test coverage plus ongoing monitoring after launch.",
   },
 ];
 
 const stack = ["Next.js", "React Native", "Node.js", "PostgreSQL", "Prisma", "Three.js", "Tailwind CSS", "AWS / Vercel"];
 
-export const metadata = { title: "App & Website Development — MyLoginn" };
+const processSteps: TimelineStep[] = [
+  { title: "Discovery & scoping", description: "We map goals, users and technical constraints into a clear spec." },
+  { title: "Design & prototype", description: "Interactive prototypes and a design system before a line of production code." },
+  { title: "Build & QA", description: "Agile sprints with weekly demos, automated tests and code review." },
+  { title: "Launch & handover", description: "Production deployment, documentation and a full source-code handover." },
+  { title: "Ongoing care", description: "Optional retainer for monitoring, patching and feature iterations." },
+];
+
+const tiers: EngagementTier[] = [
+  {
+    name: "Fixed Scope",
+    tagline: "For a well-defined product with a clear spec.",
+    features: ["Detailed proposal & timeline", "Milestone-based delivery", "Fixed feature set", "30-day post-launch support"],
+  },
+  {
+    name: "Dedicated Team",
+    tagline: "For ongoing product development at speed.",
+    features: [
+      "Full-time engineering pod",
+      "Weekly sprint demos",
+      "Direct Slack / WhatsApp access",
+      "Flexible scope as you learn",
+    ],
+    featured: true,
+  },
+  {
+    name: "Care & Maintenance",
+    tagline: "For products already live that need ongoing support.",
+    features: ["Monitoring & uptime alerts", "Security patches", "Monthly feature budget", "Priority bug response"],
+  },
+];
+
+const faqs = [
+  {
+    question: "What's your typical project timeline?",
+    answer:
+      "It depends on scope — a focused MVP is usually a matter of weeks, larger products take longer. We share a realistic timeline after the discovery call, before any commitment.",
+  },
+  {
+    question: "Do we own the source code?",
+    answer: "Yes — full source code and IP ownership transfers to you at project handover.",
+  },
+  {
+    question: "Can you work with our existing codebase?",
+    answer:
+      "Yes — we regularly join existing Next.js, React Native and Node.js projects for feature builds, audits and maintenance.",
+  },
+  {
+    question: "Do you sign NDAs?",
+    answer: "Yes, on request, before any detailed discussion of your product.",
+  },
+];
 
 export default function AppWebDevelopmentPage() {
   return (
-    <Section className="pt-14">
+    <Section className="overflow-hidden pt-14 sm:pt-14">
       <Container>
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-5">
+        <Breadcrumbs items={[{ label: "Services" }, { label: "App & Web Development" }]} className="mb-6" />
+
+        <AppWebDevHero techCount={stack.length} />
+
+        <div className="mt-16 grid grid-cols-1 gap-12 sm:mt-20 lg:grid-cols-5">
           <div className="lg:col-span-3">
-            <Eyebrow>Product Engineering</Eyebrow>
-            <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-              App &amp; Website Development
-            </h1>
-            <p className="mt-4 max-w-xl text-muted">
-              For startups, enterprises and organizations that need a premium
-              mobile app or website &mdash; built, animated, and maintained by
-              our in-house engineering team.
-            </p>
+            <FeatureBentoGrid
+              features={features}
+              highlight={{ value: stack.length, suffix: "+", label: "technologies in our stack" }}
+            />
 
-            <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {features.map((f, i) => (
-                <Card
-                  key={f.title}
-                  className={`animate-fade-up stagger-${i + 1} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]`}
-                >
-                  <IconBadge size="lg" className="text-brand-500 dark:text-brand-400" delay={i * 0.06}>
-                    <ContentIcon keyword={f.iconKey} className="h-10.5 w-10.5" />
-                  </IconBadge>
-                  <h3 className="mt-4 font-semibold">{f.title}</h3>
-                  <p className="mt-2 text-sm text-muted">{f.description}</p>
-                </Card>
-              ))}
+            <div id="stack" className="scroll-mt-24">
+              <PillRow title="Our stack" items={stack} />
             </div>
 
-            <div className="animate-fade-up stagger-5 mt-10">
-              <h2 className="font-semibold">Our stack</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {stack.map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-full border border-border-soft bg-surface px-3.5 py-1.5 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-[var(--shadow-soft)]"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <Reveal className="mt-14">
+              <HowItWorksTimeline title="How we build" steps={processSteps} className="mt-0" />
+            </Reveal>
+
+            <Reveal className="mt-14">
+              <h2 className="font-semibold">Find your engagement model</h2>
+              <p className="mt-2 text-sm text-muted">
+                No fixed rate cards — every tier below is a starting point, scoped to your product after a discovery call.
+              </p>
+              <EngagementTiers tiers={tiers} />
+            </Reveal>
+
+            <Reveal className="mt-14">
+              <h2 className="font-semibold">Frequently asked questions</h2>
+              <FaqAccordion items={faqs} className="mt-5" />
+            </Reveal>
           </div>
 
           <div className="lg:col-span-2">
-            <div className="lg:sticky lg:top-24">
-              <LeadForm service="App & Website Development" />
+            <div id="lead-form" className="scroll-mt-24 lg:sticky lg:top-24">
+              <LeadForm
+                service="App & Website Development"
+                title="Tell us about your project"
+                submitLabel="Request a proposal"
+              />
             </div>
           </div>
         </div>

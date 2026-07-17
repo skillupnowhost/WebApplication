@@ -467,6 +467,32 @@ input[type="radio"],
   animation: aurora-drift-alt 19s ease-in-out infinite;
 }
 
+/* MyLoginn Astrology — printable report layout */
+.astro-print-root {
+  --page-w: 210mm;
+  background: white;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 10mm 0;
+}
+.astro-print-root[data-page-size="A5"] {
+  --page-w: 148mm;
+  font-size: 0.85em;
+}
+.astro-print-root[data-page-size="A3"] {
+  --page-w: 297mm;
+}
+.astro-print-root > article {
+  width: var(--page-w);
+  max-width: 100%;
+}
+.astro-report-section {
+  break-inside: avoid;
+}
+.astro-page-break {
+  break-before: page;
+}
+
 /* Slow conic ring used behind hero stat clusters */
 @keyframes ring-rotate {
   from { transform: rotate(0deg); }

@@ -1,68 +1,74 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Eyebrow } from "@/components/ui/Section";
-import { ContentIcon } from "@/components/ui/ContentIcon";
-import type { CourseIconKey } from "@/lib/courseIcons";
+import { ExplorerHero } from "@/components/ui/ExplorerHero";
+import { AnimatedGraduation } from "@/components/ui/icons/AnimatedGraduation";
+import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
+import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
+import { AnimatedBook } from "@/components/ui/icons/AnimatedBook";
+import type { TutorData } from "@/components/tutoring/TutoringExplorer";
 
-const settle = {
-  initial: { opacity: 0, y: 22 },
-  animate: { opacity: 1, y: 0 },
-};
+export function TutoringHero({ tutors, sessionsBooked }: { tutors: TutorData[]; sessionsBooked: number }) {
+  const subjects = [...new Set(tutors.map((t) => t.subject))];
+  const boards = [...new Set(tutors.flatMap((t) => t.boards))];
+  const avgRating = tutors.length
+    ? tutors.reduce((sum, t) => sum + t.rating, 0) / tutors.length
+    : 0;
 
-const floaters: { key: CourseIconKey; className: string; delay: number; duration: number }[] = [
-  { key: "math", className: "-left-14 top-6 sm:-left-20", delay: 0.2, duration: 5.5 },
-  { key: "physics", className: "-right-10 top-32 sm:-right-16", delay: 0.7, duration: 6.4 },
-  { key: "chemistry", className: "-left-8 bottom-2 sm:-left-14", delay: 1.1, duration: 5.9 },
-  { key: "webdev", className: "-right-14 bottom-16 sm:-right-20", delay: 0.4, duration: 6.1 },
-];
+  const cluster = tutors.slice(0, 4).map((t) => {
+    const initials = t.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2);
+    return (
+      <span
+        key={t.id}
+        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white sm:h-9 sm:w-9"
+        style={{ background: t.avatarColor }}
+        title={t.name}
+      >
+        {initials}
+      </span>
+    );
+  });
 
-export function TutoringHero() {
+  const marqueeItems = subjects.map((s) => (
+    <span
+      key={s}
+      className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface px-4 py-1.5 text-sm font-medium text-foreground/80"
+    >
+      {s}
+    </span>
+  ));
+
   return (
-    <div className="relative mx-auto max-w-2xl text-center">
-      <div className="pointer-events-none absolute inset-x-0 -top-24 -z-10 h-[420px] bg-[radial-gradient(60%_60%_at_50%_20%,var(--brand-100),transparent_70%)] dark:bg-[radial-gradient(60%_60%_at_50%_20%,rgba(108,77,255,0.16),transparent_70%)]" />
-
-      <div className="pointer-events-none absolute inset-0 -z-10 hidden sm:block">
-        {floaters.map((f) => (
-          <motion.div
-            key={f.key}
-            className={`absolute h-12 w-12 ${f.className}`}
-            initial={{ opacity: 0, scale: 0.5, y: 10 }}
-            animate={{ opacity: 0.8, scale: 1, y: [0, -14, 0] }}
-            transition={{
-              opacity: { duration: 0.8, delay: f.delay },
-              scale: { type: "spring", stiffness: 200, damping: 14, delay: f.delay },
-              y: { duration: f.duration, repeat: Infinity, ease: "easeInOut", delay: f.delay },
-            }}
-          >
-            <ContentIcon
-              keyword={f.key}
-              className="h-full w-full drop-shadow-[0_10px_22px_rgba(108,77,255,0.28)]"
-            />
-          </motion.div>
-        ))}
-      </div>
-
-      <motion.div className="flex justify-center" initial={settle.initial} animate={settle.animate} transition={{ type: "spring", damping: 18, delay: 0 }}>
-        <Eyebrow>1:1 Mentorship</Eyebrow>
-      </motion.div>
-      <motion.h1
-        className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl"
-        initial={settle.initial}
-        animate={settle.animate}
-        transition={{ type: "spring", damping: 18, delay: 0.08 }}
-      >
-        Online Tutoring Program
-      </motion.h1>
-      <motion.p
-        className="mt-4 text-muted"
-        initial={settle.initial}
-        animate={settle.animate}
-        transition={{ type: "spring", damping: 18, delay: 0.16 }}
-      >
-        Personalized tutoring for CBSE &amp; State Board curricula &mdash; live
-        classes, progress dashboards, and mentor feedback from 1st grade onward.
-      </motion.p>
-    </div>
+    <ExplorerHero
+      eyebrowIcon={AnimatedGraduation}
+      eyebrowText="1:1 Mentorship"
+      titleLead="Learning that fits"
+      titleGradient="your schedule"
+      description="Personalized tutoring for CBSE & State Board curricula — live classes, progress dashboards, and mentor feedback from 1st grade onward."
+      chips={[
+        { icon: AnimatedShield, text: "Verified tutors" },
+        { icon: AnimatedStar, text: `${avgRating.toFixed(1)}★ avg. rating` },
+        { icon: AnimatedCalendar, text: "Flexible scheduling" },
+      ]}
+      ctaHref="#tutors"
+      ctaLabel="Browse tutors"
+      ctaNote={`${subjects.length} subjects, ${tutors.length} tutors ready now`}
+      heroIcon={AnimatedGraduation}
+      heroValue={tutors.length}
+      heroLabel="Expert tutors"
+      cluster={cluster}
+      clusterLabel={`${tutors.length} ${tutors.length === 1 ? "tutor" : "tutors"} ready to help`}
+      stats={[
+        { icon: AnimatedBook, label: "Subjects", value: subjects.length },
+        { icon: AnimatedGraduation, label: "Boards covered", value: boards.length },
+        { icon: AnimatedCalendar, label: "Sessions booked", value: sessionsBooked },
+      ]}
+      marqueeLabel="Subjects taught"
+      marqueeItems={marqueeItems}
+    />
   );
 }

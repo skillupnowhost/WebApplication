@@ -25,7 +25,7 @@ import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
 import { AnimatedBriefcase } from "@/components/ui/icons/AnimatedBriefcase";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
 
-type Step = "details" | "verify" | "success";
+type Step = "details" | "verifyPrimary" | "verifySecondary" | "success";
 type Channel = "email" | "phone";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -44,7 +44,7 @@ const itemVariants = {
 
 const steps: { key: Step; label: string }[] = [
   { key: "details", label: "Your details" },
-  { key: "verify", label: "Verify" },
+  { key: "verifyPrimary", label: "Verify" },
   { key: "success", label: "Done" },
 ];
 
@@ -97,7 +97,10 @@ export default function SignupPage() {
 
   const passwordValue = watch("password") ?? "";
   const identifier = channel === "phone" ? phone : email;
-  const stepIndex = steps.findIndex((s) => s.key === step);
+  // Progress bar only ever shows "Your details" / "Verify" / "Done" — both the
+  // required primary channel and the optional secondary one count as "Verify".
+  const displayStep: Step = step === "details" || step === "success" ? step : "verifyPrimary";
+  const stepIndex = steps.findIndex((s) => s.key === displayStep);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -144,13 +147,23 @@ export default function SignupPage() {
       }
       setEmail(data.email);
       setPhone(data.phone);
-      setChannel("email");
+      // Phone is the default, required verification step — email is verified
+      // afterward as an optional, skippable step.
+      setChannel("phone");
       setOtp("");
-      setStep("verify");
-      await requestCode("email", data.email);
+      setStep("verifyPrimary");
+      await requestCode("phone", data.phone);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function goToDashboard() {
+    setStep("success");
+    setTimeout(() => {
+      router.push("/dashboard");
+      router.refresh();
+    }, 1300);
   }
 
   async function verifyCode(code: string) {
@@ -167,14 +180,25 @@ export default function SignupPage() {
         setOtpError(json.error ?? "Invalid code");
         return;
       }
-      setStep("success");
-      setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
-      }, 1300);
+      if (step === "verifyPrimary") {
+        // Primary (required) channel is verified — move on to the optional
+        // secondary channel instead of finishing signup immediately.
+        const secondary: Channel = channel === "phone" ? "email" : "phone";
+        setChannel(secondary);
+        setOtp("");
+        setStep("verifySecondary");
+        await requestCode(secondary, secondary === "phone" ? phone : email);
+        return;
+      }
+      goToDashboard();
     } finally {
       setVerifying(false);
     }
+  }
+
+  function skipSecondary() {
+    setOtpError(null);
+    goToDashboard();
   }
 
   function switchChannel() {
@@ -232,7 +256,7 @@ export default function SignupPage() {
             <motion.div
               className="brand-gradient-bg h-full rounded-full"
               initial={false}
-              animate={{ width: step === "details" ? "50%" : "100%" }}
+              animate={{ width: displayStep === "details" ? "50%" : "100%" }}
               transition={{ duration: 0.5, ease: easeOut }}
             />
           </div>
@@ -278,7 +302,7 @@ export default function SignupPage() {
                   type="email"
                   autoComplete="email"
                   placeholder="you@example.com"
-                  hint="We'll email a verification code here — 100% free."
+                  hint="Verified after your phone — optional, but unlocks certificates."
                   {...register("email")}
                   error={errors.email?.message}
                 />
@@ -290,6 +314,7 @@ export default function SignupPage() {
                   render={({ field }) => (
                     <PhoneInput
                       label="Phone number"
+                      hint="We'll text a verification code here first — it's required to finish signing up."
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -365,9 +390,9 @@ export default function SignupPage() {
           </motion.div>
         )}
 
-        {step === "verify" && (
+        {(step === "verifyPrimary" || step === "verifySecondary") && (
           <motion.div
-            key="verify"
+            key={step}
             variants={stepVariants}
             initial="enter"
             animate="center"
@@ -383,6 +408,7 @@ export default function SignupPage() {
               <div>
                 <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
                   {channel === "email" ? "Verify your email" : "Verify your phone"}
+                  {step === "verifySecondary" && <span className="text-muted"> (optional)</span>}
                 </h1>
                 <p className="text-sm text-muted">
                   Code sent to{" "}
@@ -392,6 +418,13 @@ export default function SignupPage() {
                 </p>
               </div>
             </div>
+
+            {step === "verifySecondary" && (
+              <p className="mt-3 text-xs text-muted">
+                Your account is already active. Verifying your {channel} unlocks certificates and account
+                recovery — you can also do this later from your dashboard.
+              </p>
+            )}
 
             {devCode && (
               <motion.p
@@ -423,14 +456,24 @@ export default function SignupPage() {
               </Button>
 
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <button
-                  type="button"
-                  onClick={switchChannel}
-                  disabled={requesting}
-                  className="cursor-pointer font-medium text-brand-500 hover:underline disabled:opacity-50"
-                >
-                  Verify by {channel === "phone" ? "email" : "phone"} instead
-                </button>
+                {step === "verifyPrimary" ? (
+                  <button
+                    type="button"
+                    onClick={switchChannel}
+                    disabled={requesting}
+                    className="cursor-pointer font-medium text-brand-500 hover:underline disabled:opacity-50"
+                  >
+                    Verify by {channel === "phone" ? "email" : "phone"} instead
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={skipSecondary}
+                    className="cursor-pointer font-medium text-muted hover:text-foreground hover:underline"
+                  >
+                    Skip for now
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => requestCode(channel, identifier)}
