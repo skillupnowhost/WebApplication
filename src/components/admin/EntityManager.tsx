@@ -10,6 +10,7 @@ import { AnimatedEdit } from "@/components/ui/icons/AnimatedEdit";
 import { AnimatedTrash } from "@/components/ui/icons/AnimatedTrash";
 import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
 import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
+import { AnimatedImage } from "@/components/ui/icons/AnimatedImage";
 import { ToggleChipGroup } from "@/components/ui/ToggleChipGroup";
 import { useLiveData } from "@/components/admin/useLiveData";
 import { CategoryPicker } from "@/components/admin/CategoryPicker";
@@ -19,7 +20,7 @@ import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/
 export type FieldDef = {
   name: string;
   label: string;
-  type: "text" | "email" | "password" | "number" | "textarea" | "select" | "checkbox" | "date" | "datetime-local" | "category" | "checkboxGroup" | "rating";
+  type: "text" | "email" | "password" | "number" | "textarea" | "select" | "checkbox" | "date" | "datetime-local" | "category" | "checkboxGroup" | "rating" | "image";
   options?: { label: string; value: string }[];
   required?: boolean;
   placeholder?: string;
@@ -181,6 +182,74 @@ function SuggestField({
   );
 }
 
+/** Uploads to /api/admin/upload and stores the returned URL as the field value. */
+function ImageField({ field, value, onChange }: { field: FieldDef; value: unknown; onChange: (v: unknown) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const url = String(value ?? "");
+
+  async function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Upload failed");
+        return;
+      }
+      onChange(json.url);
+    } catch {
+      setError("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <span className="mb-2 block text-sm font-medium">{field.label}</span>
+      <div className="flex items-center gap-4 rounded-xl border border-border-soft bg-surface p-3">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded, arbitrary-size asset
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <AnimatedImage className="h-8 w-8 opacity-50" />
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="secondary" onClick={() => inputRef.current?.click()} disabled={uploading}>
+              {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
+            </Button>
+            {url && (
+              <Button type="button" size="sm" variant="ghost" onClick={() => onChange("")} disabled={uploading}>
+                Remove
+              </Button>
+            )}
+          </div>
+          {error && <p className="text-xs text-danger">{error}</p>}
+          {field.hint && !error && <p className="text-xs text-muted">{field.hint}</p>}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
+          onChange={handlePick}
+        />
+      </div>
+    </div>
+  );
+}
+
 function FieldControl({
   field,
   value,
@@ -196,6 +265,9 @@ function FieldControl({
   dynamicOptions?: { label: string; value: string }[];
   autoFocus?: boolean;
 }) {
+  if (field.type === "image") {
+    return <ImageField field={field} value={value} onChange={onChange} />;
+  }
   if (field.type === "rating") {
     const current = Number(value ?? 0);
     return (

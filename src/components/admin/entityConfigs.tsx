@@ -698,3 +698,247 @@ export const paymentConfig: EntityConfig = {
     },
   ],
 };
+
+const thumbCell = (key: string) => (row: Row) => {
+  const url = String(row[key] ?? "");
+  if (!url) return <span className="text-muted">—</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- admin table thumbnail of an uploaded asset
+    <img src={url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+  );
+};
+
+const TEAM_CATEGORY_OPTIONS = [
+  { label: "Founder", value: "FOUNDER" },
+  { label: "CEO", value: "CEO" },
+  { label: "Staff", value: "STAFF" },
+];
+
+export const offeringConfig: EntityConfig = {
+  entity: "offerings",
+  titleSingular: "Offering",
+  titlePlural: "Key Offerings",
+  description: "The bullet-point offerings shown near the top of the About Us page.",
+  nameKey: "title",
+  columns: [
+    { key: "title", label: "Title", className: "font-medium" },
+    { key: "description", label: "Description", className: "text-muted" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "md" },
+  ] as Column[],
+  createFields: [
+    { name: "title", label: "Title", type: "text", required: true },
+    { name: "description", label: "Description", type: "textarea", required: true, full: true },
+  ],
+  editFields: [
+    { name: "title", label: "Title", type: "text", required: true },
+    { name: "description", label: "Description", type: "textarea", full: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+};
+
+export const teamConfig: EntityConfig = {
+  entity: "team",
+  titleSingular: "Team member",
+  titlePlural: "Team",
+  description:
+    "Founders and the CEO appear as cinematic cards; staff are listed with their specialization. Photos should be cropped from hip to shoulders.",
+  nameKey: "name",
+  columns: [
+    { key: "photoUrl", label: "Photo", render: thumbCell("photoUrl") },
+    { key: "name", label: "Name", className: "font-medium" },
+    { key: "role", label: "Role" },
+    { key: "category", label: "Category", render: (r) => <StatusBadge status={String(r.category ?? "").toLowerCase()} /> },
+    { key: "specialization", label: "Specialization", hideBelow: "md" },
+    { key: "experienceYears", label: "Exp (yrs)", align: "right", hideBelow: "lg" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "xl" },
+  ] as Column[],
+  createFields: [
+    { name: "name", label: "Full name", type: "text", required: true },
+    { name: "role", label: "Role / title", type: "text", required: true, placeholder: "Co-Founder, CEO, Full-Stack Developer…" },
+    { name: "category", label: "Category", type: "select", options: TEAM_CATEGORY_OPTIONS, required: true },
+    { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60 },
+    { name: "specialization", label: "Specialization", type: "text", placeholder: "e.g. Full-stack development" },
+    { name: "photoUrl", label: "Photo", type: "image", hint: "PNG cropped from hip to shoulders works best for founder/CEO cards." },
+    { name: "linkedinUrl", label: "LinkedIn URL", type: "text" },
+    { name: "bio", label: "Bio", type: "textarea", full: true },
+  ],
+  editFields: [
+    { name: "name", label: "Full name", type: "text", required: true },
+    { name: "role", label: "Role / title", type: "text", required: true },
+    { name: "category", label: "Category", type: "select", options: TEAM_CATEGORY_OPTIONS, required: true },
+    { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60 },
+    { name: "specialization", label: "Specialization", type: "text" },
+    { name: "photoUrl", label: "Photo", type: "image", hint: "PNG cropped from hip to shoulders works best for founder/CEO cards." },
+    { name: "linkedinUrl", label: "LinkedIn URL", type: "text" },
+    { name: "bio", label: "Bio", type: "textarea", full: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+  createDefaults: { category: "STAFF" },
+};
+
+export const partnerConfig: EntityConfig = {
+  entity: "partners",
+  titleSingular: "Partner",
+  titlePlural: "Partners",
+  description: "Business partners shown with their logo and website link.",
+  nameKey: "name",
+  columns: [
+    { key: "logoUrl", label: "Logo", render: thumbCell("logoUrl") },
+    { key: "name", label: "Name", className: "font-medium" },
+    { key: "websiteUrl", label: "Website", className: "text-muted", hideBelow: "md" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  createFields: [
+    { name: "name", label: "Name", type: "text", required: true },
+    { name: "logoUrl", label: "Logo", type: "image" },
+    { name: "websiteUrl", label: "Website URL", type: "text", placeholder: "https://…" },
+  ],
+  editFields: [
+    { name: "name", label: "Name", type: "text", required: true },
+    { name: "logoUrl", label: "Logo", type: "image" },
+    { name: "websiteUrl", label: "Website URL", type: "text" },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+};
+
+export const clientConfig: EntityConfig = {
+  entity: "clients",
+  titleSingular: "Client",
+  titlePlural: "Clients",
+  description: "Clients shown with their logo, link and a short description.",
+  nameKey: "name",
+  columns: [
+    { key: "logoUrl", label: "Logo", render: thumbCell("logoUrl") },
+    { key: "name", label: "Name", className: "font-medium" },
+    { key: "description", label: "Description", className: "text-muted", hideBelow: "md" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  createFields: [
+    { name: "name", label: "Name", type: "text", required: true },
+    { name: "logoUrl", label: "Logo", type: "image" },
+    { name: "websiteUrl", label: "Website URL", type: "text", placeholder: "https://…" },
+    { name: "description", label: "Description", type: "textarea", full: true },
+  ],
+  editFields: [
+    { name: "name", label: "Name", type: "text", required: true },
+    { name: "logoUrl", label: "Logo", type: "image" },
+    { name: "websiteUrl", label: "Website URL", type: "text" },
+    { name: "description", label: "Description", type: "textarea", full: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+};
+
+const RATING_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({ label: `${n} star${n > 1 ? "s" : ""}`, value: String(n) }));
+
+export const testimonialConfig: EntityConfig = {
+  entity: "testimonials",
+  titleSingular: "Testimonial",
+  titlePlural: "Testimonials",
+  description: "Quotes shown in the homepage testimonials carousel.",
+  nameKey: "authorName",
+  columns: [
+    { key: "avatarUrl", label: "Photo", render: thumbCell("avatarUrl") },
+    { key: "authorName", label: "Author", className: "font-medium" },
+    { key: "authorRole", label: "Role", className: "text-muted", hideBelow: "md" },
+    { key: "quote", label: "Quote", className: "text-muted", hideBelow: "lg" },
+    { key: "rating", label: "Rating", align: "right", hideBelow: "md" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  createFields: [
+    { name: "authorName", label: "Author name", type: "text", required: true },
+    { name: "authorRole", label: "Author role", type: "text", placeholder: "e.g. Software Engineer, Batch of 2025" },
+    { name: "avatarUrl", label: "Photo", type: "image" },
+    { name: "rating", label: "Rating", type: "select", options: RATING_OPTIONS },
+    { name: "quote", label: "Quote", type: "textarea", required: true, full: true },
+  ],
+  editFields: [
+    { name: "authorName", label: "Author name", type: "text", required: true },
+    { name: "authorRole", label: "Author role", type: "text" },
+    { name: "avatarUrl", label: "Photo", type: "image" },
+    { name: "rating", label: "Rating", type: "select", options: RATING_OPTIONS },
+    { name: "quote", label: "Quote", type: "textarea", required: true, full: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+};
+
+const EVENT_MODE_OPTIONS = [
+  { label: "Online", value: "ONLINE" },
+  { label: "Offline", value: "OFFLINE" },
+  { label: "Hybrid", value: "HYBRID" },
+];
+
+export const eventConfig: EntityConfig = {
+  entity: "events",
+  titleSingular: "Event",
+  titlePlural: "Events",
+  description: "Workshops, webinars and meetups shown on the public Events page.",
+  nameKey: "title",
+  columns: [
+    { key: "coverImageUrl", label: "Cover", render: thumbCell("coverImageUrl") },
+    { key: "title", label: "Title", className: "font-medium" },
+    { key: "category", label: "Category", hideBelow: "md" },
+    { key: "mode", label: "Mode", render: (r) => <StatusBadge status={String(r.mode ?? "").toLowerCase()} /> },
+    { key: "startsAt", label: "Starts", render: dateTimeCell("startsAt") },
+    { key: "location", label: "Location", className: "text-muted", hideBelow: "lg" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "xl" },
+  ] as Column[],
+  createFields: [
+    { name: "title", label: "Title", type: "text", required: true },
+    { name: "description", label: "Description", type: "textarea", required: true, full: true },
+    { name: "category", label: "Category", type: "text", placeholder: "Workshop, Webinar, Meetup…" },
+    { name: "mode", label: "Mode", type: "select", options: EVENT_MODE_OPTIONS, required: true },
+    { name: "startsAt", label: "Starts at", type: "datetime-local", required: true },
+    { name: "endsAt", label: "Ends at", type: "datetime-local" },
+    { name: "location", label: "Location", type: "text", placeholder: "Venue address or meeting link" },
+    { name: "coverImageUrl", label: "Cover image", type: "image" },
+    { name: "registerUrl", label: "Register URL", type: "text", placeholder: "https://…" },
+  ],
+  editFields: [
+    { name: "title", label: "Title", type: "text", required: true },
+    { name: "description", label: "Description", type: "textarea", full: true },
+    { name: "category", label: "Category", type: "text" },
+    { name: "mode", label: "Mode", type: "select", options: EVENT_MODE_OPTIONS, required: true },
+    { name: "startsAt", label: "Starts at", type: "datetime-local", required: true },
+    { name: "endsAt", label: "Ends at", type: "datetime-local" },
+    { name: "location", label: "Location", type: "text" },
+    { name: "coverImageUrl", label: "Cover image", type: "image" },
+    { name: "registerUrl", label: "Register URL", type: "text" },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+  createDefaults: { mode: "ONLINE" },
+};
+
+export const astrologyReportConfig: EntityConfig = {
+  entity: "astrologyReports",
+  titleSingular: "Horoscope report",
+  titlePlural: "Horoscope reports",
+  description: "Every generated horoscope report — read-only, for support and QA purposes.",
+  nameKey: "subject",
+  canDelete: true,
+  columns: [
+    { key: "subject", label: "Subject", className: "font-medium" },
+    { key: "birthPlace", label: "Birth place", hideBelow: "lg", className: "text-muted" },
+    { key: "depth", label: "Depth", hideBelow: "sm" },
+    { key: "chartStyle", label: "Chart style", hideBelow: "md" },
+    { key: "language", label: "Language", hideBelow: "md" },
+    { key: "ayanamsaUsed", label: "Ayanamsa", hideBelow: "xl", className: "text-muted text-xs" },
+    { key: "createdAt", label: "Generated", hideBelow: "lg", render: dateCell("createdAt") },
+  ] as Column[],
+};
+
+export const astrologyMatchConfig: EntityConfig = {
+  entity: "astrologyMatches",
+  titleSingular: "Compatibility match",
+  titlePlural: "Compatibility matches",
+  description: "Every marriage-compatibility check — read-only, for support and QA purposes.",
+  nameKey: "partnerA",
+  canDelete: true,
+  columns: [
+    { key: "partnerA", label: "Partner A", className: "font-medium" },
+    { key: "partnerB", label: "Partner B", className: "font-medium" },
+    { key: "score", label: "Score", align: "right" },
+    { key: "verdict", label: "Verdict", hideBelow: "sm" },
+    { key: "language", label: "Language", hideBelow: "md" },
+    { key: "createdAt", label: "Checked", hideBelow: "lg", render: dateCell("createdAt") },
+  ] as Column[],
+};

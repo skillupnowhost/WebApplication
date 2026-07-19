@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { GlassCard } from "@/components/ui/Card";
+import { TiltCard } from "@/components/ui/TiltCard";
+import { RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { ContentIcon } from "@/components/ui/ContentIcon";
 import type { CourseIconKey } from "@/lib/courseIcons";
@@ -31,8 +33,9 @@ const features: { iconKey: CourseIconKey; title: string; description: string }[]
 
 export function FeaturesSection() {
   return (
-    <Section className="bg-surface-2/50">
-      <Container>
+    <Section className="relative overflow-hidden bg-surface-2/50">
+      <div className="bg-dot-grid pointer-events-none absolute inset-0" />
+      <Container className="relative">
         <div className="mx-auto max-w-2xl text-center">
           <div className="flex justify-center">
             <Eyebrow>Why MyLoginn</Eyebrow>
@@ -42,30 +45,27 @@ export function FeaturesSection() {
           </h2>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 sm:gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <RevealGroup className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 sm:gap-8 sm:grid-cols-2 lg:grid-cols-4" stagger={0.1}>
           {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.55, delay: i * 0.1 }}
-              className="flex items-start gap-4 text-left sm:block"
-            >
-              <IconBadge
-                size="xl"
-                className="h-12 w-12 shrink-0 text-brand-500 dark:text-brand-400 sm:h-22 sm:w-22"
-                delay={i * 0.1}
-              >
-                <ContentIcon keyword={f.iconKey} className="h-7 w-7 sm:h-14 sm:w-14" />
-              </IconBadge>
-              <div>
-                <h3 className="font-semibold sm:mt-4">{f.title}</h3>
-                <p className="mt-1 text-sm text-muted sm:mt-2">{f.description}</p>
-              </div>
-            </motion.div>
+            <RevealItem key={f.title}>
+              <TiltCard maxTilt={6} className="h-full">
+                <GlassCard className="flex h-full items-start gap-4 p-5 text-left transition-shadow duration-300 hover:shadow-[var(--shadow-lift)] sm:block sm:p-6">
+                  <IconBadge
+                    size="xl"
+                    className="h-12 w-12 shrink-0 text-brand-500 dark:text-brand-400 sm:h-22 sm:w-22"
+                    delay={i * 0.1}
+                  >
+                    <ContentIcon keyword={f.iconKey} className="h-7 w-7 sm:h-14 sm:w-14" />
+                  </IconBadge>
+                  <div>
+                    <h3 className="font-semibold sm:mt-4">{f.title}</h3>
+                    <p className="mt-1 text-sm text-muted sm:mt-2">{f.description}</p>
+                  </div>
+                </GlassCard>
+              </TiltCard>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </Container>
     </Section>
   );

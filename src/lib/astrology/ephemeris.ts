@@ -1,72 +1,89 @@
 import * as Astronomy from "astronomy-engine";
-
-export type PlanetName = "Sun" | "Moon" | "Mercury" | "Venus" | "Mars" | "Jupiter" | "Saturn" | "Rahu" | "Ketu";
+import type { PlanetName } from "./constants";
 
 export type PlanetPosition = {
   planet: PlanetName;
-  /** Geocentric tropical ecliptic longitude, degrees 0-360. */
-  tropicalLongitude: number;
+  tropicalLongitude: number; // degrees, 0-360, geocentric apparent ecliptic longitude of date
+  isRetrograde: boolean;
 };
 
-/** Bodies other than the Sun — geocentric apparent ecliptic longitude via GeoVector + Ecliptic. */
-const GEO_BODY_MAP: Record<string, Astronomy.Body> = {
-  Moon: Astronomy.Body.Moon,
-  Mercury: Astronomy.Body.Mercury,
-  Venus: Astronomy.Body.Venus,
-  Mars: Astronomy.Body.Mars,
-  Jupiter: Astronomy.Body.Jupiter,
-  Saturn: Astronomy.Body.Saturn,
-};
+const CLASSICAL_BODIES: { name: Exclude<PlanetName, "Rahu" | "Ketu">; body: Astronomy.Body }[] = [
+  { name: "Sun", body: Astronomy.Body.Sun },
+  { name: "Moon", body: Astronomy.Body.Moon },
+  { name: "Mercury", body: Astronomy.Body.Mercury },
+  { name: "Venus", body: Astronomy.Body.Venus },
+  { name: "Mars", body: Astronomy.Body.Mars },
+  { name: "Jupiter", body: Astronomy.Body.Jupiter },
+  { name: "Saturn", body: Astronomy.Body.Saturn },
+];
 
-export function normalizeDegrees(deg: number): number {
+function normalizeDegrees(deg: number): number {
   const d = deg % 360;
   return d < 0 ? d + 360 : d;
 }
 
-/** Mean lunar ascending node longitude (Rahu), Meeus "Astronomical Algorithms" formula 22.2. */
-function meanLunarNodeLongitude(julianCenturiesTT: number): number {
-  const T = julianCenturiesTT;
-  const omega =
-    125.0445479 - 1934.1362891 * T + 0.0020754 * T * T + (T * T * T) / 467441 - (T * T * T * T) / 60616000;
+/** Mean lunar ascending node (Rahu) longitude — Meeus, Astronomical Algorithms, ch. 47. */
+function meanLunarNodeLongitude(date: Date): number {
+  const julianDay = date.getTime() / 86400000 + 2440587.5;
+  const T = (julianDay - 2451545.0) / 36525; // Julian centuries since J2000.0
+  const omega = 125.0445479 - 1934.1362891 * T + 0.0020754 * T ** 2 + T ** 3 / 467441 - T ** 4 / 60616000;
   return normalizeDegrees(omega);
 }
 
-/** Sun, Moon, and the five visible planets, plus the lunar nodes (Rahu/Ketu), all tropical/geocentric. */
+/**
+ * GEOCENTRIC apparent ecliptic longitude of date. Astronomy-engine's EclipticLongitude()
+ * is HELIOCENTRIC — using it here silently produces earth-shifted positions for every body
+ * (verified against a professional Thirukkanitha panchangam: Moon was ~135° off). The correct
+ * geocentric path is GeoVector (with aberration) converted through Ecliptic(); the Sun still
+ * needs SunPosition() because it has no meaningful heliocentric position.
+ */
+function eclipticLongitudeOf(body: Astronomy.Body, date: Date): number {
+  if (body === Astronomy.Body.Sun) return Astronomy.SunPosition(date).elon;
+  return Astronomy.Ecliptic(Astronomy.GeoVector(body, date, true)).elon;
+}
+
+function isRetrograde(body: Astronomy.Body, date: Date): boolean {
+  const before = eclipticLongitudeOf(body, new Date(date.getTime() - 24 * 3600 * 1000));
+  const after = eclipticLongitudeOf(body, new Date(date.getTime() + 24 * 3600 * 1000));
+  let diff = after - before;
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+  return diff < 0;
+}
+
+/** Geocentric apparent tropical longitudes of the Navagraha (9 Vedic "planets") at a given instant. */
 export function computeTropicalPlanetPositions(date: Date): PlanetPosition[] {
-  const time = new Astronomy.AstroTime(date);
+  const positions: PlanetPosition[] = CLASSICAL_BODIES.map(({ name, body }) => ({
+    planet: name,
+    tropicalLongitude: normalizeDegrees(eclipticLongitudeOf(body, date)),
+    isRetrograde: name === "Sun" || name === "Moon" ? false : isRetrograde(body, date),
+  }));
 
-  const positions: PlanetPosition[] = [
-    { planet: "Sun", tropicalLongitude: normalizeDegrees(Astronomy.SunPosition(time).elon) },
-    ...Object.entries(GEO_BODY_MAP).map(([name, body]) => ({
-      planet: name as PlanetName,
-      tropicalLongitude: normalizeDegrees(Astronomy.Ecliptic(Astronomy.GeoVector(body, time, true)).elon),
-    })),
-  ];
-
-  const rahuLongitude = meanLunarNodeLongitude(time.tt / 36525);
-  positions.push({ planet: "Rahu", tropicalLongitude: rahuLongitude });
-  positions.push({ planet: "Ketu", tropicalLongitude: normalizeDegrees(rahuLongitude + 180) });
+  const rahuLongitude = meanLunarNodeLongitude(date);
+  positions.push({ planet: "Rahu", tropicalLongitude: rahuLongitude, isRetrograde: true });
+  positions.push({ planet: "Ketu", tropicalLongitude: normalizeDegrees(rahuLongitude + 180), isRetrograde: true });
 
   return positions;
 }
 
-/** Ascendant (lagna) tropical longitude from birth instant + geographic coordinates. */
+/**
+ * Tropical ecliptic longitude of the ascendant (Lagna) for a birth instant + geographic location.
+ * Standard RAMC formula (Duffett-Smith, "Practical Astronomy with Your Calculator"). The atan2
+ * arrangement lands in the descendant's quadrant, so a +180° correction selects the rising point —
+ * verified to the arc-second against a professional Thirukkanitha panchangam reference chart.
+ */
 export function computeTropicalAscendant(date: Date, latitude: number, longitude: number): number {
-  const time = new Astronomy.AstroTime(date);
+  const time = Astronomy.MakeTime(date);
+  const gstHours = Astronomy.SiderealTime(time); // Greenwich apparent sidereal time, hours
+  const ramcDeg = normalizeDegrees(gstHours * 15 + longitude);
   const obliquityDeg = Astronomy.e_tilt(time).tobl;
-  const gstHours = Astronomy.SiderealTime(time);
 
-  let lstHours = gstHours + longitude / 15;
-  lstHours = ((lstHours % 24) + 24) % 24;
-  const ramcDeg = lstHours * 15;
-
-  const latRad = (latitude * Math.PI) / 180;
-  const oblRad = (obliquityDeg * Math.PI) / 180;
   const ramcRad = (ramcDeg * Math.PI) / 180;
+  const oblRad = (obliquityDeg * Math.PI) / 180;
+  const latRad = (latitude * Math.PI) / 180;
 
   const y = -Math.cos(ramcRad);
-  const x = Math.sin(oblRad) * Math.tan(latRad) + Math.cos(oblRad) * Math.sin(ramcRad);
-  const ascendantDeg = (Math.atan2(y, x) * 180) / Math.PI;
+  const x = Math.sin(ramcRad) * Math.cos(oblRad) + Math.tan(latRad) * Math.sin(oblRad);
 
-  return normalizeDegrees(ascendantDeg);
+  return normalizeDegrees((Math.atan2(y, x) * 180) / Math.PI + 180);
 }

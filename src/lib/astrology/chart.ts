@@ -1,10 +1,11 @@
 import { DateTime } from "luxon";
-import type { ChartData } from "@prisma/client";
 import { computeTropicalPlanetPositions, computeTropicalAscendant, type PlanetPosition } from "./ephemeris";
-import { lahiriAyanamsa, toSidereal } from "./ayanamsa";
-import { rashiFromSidereal, nakshatraFromSidereal, tithiFromLongitudes } from "./panchanga";
+import { ayanamsaForSystem, toSidereal, type AstrologySystem } from "./ayanamsa";
+import { rashiFromSidereal, nakshatraFromSidereal, tithiFromLongitudes, yogaFromLongitudes, karanaFromLongitudes, vaaraFromLocalWeekday } from "./panchanga";
 import { computeVimshottariDasha, ageBandPredictions } from "./dasha";
 import { numerologyProfile } from "./numerology";
+import { computeDoshas } from "./dosha";
+import type { RashiInfo, NakshatraInfo } from "./constants";
 
 /** Resolves a local wall-clock birth date/time in a given IANA timezone to a UTC instant. */
 export function localBirthInstant(dateStr: string, timeStr: string, timezone: string): Date {
@@ -14,8 +15,9 @@ export function localBirthInstant(dateStr: string, timeStr: string, timezone: st
 
 export type SiderealPlanet = PlanetPosition & {
   siderealLongitude: number;
-  rashi: ReturnType<typeof rashiFromSidereal>;
-  nakshatra: ReturnType<typeof nakshatraFromSidereal>;
+  rashi: RashiInfo;
+  nakshatra: NakshatraInfo & { pada: number; fractionElapsed: number };
+  houseFromAscendant: number;
 };
 
 export type ChartResult = {
@@ -24,13 +26,23 @@ export type ChartResult = {
   ascendant: {
     tropicalLongitude: number;
     siderealLongitude: number;
-    rashi: ReturnType<typeof rashiFromSidereal>;
+    rashi: RashiInfo;
   };
-  tithi: ReturnType<typeof tithiFromLongitudes>;
+  panchanga: {
+    tithi: ReturnType<typeof tithiFromLongitudes>;
+    yoga: ReturnType<typeof yogaFromLongitudes>;
+    karana: ReturnType<typeof karanaFromLongitudes>;
+    vaara: ReturnType<typeof vaaraFromLocalWeekday>;
+  };
   dashaPeriods: ReturnType<typeof computeVimshottariDasha>;
   ageBands: ReturnType<typeof ageBandPredictions>;
   numerology: ReturnType<typeof numerologyProfile>;
+  doshas: ReturnType<typeof computeDoshas>;
 };
+
+function houseOf(rashiIndex: number, ascendantRashiIndex: number): number {
+  return ((rashiIndex - ascendantRashiIndex + 12) % 12) + 1;
+}
 
 /** Runs the full birth-chart calculation once; the result is meant to be stored and reused across styles/languages. */
 export function computeChart(params: {
@@ -38,24 +50,29 @@ export function computeChart(params: {
   birthDate: Date;
   latitude: number;
   longitude: number;
+  timezone: string;
+  system?: AstrologySystem;
 }): ChartResult {
-  const { fullName, birthDate, latitude, longitude } = params;
+  const { fullName, birthDate, latitude, longitude, timezone, system = "THIRUKKANITHAM" } = params;
 
-  const ayanamsaUsed = lahiriAyanamsa(birthDate);
+  const ayanamsaUsed = ayanamsaForSystem(system, birthDate);
   const tropicalPlanets = computeTropicalPlanetPositions(birthDate);
-
-  const planets: SiderealPlanet[] = tropicalPlanets.map((p) => {
-    const siderealLongitude = toSidereal(p.tropicalLongitude, ayanamsaUsed);
-    return {
-      ...p,
-      siderealLongitude,
-      rashi: rashiFromSidereal(siderealLongitude),
-      nakshatra: nakshatraFromSidereal(siderealLongitude),
-    };
-  });
 
   const ascendantTropical = computeTropicalAscendant(birthDate, latitude, longitude);
   const ascendantSidereal = toSidereal(ascendantTropical, ayanamsaUsed);
+  const ascendantRashi = rashiFromSidereal(ascendantSidereal);
+
+  const planets: SiderealPlanet[] = tropicalPlanets.map((p) => {
+    const siderealLongitude = toSidereal(p.tropicalLongitude, ayanamsaUsed);
+    const rashi = rashiFromSidereal(siderealLongitude);
+    return {
+      ...p,
+      siderealLongitude,
+      rashi,
+      nakshatra: nakshatraFromSidereal(siderealLongitude),
+      houseFromAscendant: houseOf(rashi.index, ascendantRashi.index),
+    };
+  });
 
   const moon = planets.find((p) => p.planet === "Moon");
   const sun = planets.find((p) => p.planet === "Sun");
@@ -64,46 +81,30 @@ export function computeChart(params: {
   const dashaPeriods = computeVimshottariDasha(birthDate, moon.siderealLongitude);
   const ageBands = ageBandPredictions(dashaPeriods, birthDate);
 
+  const localWeekday = DateTime.fromJSDate(birthDate, { zone: timezone }).weekday % 7; // luxon: 1=Mon..7=Sun -> 0=Sun..6=Sat
+
   return {
     ayanamsaUsed,
     planets,
     ascendant: {
       tropicalLongitude: ascendantTropical,
       siderealLongitude: ascendantSidereal,
-      rashi: rashiFromSidereal(ascendantSidereal),
+      rashi: ascendantRashi,
     },
-    tithi: tithiFromLongitudes(moon.tropicalLongitude, sun.tropicalLongitude),
+    panchanga: {
+      // Tithi/karana depend on the Moon-Sun DIFFERENCE (ayanamsa cancels), but yoga is a SUM
+      // and must use sidereal (nirayana) longitudes to match classical panchangams.
+      tithi: tithiFromLongitudes(moon.tropicalLongitude, sun.tropicalLongitude),
+      yoga: yogaFromLongitudes(moon.siderealLongitude, sun.siderealLongitude),
+      karana: karanaFromLongitudes(moon.tropicalLongitude, sun.tropicalLongitude),
+      vaara: vaaraFromLocalWeekday(localWeekday),
+    },
     dashaPeriods,
     ageBands,
     numerology: numerologyProfile(fullName, birthDate),
-  };
-}
-
-/** Maps a computed ChartResult onto the ChartData row's JSON columns for persistence. */
-export function serializeChart(chart: ChartResult) {
-  return {
-    ayanamsaUsed: chart.ayanamsaUsed,
-    planetsJson: JSON.stringify(chart.planets),
-    ascendantJson: JSON.stringify(chart.ascendant),
-    dashaJson: JSON.stringify({ periods: chart.dashaPeriods, ageBands: chart.ageBands, tithi: chart.tithi }),
-    numerologyJson: JSON.stringify(chart.numerology),
-  };
-}
-
-/** Inverse of serializeChart — reconstructs a full ChartResult from a stored ChartData row. */
-export function deserializeChart(record: ChartData): ChartResult {
-  const dasha = JSON.parse(record.dashaJson) as {
-    periods: ChartResult["dashaPeriods"];
-    ageBands: ChartResult["ageBands"];
-    tithi: ChartResult["tithi"];
-  };
-  return {
-    ayanamsaUsed: record.ayanamsaUsed,
-    planets: JSON.parse(record.planetsJson),
-    ascendant: JSON.parse(record.ascendantJson),
-    tithi: dasha.tithi,
-    dashaPeriods: dasha.periods,
-    ageBands: dasha.ageBands,
-    numerology: JSON.parse(record.numerologyJson),
+    doshas: computeDoshas(
+      planets.map((p) => ({ planet: p.planet, rashiIndex: p.rashi.index })),
+      ascendantRashi.index
+    ),
   };
 }

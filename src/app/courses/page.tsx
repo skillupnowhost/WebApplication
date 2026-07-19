@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Section, Container } from "@/components/ui/Section";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { CoursesHero } from "@/components/courses/CoursesHero";
 import { CoursesExplorer } from "@/components/courses/CoursesExplorer";
 import type { CourseCardData } from "@/components/courses/CourseCard";
 
@@ -48,24 +49,24 @@ export default async function CoursesPage() {
     .slice(0, 3)
     .map((c) => c.id);
 
+  const categories = [...new Set(cards.map((c) => c.category))];
+  const instructors = [...new Set(cards.map((c) => c.instructor))];
+  const studentsCount = cards.reduce((sum, c) => sum + c.studentsCount, 0);
+  const avgRating = cards.length ? cards.reduce((sum, c) => sum + c.rating, 0) / cards.length : 0;
+
   return (
-    <Section className="pt-14 sm:pt-14">
+    <Section className="overflow-hidden pt-14 sm:pt-16">
       <Container>
         <Breadcrumbs items={[{ label: "Courses" }]} className="mb-6" />
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="flex justify-center">
-            <Eyebrow>Learning Paths</Eyebrow>
-          </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Advanced Digital Marketing &amp; AI/ML Courses
-          </h1>
-          <p className="mt-4 text-muted">
-            Live sessions, personalized AI recommendations, mentor support and
-            placement guidance — built for professionals and graduates.
-          </p>
-        </div>
+        <CoursesHero
+          courseCount={cards.length}
+          studentsCount={studentsCount}
+          avgRating={avgRating}
+          categories={categories}
+          instructors={instructors}
+        />
 
-        <div className="mt-14">
+        <div id="course-catalog" className="mt-14 scroll-mt-24 sm:mt-16">
           <CoursesExplorer
             courses={cards}
             enrolledIds={enrolledIds}

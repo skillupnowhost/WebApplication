@@ -146,7 +146,7 @@ export function ProjectsExplorer({ projects }: { projects: ShowcaseProject[] }) 
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.6, ease: EASE }}
-        className="gradient-border relative mx-auto mt-16 max-w-2xl overflow-hidden rounded-2xl"
+        className="relative mx-auto mt-16 max-w-2xl overflow-hidden rounded-2xl border border-border-soft"
       >
         <div className="relative z-10 flex flex-col items-center gap-4 rounded-2xl bg-surface p-7 text-center sm:flex-row sm:justify-between sm:p-8 sm:text-left">
           <div className="flex items-center gap-3.5">

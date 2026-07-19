@@ -91,6 +91,8 @@ const columns = [
       { href: "/internships", label: "Internships" },
       { href: "/projects", label: "Projects" },
       { href: "/tutoring", label: "Online Tutoring" },
+      { href: "/mentoring", label: "Mentoring" },
+      { href: "/events", label: "Events" },
     ],
   },
   {
@@ -99,6 +101,7 @@ const columns = [
     links: [
       { href: "/services/digital-marketing", label: "Digital Marketing" },
       { href: "/services/app-web-development", label: "App & Web Development" },
+      { href: "/about", label: "About us" },
       { href: "/contact", label: "Contact us" },
     ],
   },

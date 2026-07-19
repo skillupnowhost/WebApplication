@@ -1,243 +1,353 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { Input, Textarea } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { AnimatePresence, motion } from "framer-motion";
+import { z } from "zod";
+import { astrologyProfileSchema } from "@/lib/validation";
+import { Input, Textarea, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/Card";
-import { birthDetailsSchema, type BirthDetailsInput } from "@/lib/validation";
+import { AnimatedCelestialWheel } from "@/components/ui/icons/AnimatedCelestialWheel";
+import { AnimatedChevron } from "@/components/ui/icons/AnimatedChevron";
+import { PlaceAutocomplete, type PlacePick } from "./PlaceAutocomplete";
+import { DateSelect, TimeSelect } from "./DateTimeFields";
+import { LanguageChips } from "./LanguageChips";
+import { t, type AstrologyLanguage } from "@/lib/astrology/i18n";
 import { cn } from "@/lib/cn";
 
-function ChoiceCards({
-  options,
-  value,
-  onChange,
+const formSchema = astrologyProfileSchema
+  .omit({ birthTimeKnown: true, latitude: true, longitude: true })
+  .extend({
+    birthTimeUnknown: z.boolean().default(false),
+    depth: z.enum(["SUMMARY", "FULL"]),
+    chartStyle: z.enum(["NORTH_INDIAN", "SOUTH_INDIAN", "EAST_INDIAN"]),
+    language: z.enum(["en", "ta", "hi", "te", "ml"]),
+    reportStyle: z.enum(["PROFESSIONAL", "TRADITIONAL", "MODERN"]),
+  });
+
+type FormInput = z.input<typeof formSchema>;
+
+function SectionCard({
+  title,
+  badge,
+  badgeTone = "gold",
+  children,
 }: {
-  options: { value: string; label: string; desc: string }[];
-  value: string;
-  onChange: (value: string) => void;
+  title: string;
+  badge?: string;
+  badgeTone?: "gold" | "muted";
+  children: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {options.map((opt) => {
-        const active = value === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
+    <section className="rounded-2xl border border-border-soft bg-surface/40 p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold">{title}</h3>
+        {badge && (
+          <span
             className={cn(
-              "cursor-pointer rounded-xl border p-3 text-left transition-all duration-200",
-              active
-                ? "border-brand-400 bg-brand-50 shadow-[0_2px_8px_rgba(108,77,255,0.2)] dark:bg-brand-900/20"
-                : "border-border-soft bg-surface hover:border-brand-300"
+              "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+              badgeTone === "gold" ? "celestial-glow-text ring-1 ring-amber-400/40" : "bg-surface-2 text-muted"
             )}
           >
-            <p className={cn("text-sm font-semibold", active && "text-brand-500")}>{opt.label}</p>
-            <p className="mt-0.5 text-xs text-muted">{opt.desc}</p>
-          </button>
-        );
-      })}
-    </div>
+            {badge}
+          </span>
+        )}
+      </div>
+      {children}
+    </section>
   );
 }
 
-const STEPS = ["Birth details", "Optional details", "Style & language"] as const;
-
-const VOICE_CHOICES = [
-  { value: "STORYTELLING", label: "Storytelling", desc: "Warm, human-narrative voice" },
-  { value: "PROFESSIONAL", label: "Professional print", desc: "Structured, report-style" },
-  { value: "ANIMATED", label: "Dynamic animated", desc: "On-screen reveal experience" },
-];
-
-const DEPTH_CHOICES = [
-  { value: "SUMMARY", label: "Single-page summary", desc: "A concise, at-a-glance reading" },
-  { value: "FULL", label: "Full horoscope", desc: "Every placement, age-band predictions, numerology" },
-];
-
-export function BirthDetailsForm() {
+export function BirthDetailsForm({
+  language = "en",
+  defaultDepth = "SUMMARY",
+}: {
+  language?: AstrologyLanguage;
+  defaultDepth?: "SUMMARY" | "FULL";
+}) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [serverError, setServerError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [placePick, setPlacePick] = useState<PlacePick | null>(null);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    trigger,
     formState: { errors },
-  } = useForm<BirthDetailsInput>({
-    resolver: zodResolver(birthDetailsSchema),
+  } = useForm<FormInput>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      birthTimeKnown: true,
-      depth: "SUMMARY",
-      voice: "PROFESSIONAL",
-      language: "en",
+      birthTimeUnknown: false,
+      depth: defaultDepth,
+      chartStyle: "SOUTH_INDIAN",
+      language,
+      reportStyle: "PROFESSIONAL",
+      system: "THIRUKKANITHAM",
+      birthPlace: "",
     },
   });
 
-  const values = watch();
+  const birthTimeUnknown = watch("birthTimeUnknown");
+  const lang = (watch("language") ?? language) as AstrologyLanguage;
+  const birthPlace = watch("birthPlace") ?? "";
+  const depth = watch("depth");
+  const reportStyle = watch("reportStyle");
 
-  const stepFields: (keyof BirthDetailsInput)[][] = [
-    ["fullName", "birthDate", "birthTime", "birthPlace"],
-    [],
-    ["depth", "voice", "language"],
-  ];
+  useEffect(() => {
+    if (birthTimeUnknown) setValue("birthTime", "12:00", { shouldValidate: true });
+  }, [birthTimeUnknown, setValue]);
 
-  async function goNext() {
-    const valid = await trigger(stepFields[step]);
-    if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  }
-
-  function goBack() {
-    setStep((s) => Math.max(s - 1, 0));
-  }
-
-  async function onSubmit(data: BirthDetailsInput) {
+  async function onSubmit(data: FormInput) {
     setLoading(true);
     setServerError(null);
     try {
-      const res = await fetch("/api/astrology/profiles", {
+      const profileRes = await fetch("/api/astrology/profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          fullName: data.fullName,
+          gender: data.gender,
+          birthDate: data.birthDate,
+          birthTime: data.birthTime,
+          birthTimeKnown: !data.birthTimeUnknown,
+          birthPlace: data.birthPlace,
+          latitude: placePick?.latitude,
+          longitude: placePick?.longitude,
+          system: data.system,
+          fatherName: data.fatherName,
+          motherName: data.motherName,
+          maritalStatus: data.maritalStatus,
+          phone: data.phone,
+          email: data.email,
+          occupation: data.occupation,
+          businessType: data.businessType,
+          salary: data.salary,
+          community: data.community,
+          caste: data.caste,
+          gothram: data.gothram,
+          customNotes: data.customNotes,
+        }),
       });
-      const json = await res.json();
-      if (!res.ok) {
-        setServerError(json.error ?? "Something went wrong. Please try again.");
+      const profileJson = await profileRes.json();
+      if (!profileRes.ok) {
+        setServerError(profileJson.error ?? "Something went wrong");
         return;
       }
-      router.push(`/astrology/${json.reportId}`);
+
+      const reportRes = await fetch("/api/astrology/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileId: profileJson.profile.id,
+          depth: data.depth,
+          chartStyle: data.chartStyle,
+          language: data.language,
+          reportStyle: data.reportStyle,
+        }),
+      });
+      const reportJson = await reportRes.json();
+      if (!reportRes.ok) {
+        setServerError(reportJson.error ?? "Couldn't generate the report");
+        return;
+      }
+
+      router.push(`/astrology/${reportJson.reportId}`);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <GlassCard className="relative mx-auto max-w-xl overflow-hidden p-7 sm:p-8">
-      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[radial-gradient(circle,var(--brand-300),transparent_70%)] opacity-25 blur-2xl" />
-
-      <div className="mb-6 flex items-center gap-2">
-        {STEPS.map((label, i) => (
-          <div key={label} className="flex flex-1 items-center gap-2">
-            <div
-              className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300",
-                i <= step ? "brand-gradient-bg text-white" : "bg-surface-2 text-muted"
-              )}
-            >
-              {i + 1}
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={cn("h-0.5 flex-1 rounded-full transition-colors duration-300", i < step ? "brand-gradient-bg" : "bg-surface-2")} />
-            )}
-          </div>
-        ))}
+    <GlassCard className="celestial-card relative overflow-hidden p-6 sm:p-8">
+      <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 opacity-20">
+        <AnimatedCelestialWheel className="h-full w-full" />
       </div>
-      <p className="mb-5 text-sm font-medium text-muted">{STEPS[step]}</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <AnimatePresence mode="wait">
-          {step === 0 && (
-            <motion.div key="step0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="flex flex-col gap-4">
-              <Input label="Full name" placeholder="Your name" {...register("fullName")} error={errors.fullName?.message} />
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Date of birth" type="date" {...register("birthDate")} error={errors.birthDate?.message} />
-                <Input
-                  label="Time of birth"
-                  type="time"
-                  disabled={values.birthTimeKnown === false}
-                  {...register("birthTime")}
-                  error={errors.birthTime?.message}
-                />
-              </div>
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-border-soft accent-[var(--brand-500)]"
-                  checked={values.birthTimeKnown === false}
-                  onChange={(e) => setValue("birthTimeKnown", !e.target.checked)}
-                />
-                I don&apos;t know my exact birth time (we&apos;ll use noon and flag time-sensitive predictions as approximate)
-              </label>
-              <Input
-                label="Place of birth"
-                placeholder="City, State, Country — e.g. Madurai, Tamil Nadu, India"
-                {...register("birthPlace")}
-                error={errors.birthPlace?.message}
+      {/* Language switch — controls every label live */}
+      <LanguageChips value={lang} onChange={(code) => setValue("language", code)} />
+
+      <form onSubmit={handleSubmit(onSubmit)} className="astro-form relative flex flex-col gap-5">
+        {/* ---- Birth details (mandatory) ---- */}
+        <SectionCard title={t(lang, "formTitleBirth")} badge={t(lang, "requiredNote")}>
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label={t(lang, "fullName")} placeholder="e.g. Priya Sundaram" {...register("fullName")} error={errors.fullName?.message} />
+              <Select label={t(lang, "gender")} {...register("gender")}>
+                <option value="">—</option>
+                <option value="male">{t(lang, "genderMale")}</option>
+                <option value="female">{t(lang, "genderFemale")}</option>
+                <option value="other">{t(lang, "genderOther")}</option>
+              </Select>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DateSelect
+                label={t(lang, "birthDate")}
+                lang={lang}
+                value={watch("birthDate") ?? ""}
+                error={errors.birthDate?.message}
+                onChange={(v) => setValue("birthDate", v, { shouldValidate: !!errors.birthDate })}
               />
-            </motion.div>
-          )}
-
-          {step === 1 && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="flex flex-col gap-4">
-              <p className="text-xs text-muted">
-                Everything below is optional — leave it blank and we&apos;ll skip it entirely in your report.
-              </p>
-              <Input label="Gender (optional)" placeholder="e.g. Female" {...register("gender")} />
-              <Input label="Parents' names (optional)" placeholder="e.g. Ramesh & Lakshmi" {...register("parentsNames")} />
-              <Input label="Occupation (optional)" placeholder="e.g. Software engineer" {...register("occupation")} />
-              <Textarea label="Anything else you'd like reflected (optional)" rows={3} {...register("customNotes")} />
-            </motion.div>
-          )}
-
-          {step === 2 && (
-            <motion.div key="step2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="flex flex-col gap-5">
-              <div>
-                <p className="mb-2 text-sm font-medium text-foreground">Report depth</p>
-                <ChoiceCards
-                  options={DEPTH_CHOICES}
-                  value={values.depth}
-                  onChange={(v) => setValue("depth", v as BirthDetailsInput["depth"])}
-                />
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-medium text-foreground">Voice / style</p>
-                <ChoiceCards
-                  options={VOICE_CHOICES}
-                  value={values.voice}
-                  onChange={(v) => setValue("voice", v as BirthDetailsInput["voice"])}
-                />
-              </div>
-              <Select
-                label="Language"
-                value={values.language}
-                onChange={(e) => setValue("language", e.target.value as BirthDetailsInput["language"])}
-                options={[
-                  { label: "English", value: "en" },
-                  { label: "Tamil", value: "ta" },
-                ]}
+              <TimeSelect
+                label={t(lang, "birthTime")}
+                lang={lang}
+                disabled={birthTimeUnknown}
+                value={watch("birthTime") ?? ""}
+                error={errors.birthTime?.message}
+                onChange={(v) => setValue("birthTime", v, { shouldValidate: !!errors.birthTime })}
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" className="h-4 w-4 rounded border-border-soft accent-amber-500" {...register("birthTimeUnknown")} />
+              {t(lang, "birthTimeUnknown")}
+            </label>
+            <PlaceAutocomplete
+              label={t(lang, "birthPlace")}
+              value={birthPlace}
+              placeholder="e.g. Madurai, Tamil Nadu, India"
+              error={errors.birthPlace?.message}
+              searchingText={t(lang, "placeSearching")}
+              noResultsText={t(lang, "placeNoResults")}
+              onChange={(text) => setValue("birthPlace", text, { shouldValidate: !!errors.birthPlace })}
+              onPick={setPlacePick}
+            />
+          </div>
+        </SectionCard>
+
+        {/* ---- Additional information (optional, expandable) ---- */}
+        <section className="rounded-2xl border border-border-soft bg-surface/40">
+          <button
+            type="button"
+            onClick={() => setMoreOpen((o) => !o)}
+            className="flex w-full cursor-pointer items-center justify-between gap-3 p-5 text-left sm:p-6"
+          >
+            <div>
+              <h3 className="text-base font-semibold">{t(lang, "optionalDetails")}</h3>
+              <p className="mt-0.5 text-xs text-muted">{t(lang, "optionalHint")}</p>
+            </div>
+            <AnimatedChevron direction={moreOpen ? "up" : "down"} className="h-5 w-5 shrink-0" />
+          </button>
+          <AnimatePresence initial={false}>
+            {moreOpen && (
+              <motion.div
+                key="more"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-1 gap-4 px-5 pb-5 sm:grid-cols-2 sm:px-6 sm:pb-6">
+                  <Input label={t(lang, "fatherName")} {...register("fatherName")} />
+                  <Input label={t(lang, "motherName")} {...register("motherName")} />
+                  <Select label={t(lang, "maritalStatus")} {...register("maritalStatus")}>
+                    <option value="">—</option>
+                    <option value="single">{t(lang, "maritalSingle")}</option>
+                    <option value="married">{t(lang, "maritalMarried")}</option>
+                    <option value="divorced">{t(lang, "maritalDivorced")}</option>
+                    <option value="widowed">{t(lang, "maritalWidowed")}</option>
+                  </Select>
+                  <Input label={t(lang, "phone")} type="tel" placeholder="+91 98765 43210" {...register("phone")} error={errors.phone?.message} />
+                  <Input label={t(lang, "email")} type="email" {...register("email")} error={errors.email?.message} />
+                  <Input label={t(lang, "occupation")} {...register("occupation")} />
+                  <Input label={t(lang, "businessType")} {...register("businessType")} />
+                  <Input label={t(lang, "salary")} {...register("salary")} />
+                  <Input label={t(lang, "community")} {...register("community")} />
+                  <Input label={t(lang, "caste")} {...register("caste")} />
+                  <Input label={t(lang, "gothram")} {...register("gothram")} />
+                  <div className="sm:col-span-2">
+                    <Textarea label={t(lang, "customNotes")} rows={3} {...register("customNotes")} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+
+        {/* ---- Report options ---- */}
+        <SectionCard title={t(lang, "reportOptions")}>
+          <div className="flex flex-col gap-4">
+            {/* Horoscope type — radio cards */}
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">{t(lang, "chooseDepth")}</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    { value: "SUMMARY", label: t(lang, "depthSummary") },
+                    { value: "FULL", label: t(lang, "depthFull") },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setValue("depth", opt.value)}
+                    className={cn(
+                      "cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all duration-200",
+                      depth === opt.value
+                        ? "border-amber-400/60 bg-[color-mix(in_oklab,var(--color-amber-500)_12%,transparent)]"
+                        : "border-border-soft bg-surface hover:border-amber-400/30"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Select label={t(lang, "chooseSystem")} {...register("system")}>
+                <option value="THIRUKKANITHAM">{t(lang, "systemThirukkanitham")}</option>
+                <option value="VAKYA">{t(lang, "systemVakya")}</option>
+                <option value="KP">{t(lang, "systemKP")}</option>
+                <option value="RAMAN">{t(lang, "systemRaman")}</option>
+              </Select>
+              <Select label={t(lang, "chooseStyle")} {...register("chartStyle")}>
+                <option value="SOUTH_INDIAN">{t(lang, "styleSouth")}</option>
+                <option value="NORTH_INDIAN">{t(lang, "styleNorth")}</option>
+                <option value="EAST_INDIAN">{t(lang, "styleEast")}</option>
+              </Select>
+            </div>
+
+            {/* Output style — radio cards */}
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">{t(lang, "chooseOutputStyle")}</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    { value: "PROFESSIONAL", label: t(lang, "outputProfessional") },
+                    { value: "TRADITIONAL", label: t(lang, "outputTraditional") },
+                    { value: "MODERN", label: t(lang, "outputModern") },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setValue("reportStyle", opt.value)}
+                    className={cn(
+                      "cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all duration-200",
+                      reportStyle === opt.value
+                        ? "border-amber-400/60 bg-[color-mix(in_oklab,var(--color-amber-500)_12%,transparent)]"
+                        : "border-border-soft bg-surface hover:border-amber-400/30"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </SectionCard>
 
         {serverError && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{serverError}</p>}
 
-        <div className="mt-2 flex items-center justify-between gap-3">
-          {step > 0 ? (
-            <Button type="button" variant="secondary" onClick={goBack} disabled={loading}>
-              Back
-            </Button>
-          ) : (
-            <span />
-          )}
-          {step < STEPS.length - 1 ? (
-            <Button type="button" onClick={goNext}>
-              Continue
-            </Button>
-          ) : (
-            <Button type="submit" disabled={loading}>
-              {loading ? "Reading the stars…" : "Reveal my horoscope"}
-            </Button>
-          )}
-        </div>
+        <Button type="submit" disabled={loading} className="w-full sm:w-auto sm:self-end">
+          {loading ? t(lang, "calculating") : t(lang, "submit")}
+        </Button>
       </form>
     </GlassCard>
   );

@@ -1,13 +1,6 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { deserializeChart } from "@/lib/astrology/chart";
-import { getOrCreateReport } from "@/lib/astrology/report";
-import type { ReportNarrative } from "@/lib/astrology/narrative";
-import { PrintReport } from "@/components/astrology/reportStyles/PrintReport";
-import { PrintPage, type PageSize } from "@/components/astrology/print/PrintPage";
-import type { ReportViewData } from "@/components/astrology/reportTypes";
-
-const PAGE_SIZES: PageSize[] = ["A3", "A4", "A5"];
+import { loadReportView } from "@/lib/astrology/report";
+import { ReportViewer } from "@/components/astrology/ReportViewer";
 
 export default async function AstrologyPrintPage({
   params,
@@ -17,55 +10,15 @@ export default async function AstrologyPrintPage({
   searchParams: Promise<{ size?: string }>;
 }) {
   const { reportId } = await params;
-  const { size: sizeParam } = await searchParams;
-  const requested = (sizeParam ?? "A4").toUpperCase();
-  const size = (PAGE_SIZES as string[]).includes(requested) ? (requested as PageSize) : "A4";
+  const { size } = await searchParams;
+  const view = await loadReportView(reportId);
+  if (!view) notFound();
 
-  let report = await prisma.horoscopeReport.findUnique({
-    where: { id: reportId },
-    include: { chartData: { include: { profile: true } } },
-  });
-  if (!report) notFound();
-
-  if (report.voice === "ANIMATED") {
-    const professional = await getOrCreateReport({
-      chartDataId: report.chartDataId,
-      depth: report.depth,
-      voice: "PROFESSIONAL",
-      language: report.language,
-    });
-    if (professional) {
-      report = await prisma.horoscopeReport.findUnique({
-        where: { id: professional.id },
-        include: { chartData: { include: { profile: true } } },
-      });
-    }
-  }
-  if (!report) notFound();
-
-  const chart = deserializeChart(report.chartData);
-  const narrative = JSON.parse(report.narrativeJson) as ReportNarrative;
-
-  const data: ReportViewData = {
-    reportId: report.id,
-    chartDataId: report.chartDataId,
-    depth: report.depth,
-    voice: report.voice,
-    language: report.language,
-    narrative,
-    chart,
-    profile: {
-      fullName: report.chartData.profile.fullName,
-      birthPlace: report.chartData.profile.birthPlace,
-      birthDate: report.chartData.profile.birthDate.toISOString(),
-      occupation: report.chartData.profile.occupation,
-      parentsNames: report.chartData.profile.parentsNames,
-    },
-  };
+  const pageSize = size === "A5" || size === "A3" ? size : "A4";
 
   return (
-    <PrintPage size={size}>
-      <PrintReport data={data} />
-    </PrintPage>
+    <div data-page-size={pageSize} className="bg-white py-8 print:py-0">
+      <ReportViewer view={view} printMode />
+    </div>
   );
 }

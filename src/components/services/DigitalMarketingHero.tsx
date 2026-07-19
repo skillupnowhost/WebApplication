@@ -2,9 +2,11 @@
 
 import { motion } from "framer-motion";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
+import { AnimatedTrending } from "@/components/ui/icons/AnimatedTrending";
 import { Eyebrow } from "@/components/ui/Section";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { LiveActivityTicker } from "@/components/services/LiveActivityTicker";
+import { useParallax } from "@/hooks/useParallax";
 
 const tickerItems = [
   "AI campaign launched for a D2C fashion brand — just now",
@@ -21,10 +23,33 @@ const stats: { to: number; decimals?: number; prefix?: string; suffix: string; l
 ];
 
 export function DigitalMarketingHero() {
+  const { ref: parallaxRef, y: parallaxY } = useParallax(30);
+
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute -inset-x-10 -top-20 -z-10 h-72 bg-[radial-gradient(60%_60%_at_30%_0%,var(--brand-100),transparent_70%)] dark:bg-[radial-gradient(60%_60%_at_30%_0%,rgba(108,77,255,0.16),transparent_70%)]" />
-      <div className="animate-float pointer-events-none absolute -right-10 top-6 -z-10 h-40 w-40 rounded-full bg-[radial-gradient(circle,var(--accent-400),transparent_70%)] opacity-30 blur-2xl" />
+      <motion.div
+        ref={parallaxRef}
+        style={{ y: parallaxY }}
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[2rem]"
+        aria-hidden
+      >
+        <div className="hero-grid-light absolute inset-x-0 top-0 h-[30rem]" />
+        <span
+          className="absolute -top-16 left-[6%] h-64 w-[min(70%,34rem)] rounded-full bg-brand-300/25 blur-3xl"
+          style={{ animation: "pulse-glow 5.5s ease-in-out infinite" }}
+        />
+        <span
+          className="absolute top-16 right-[2%] h-52 w-[min(40%,20rem)] rounded-full bg-accent-400/15 blur-3xl"
+          style={{ animation: "pulse-glow 6.5s ease-in-out infinite 1s" }}
+        />
+        <motion.span
+          className="glass-panel absolute right-[8%] top-[10%] hidden h-12 w-12 items-center justify-center rounded-2xl lg:flex"
+          animate={{ y: [0, -12, 0], rotate: [0, 5, 0] }}
+          transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <AnimatedTrending className="h-6 w-6" />
+        </motion.span>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -41,7 +66,7 @@ export function DigitalMarketingHero() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.15 }}
-        className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl"
+        className="mt-5 text-[clamp(2rem,1rem+3.6vw,3.5rem)] font-semibold leading-[1.08] tracking-tight text-foreground"
       >
         <span className="brand-gradient-text bg-size-200">AI-Driven</span> Digital Marketing
         Services

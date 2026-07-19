@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { MotionConfig } from "framer-motion";
 import "./globals.css";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
@@ -9,6 +9,7 @@ import { AiAgentWidget } from "@/components/layout/AiAgentWidget";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { HideOnAdmin } from "@/components/layout/HideOnAdmin";
+import { ScrollProgressBar } from "@/components/ui/ScrollProgressBar";
 import { getCurrentUser } from "@/lib/auth";
 
 const geistSans = Geist({
@@ -19,6 +20,14 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Display face for headlines only — Geist stays the workhorse body/UI font,
+// Sora's wider geometric letterforms give cinematic headlines more presence.
+const sora = Sora({
+  variable: "--font-sora",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -42,12 +51,13 @@ export default async function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <MotionConfig reducedMotion="user">
           <ThemeProvider>
             <HideOnAdmin>
+              <ScrollProgressBar />
               <Navbar user={navUser} />
             </HideOnAdmin>
             <main className="flex-1">

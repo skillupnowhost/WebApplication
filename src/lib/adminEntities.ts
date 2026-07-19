@@ -131,6 +131,73 @@ const classUpdate = z.object({
   recordingAccessTier: z.enum(["FREE", "STANDARD", "PREMIUM"]).optional(),
 });
 
+const offeringCreate = z.object({
+  title: z.string().trim().min(2),
+  description: z.string().trim().min(5),
+});
+const offeringUpdate = offeringCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const teamMemberCreate = z.object({
+  name: z.string().trim().min(2),
+  role: z.string().trim().min(2),
+  category: z.enum(["FOUNDER", "CEO", "STAFF"]),
+  bio: z.string().trim().optional().default(""),
+  experienceYears: z.coerce.number().int().min(0).max(60).optional().nullable(),
+  specialization: z.string().trim().optional().nullable(),
+  photoUrl: z.string().trim().optional().nullable(),
+  linkedinUrl: z.string().trim().optional().nullable(),
+});
+const teamMemberUpdate = teamMemberCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const partnerCreate = z.object({
+  name: z.string().trim().min(2),
+  logoUrl: z.string().trim().optional().nullable(),
+  websiteUrl: z.string().trim().optional().nullable(),
+});
+const partnerUpdate = partnerCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const clientCreate = z.object({
+  name: z.string().trim().min(2),
+  logoUrl: z.string().trim().optional().nullable(),
+  websiteUrl: z.string().trim().optional().nullable(),
+  description: z.string().trim().optional().default(""),
+});
+const clientUpdate = clientCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const testimonialCreate = z.object({
+  quote: z.string().trim().min(10),
+  authorName: z.string().trim().min(2),
+  authorRole: z.string().trim().optional().default(""),
+  avatarUrl: z.string().trim().optional().nullable(),
+  rating: z.coerce.number().int().min(1).max(5).default(5),
+});
+const testimonialUpdate = testimonialCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const eventCreate = z.object({
+  title: z.string().trim().min(3),
+  description: z.string().trim().min(10),
+  category: z.string().trim().optional().nullable(),
+  mode: z.enum(["ONLINE", "OFFLINE", "HYBRID"]).default("ONLINE"),
+  startsAt: z.coerce.date(),
+  endsAt: z.coerce.date().optional().nullable(),
+  location: z.string().trim().optional().nullable(),
+  coverImageUrl: z.string().trim().optional().nullable(),
+  registerUrl: z.string().trim().optional().nullable(),
+});
+const eventUpdate = eventCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
 const leadUpdate = z.object({
   status: z.enum(["new", "contacted", "closed"]),
 });
@@ -548,6 +615,208 @@ export const adminEntities: Record<string, EntityDef> = {
     },
     remove: async (id) => {
       await prisma.lead.delete({ where: { id } });
+    },
+  },
+
+  astrologyReports: {
+    list: async () => {
+      const rows = await prisma.horoscopeReport.findMany({
+        orderBy: { createdAt: "desc" },
+        include: { chartData: { include: { profile: true } } },
+      });
+      return rows.map((r) => ({
+        id: r.id,
+        subject: r.chartData.profile.fullName,
+        birthPlace: r.chartData.profile.birthPlace,
+        depth: r.depth,
+        chartStyle: r.chartStyle,
+        language: r.language,
+        ayanamsaUsed: r.chartData.ayanamsaUsed.toFixed(3),
+        createdAt: iso(r.createdAt),
+      }));
+    },
+    remove: async (id) => {
+      await prisma.horoscopeReport.delete({ where: { id } });
+    },
+  },
+
+  astrologyMatches: {
+    list: async () => {
+      const rows = await prisma.matchRequest.findMany({
+        orderBy: { createdAt: "desc" },
+        include: { profileA: true, profileB: true },
+      });
+      return rows.map((m) => {
+        const ashtakoot = JSON.parse(m.ashtakootJson) as { totalPoints: number; verdict: string };
+        return {
+          id: m.id,
+          partnerA: m.profileA.fullName,
+          partnerB: m.profileB.fullName,
+          score: `${ashtakoot.totalPoints}/36`,
+          verdict: ashtakoot.verdict,
+          language: m.language,
+          createdAt: iso(m.createdAt),
+        };
+      });
+    },
+    remove: async (id) => {
+      await prisma.matchRequest.delete({ where: { id } });
+    },
+  },
+
+  offerings: {
+    list: async () => {
+      const rows = await prisma.offering.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] });
+      return rows.map((o) => ({ id: o.id, title: o.title, description: o.description, sortOrder: o.sortOrder }));
+    },
+    create: async (body) => {
+      const data = offeringCreate.parse(body);
+      return prisma.offering.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = offeringUpdate.parse(body);
+      return prisma.offering.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.offering.delete({ where: { id } });
+    },
+  },
+
+  team: {
+    list: async () => {
+      const rows = await prisma.teamMember.findMany({ orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }] });
+      return rows.map((t) => ({
+        id: t.id,
+        name: t.name,
+        role: t.role,
+        category: t.category,
+        bio: t.bio,
+        experienceYears: t.experienceYears,
+        specialization: t.specialization ?? "",
+        photoUrl: t.photoUrl ?? "",
+        linkedinUrl: t.linkedinUrl ?? "",
+        sortOrder: t.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = teamMemberCreate.parse(body);
+      return prisma.teamMember.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = teamMemberUpdate.parse(body);
+      return prisma.teamMember.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.teamMember.delete({ where: { id } });
+    },
+  },
+
+  partners: {
+    list: async () => {
+      const rows = await prisma.partner.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+      return rows.map((p) => ({
+        id: p.id,
+        name: p.name,
+        logoUrl: p.logoUrl ?? "",
+        websiteUrl: p.websiteUrl ?? "",
+        sortOrder: p.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = partnerCreate.parse(body);
+      return prisma.partner.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = partnerUpdate.parse(body);
+      return prisma.partner.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.partner.delete({ where: { id } });
+    },
+  },
+
+  clients: {
+    list: async () => {
+      const rows = await prisma.client.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+      return rows.map((c) => ({
+        id: c.id,
+        name: c.name,
+        logoUrl: c.logoUrl ?? "",
+        websiteUrl: c.websiteUrl ?? "",
+        description: c.description,
+        sortOrder: c.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = clientCreate.parse(body);
+      return prisma.client.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = clientUpdate.parse(body);
+      return prisma.client.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.client.delete({ where: { id } });
+    },
+  },
+
+  testimonials: {
+    list: async () => {
+      const rows = await prisma.testimonial.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] });
+      return rows.map((t) => ({
+        id: t.id,
+        quote: t.quote,
+        authorName: t.authorName,
+        authorRole: t.authorRole,
+        avatarUrl: t.avatarUrl ?? "",
+        rating: t.rating,
+        sortOrder: t.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = testimonialCreate.parse(body);
+      return prisma.testimonial.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = testimonialUpdate.parse(body);
+      return prisma.testimonial.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.testimonial.delete({ where: { id } });
+    },
+  },
+
+  events: {
+    list: async () => {
+      const rows = await prisma.event.findMany({ orderBy: [{ startsAt: "asc" }] });
+      return rows.map((e) => ({
+        id: e.id,
+        slug: e.slug,
+        title: e.title,
+        description: e.description,
+        category: e.category ?? "",
+        mode: e.mode,
+        startsAt: iso(e.startsAt),
+        endsAt: iso(e.endsAt),
+        location: e.location ?? "",
+        coverImageUrl: e.coverImageUrl ?? "",
+        registerUrl: e.registerUrl ?? "",
+        sortOrder: e.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = eventCreate.parse(body);
+      const slug = await uniqueSlug(data.title, async (s) =>
+        Boolean(await prisma.event.findUnique({ where: { slug: s } }))
+      );
+      return prisma.event.create({ data: { ...data, slug }, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = eventUpdate.parse(body);
+      return prisma.event.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.event.delete({ where: { id } });
     },
   },
 

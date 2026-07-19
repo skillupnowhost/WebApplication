@@ -36,6 +36,11 @@
   --shadow-lift: 0 12px 32px rgba(76, 45, 220, 0.16), 0 2px 8px rgba(15, 17, 32, 0.06);
 
   --link-line: var(--brand-600);
+
+  /* Plain :root custom property (not a @theme token) so it always ships —
+     it's only ever consumed via the h1/h2/h3 selector below, never as a
+     Tailwind utility class, and @theme inline tree-shakes unused tokens. */
+  --font-display: var(--font-sora);
 }
 
 :root[data-theme="dark"] {
@@ -108,6 +113,17 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Cinematic headline face — Sora's wider geometric letterforms replace the
+   neutral Geist default wherever a heading or hero title appears, so display
+   type reads as intentional rather than "default app font, but bigger". */
+h1,
+h2,
+h3,
+.cinematic-title {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 body {
@@ -456,6 +472,13 @@ input[type="radio"],
   75% { transform: translate(5%, -4%) scale(0.92); }
 }
 
+/* Shared bold display scale for cinematic page-hero headlines */
+.cinematic-title {
+  font-size: clamp(2.75rem, 6vw, 5.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
 .aurora-blob {
   position: absolute;
   border-radius: 9999px;
@@ -465,32 +488,6 @@ input[type="radio"],
 }
 .aurora-blob-alt {
   animation: aurora-drift-alt 19s ease-in-out infinite;
-}
-
-/* MyLoginn Astrology — printable report layout */
-.astro-print-root {
-  --page-w: 210mm;
-  background: white;
-  color: #1a1a2e;
-  min-height: 100vh;
-  padding: 10mm 0;
-}
-.astro-print-root[data-page-size="A5"] {
-  --page-w: 148mm;
-  font-size: 0.85em;
-}
-.astro-print-root[data-page-size="A3"] {
-  --page-w: 297mm;
-}
-.astro-print-root > article {
-  width: var(--page-w);
-  max-width: 100%;
-}
-.astro-report-section {
-  break-inside: avoid;
-}
-.astro-page-break {
-  break-before: page;
 }
 
 /* Slow conic ring used behind hero stat clusters */
@@ -520,29 +517,53 @@ input[type="radio"],
   animation: icon-thumb-shimmer 0.8s ease;
 }
 
-/* Animated gradient border for highlight cards */
-@keyframes border-flow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.gradient-border {
-  position: relative;
-}
-.gradient-border::after {
-  content: "";
+/* ── Cinematic redesign: starfield, glow ring, light beams ── */
+
+/* Lightweight CSS-only starfield (multi box-shadow dots) — the reduced-motion
+   / low-tier fallback wherever a live WebGL canvas is skipped. */
+.starfield {
   position: absolute;
   inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: linear-gradient(120deg, var(--brand-400), var(--accent-400), var(--brand-600), var(--brand-400));
-  background-size: 300% 300%;
-  animation: border-flow 6s ease infinite;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 70% 65%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 45% 15%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 85% 40%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 10% 80%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 60% 90%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1.5px 1.5px at 92% 85%, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 100% 100%;
+  animation: starfield-twinkle 6s ease-in-out infinite;
   pointer-events: none;
+}
+@keyframes starfield-twinkle {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Soft outer glow ring for magnetic CTAs / focus targets */
+.glow-ring {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-400) 55%, transparent);
+  transition: box-shadow 0.35s ease;
+}
+.glow-ring:hover,
+.glow-ring:focus-visible {
+  box-shadow: 0 0 32px 4px color-mix(in srgb, var(--accent-400) 45%, transparent),
+    0 0 60px 12px color-mix(in srgb, var(--brand-500) 30%, transparent);
+}
+
+/* Angled volumetric light streak, layered behind cinematic heroes */
+.volumetric-beam {
+  position: absolute;
+  pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-400) 22%, transparent), transparent 70%);
+  filter: blur(40px);
+  transform: rotate(var(--beam-angle, 12deg));
+  animation: beam-drift 10s ease-in-out infinite;
+}
+@keyframes beam-drift {
+  0%, 100% { opacity: 0.35; transform: rotate(var(--beam-angle, 12deg)) translateY(0); }
+  50% { opacity: 0.6; transform: rotate(var(--beam-angle, 12deg)) translateY(-2%); }
 }
 
 /* ── Infinite horizontal marquee (content duplicated once, slides 50%) ── */
@@ -716,6 +737,376 @@ input[type="radio"],
   inset: 0;
   background: linear-gradient(90deg, transparent, rgba(196, 181, 253, 0.85), rgba(103, 232, 249, 0.85), transparent);
   animation: luxe-streak 5.5s ease-in-out infinite;
+}
+
+/* ── Astrology module: celestial light surface system ──────────────
+   A light, airy take on the cosmic theme that matches the rest of the
+   site: pages stay on the white site background with soft violet
+   (brand) and warm gold (astrology accent) radial washes, gold-dust
+   stars, and glass cards with a faint gold hairline — mirroring the
+   HeroSection top-radial + glass-panel light pattern. */
+@keyframes celestial-drift {
+  0%, 100% { background-position: 0% 50%, 100% 50%, 50% 100%, 50% 0%; }
+  50% { background-position: 100% 50%, 0% 50%, 50% 0%, 50% 100%; }
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes celestial-border-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, #d97706 18%, transparent), 0 8px 28px color-mix(in srgb, var(--brand-500) 8%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, #d97706 36%, transparent), 0 8px 28px color-mix(in srgb, var(--brand-500) 14%, transparent);
+  }
+}
+
+.celestial-hero {
+  position: relative;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(44% 54% at 14% 10%, color-mix(in srgb, var(--brand-100) 90%, transparent) 0%, transparent 62%),
+    radial-gradient(40% 50% at 88% 14%, rgba(253, 230, 138, 0.45) 0%, transparent 60%),
+    radial-gradient(48% 58% at 50% 100%, color-mix(in srgb, var(--brand-50) 85%, transparent) 0%, transparent 65%),
+    radial-gradient(32% 42% at 90% 88%, rgba(254, 243, 199, 0.6) 0%, transparent 60%);
+  background-size: 160% 160%, 160% 160%, 170% 170%, 150% 150%;
+  animation: celestial-drift 24s ease-in-out infinite;
+}
+
+/* Glass surface with a faint gold hairline glow, built on .glass-panel. */
+.celestial-card {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in srgb, #d97706 22%, var(--glass-border));
+  animation: celestial-border-pulse 4s ease-in-out infinite;
+}
+
+/* Deep-gold gradient text-clip, analogous to .brand-gradient-text —
+   kept dark enough to stay legible on the white page. */
+.celestial-glow-text {
+  background: linear-gradient(120deg, #b45309, #d97706 55%, #92400e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Twinkling gold-and-violet star dust — colored (not white) so it reads
+   on the light page. Position a parent with overflow-hidden and drop
+   this in as an absolutely-positioned layer. */
+.starfield {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(2px 2px at 12% 22%, #f59e0b 0%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 28% 68%, #8874ff 0%, transparent 60%),
+    radial-gradient(2.2px 2.2px at 46% 14%, #d97706 0%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 62% 52%, #8874ff 0%, transparent 60%),
+    radial-gradient(2px 2px at 78% 30%, #f59e0b 0%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 88% 74%, #d97706 0%, transparent 60%),
+    radial-gradient(2.2px 2.2px at 18% 84%, #a89dff 0%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 55% 88%, #f59e0b 0%, transparent 60%);
+  animation: star-twinkle 3.4s ease-in-out infinite;
+}
+.starfield::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 46%, #8874ff 0%, transparent 60%),
+    radial-gradient(2px 2px at 36% 36%, #d97706 0%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 70% 10%, #f59e0b 0%, transparent 60%),
+    radial-gradient(2.2px 2.2px at 94% 48%, #a89dff 0%, transparent 60%),
+    radial-gradient(1.6px 1.6px at 42% 76%, #d97706 0%, transparent 60%);
+  animation: star-twinkle 4.2s ease-in-out infinite reverse;
+  animation-delay: 1s;
+}
+
+/* Astrology form fields — the premium "input format" for the astrology
+   module: gold hairline borders, warm amber focus glow, roomier padding.
+   Scoped under .astro-form so the site-wide Input/Select/Textarea look
+   stays untouched elsewhere. These unlayered rules deliberately out-rank
+   the Tailwind utility classes on the shared components; [aria-invalid]
+   keeps error fields red. */
+.astro-form input:not([type="checkbox"]):not([type="radio"]),
+.astro-form select,
+.astro-form textarea {
+  border-radius: 0.9rem;
+  border-color: color-mix(in srgb, #d97706 22%, var(--border-soft));
+  background-color: color-mix(in srgb, var(--surface) 85%, transparent);
+  padding: 0.72rem 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.astro-form input:not([type="checkbox"]):not([type="radio"]):hover,
+.astro-form select:hover,
+.astro-form textarea:hover {
+  border-color: color-mix(in srgb, #d97706 50%, transparent);
+}
+.astro-form input:not([type="checkbox"]):not([type="radio"]):focus,
+.astro-form select:focus,
+.astro-form textarea:focus {
+  border-color: #f59e0b;
+  background-color: var(--surface);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+}
+.astro-form input:disabled,
+.astro-form select:disabled {
+  opacity: 0.55;
+}
+/* Narrow selects inside the Day/Month/Year and Hour/Minute pickers. */
+.astro-form .astro-compact {
+  padding: 0.72rem 0.6rem;
+}
+.astro-form input[aria-invalid="true"],
+.astro-form select[aria-invalid="true"],
+.astro-form textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.astro-form input[aria-invalid="true"]:focus,
+.astro-form select[aria-invalid="true"]:focus,
+.astro-form textarea[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
+/* ---- Jathagam document: luxury white report theme (royal blue + gold), print-first ---- */
+.jathagam-doc {
+  --jd-ink: #101d3a;
+  --jd-ink-soft: #47536f;
+  --jd-royal: #1c3faa;
+  --jd-royal-deep: #14286b;
+  --jd-gold: #a8802a;
+  --jd-gold-bright: #c9a227;
+  --jd-paper: #ffffff;
+  --jd-paper-soft: #f7f8fc;
+  --jd-hairline: #e3e7f2;
+  --jd-good: #0f766e;
+  --jd-bad: #b91c1c;
+  background: var(--jd-paper);
+  color: var(--jd-ink);
+  font-feature-settings: "tnum" 1;
+}
+.jathagam-doc .jd-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--jd-gold);
+}
+.jathagam-doc .jd-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--jd-royal);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.jathagam-doc .jd-section-title::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(to right, var(--jd-gold-bright), transparent);
+}
+.jathagam-doc .jd-card {
+  border: 1px solid var(--jd-hairline);
+  border-radius: 0.9rem;
+  background: var(--jd-paper);
+}
+.jathagam-doc .jd-soft {
+  background: var(--jd-paper-soft);
+}
+.jathagam-doc .jd-label {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--jd-ink-soft);
+}
+.jathagam-doc .jd-value {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--jd-ink);
+}
+.jathagam-doc .jd-table {
+  width: 100%;
+  font-size: 11.5px;
+  border-collapse: collapse;
+}
+.jathagam-doc .jd-table th {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--jd-ink-soft);
+  font-weight: 600;
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1.5px solid var(--jd-gold-bright);
+}
+.jathagam-doc .jd-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--jd-hairline);
+}
+.jathagam-doc .jd-table tr:last-child td {
+  border-bottom: none;
+}
+.jathagam-doc .jd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.jathagam-doc .jd-chip-good { background: #ecfdf5; color: var(--jd-good); border: 1px solid #bbe7dd; }
+.jathagam-doc .jd-chip-bad { background: #fef2f2; color: var(--jd-bad); border: 1px solid #f5cccc; }
+.jathagam-doc .jd-chip-neutral { background: var(--jd-paper-soft); color: var(--jd-ink-soft); border: 1px solid var(--jd-hairline); }
+.jathagam-doc .jd-chip-gold { background: #fdf7e7; color: var(--jd-gold); border: 1px solid #ecdcae; }
+.jathagam-doc .jd-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--jd-hairline);
+  overflow: hidden;
+}
+.jathagam-doc .jd-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--jd-royal), var(--jd-gold-bright));
+}
+.jathagam-doc .jd-charts svg text {
+  fill: var(--jd-ink);
+}
+
+/* ---- Report output styles ----
+   The default .jathagam-doc is the PROFESSIONAL theme (royal blue + gold on white).
+   TRADITIONAL re-skins it as a palm-leaf-inspired handwritten manuscript;
+   MODERN re-skins it as a minimal indigo/violet premium document.
+   Both only override the theme variables + typography so every jd-* component
+   and the print/PDF pipeline work unchanged. */
+.jathagam-doc.jd-style-traditional {
+  --jd-ink: #3d2b12;
+  --jd-ink-soft: #7a6338;
+  --jd-royal: #7c2d12;
+  --jd-royal-deep: #571c07;
+  --jd-gold: #92600a;
+  --jd-gold-bright: #b47f1a;
+  --jd-paper: #faf3e3;
+  --jd-paper-soft: #f3e8cd;
+  --jd-hairline: #e2d3ab;
+  --jd-good: #386641;
+  --jd-bad: #9a3412;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(180, 127, 26, 0.08) 0%, transparent 55%),
+    var(--jd-paper);
+  border: 1px solid var(--jd-hairline);
+  outline: 3px double var(--jd-gold-bright);
+  outline-offset: -10px;
+  font-family: Georgia, "Times New Roman", "Noto Serif", serif;
+}
+.jathagam-doc.jd-style-traditional h1,
+.jathagam-doc.jd-style-traditional h2,
+.jathagam-doc.jd-style-traditional h3 {
+  font-family: "Segoe Script", "Lucida Handwriting", Georgia, cursive;
+  letter-spacing: 0.02em;
+}
+.jathagam-doc.jd-style-traditional .jd-section-title::after {
+  background: linear-gradient(to right, var(--jd-gold-bright), transparent);
+}
+.jathagam-doc.jd-style-traditional .jd-card {
+  border-color: var(--jd-hairline);
+  border-radius: 0.4rem;
+  background: color-mix(in srgb, var(--jd-paper) 60%, #fffdf6);
+}
+.jathagam-doc.jd-style-traditional .jd-chip-good { background: #eef3e6; border-color: #cfdcba; }
+.jathagam-doc.jd-style-traditional .jd-chip-bad { background: #f9ece2; border-color: #ecc9ac; }
+.jathagam-doc.jd-style-traditional .jd-chip-gold { background: #f6ecd2; border-color: #ddc283; }
+.jathagam-doc.jd-style-traditional .jd-chip-neutral { background: var(--jd-paper-soft); border-color: var(--jd-hairline); }
+.jathagam-doc.jd-style-traditional .jd-bar { background: #e8dbb9; }
+.jathagam-doc.jd-style-traditional .jd-bar > span {
+  background: linear-gradient(to right, var(--jd-royal), var(--jd-gold-bright));
+}
+
+.jathagam-doc.jd-style-modern {
+  --jd-ink: #17163a;
+  --jd-ink-soft: #5b5a7d;
+  --jd-royal: #6d28d9;
+  --jd-royal-deep: #3b1d8f;
+  --jd-gold: #9333ea;
+  --jd-gold-bright: #a855f7;
+  --jd-paper: #ffffff;
+  --jd-paper-soft: #f6f4fd;
+  --jd-hairline: #e8e4f8;
+  --jd-good: #0f766e;
+  --jd-bad: #be123c;
+  background:
+    radial-gradient(90% 40% at 100% 0%, rgba(168, 85, 247, 0.07) 0%, transparent 60%),
+    radial-gradient(80% 30% at 0% 100%, rgba(109, 40, 217, 0.05) 0%, transparent 60%),
+    var(--jd-paper);
+  font-family: var(--font-sans, ui-sans-serif), system-ui, sans-serif;
+}
+.jathagam-doc.jd-style-modern .jd-kicker {
+  background: linear-gradient(120deg, #7c3aed, #a855f7 60%, #6d28d9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.jathagam-doc.jd-style-modern .jd-card {
+  border-radius: 1.1rem;
+  box-shadow: 0 1px 2px rgba(23, 22, 58, 0.04), 0 6px 20px rgba(109, 40, 217, 0.05);
+}
+.jathagam-doc.jd-style-modern .jd-section-title::after {
+  background: linear-gradient(to right, #a855f7, transparent);
+}
+.jathagam-doc.jd-style-modern .jd-chip-gold { background: #f5edfe; color: #7c3aed; border-color: #e3ccfb; }
+.jathagam-doc.jd-style-modern .jd-table th { border-bottom-color: #a855f7; }
+.jathagam-doc.jd-style-modern .jd-bar > span {
+  background: linear-gradient(to right, #6d28d9, #a855f7);
+}
+
+/* Astrology report pagination — keeps sections intact across PDF/print page breaks */
+.astro-report-section {
+  break-inside: avoid;
+}
+.astro-page-break {
+  break-before: page;
+}
+.astro-print-page {
+  margin-inline: auto;
+}
+@media print {
+  .astro-no-print {
+    display: none !important;
+  }
+  .astro-print-page {
+    box-shadow: none !important;
+  }
+}
+[data-page-size="A4"] .astro-print-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 12mm;
+}
+[data-page-size="A5"] .astro-print-page {
+  width: 148mm;
+  min-height: 210mm;
+  padding: 10mm 9mm;
+  font-size: 0.9em;
+}
+[data-page-size="A3"] .astro-print-page {
+  width: 297mm;
+  min-height: 420mm;
+  padding: 18mm 16mm;
+}
+@page {
+  margin: 12mm;
 }
 
 @media (prefers-reduced-motion: reduce) {

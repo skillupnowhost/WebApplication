@@ -31,10 +31,16 @@ enum ReportDepth {
   FULL
 }
 
-enum ReportVoice {
-  STORYTELLING
-  PROFESSIONAL
-  ANIMATED
+enum ChartStyle {
+  NORTH_INDIAN
+  SOUTH_INDIAN
+  EAST_INDIAN
+}
+
+enum TeamCategory {
+  FOUNDER
+  CEO
+  STAFF
 }
 
 model User {
@@ -354,6 +360,82 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 }
 
+model AboutContent {
+  id           String   @id @default("singleton")
+  heroTitle    String   @default("About MyLoginn")
+  heroTagline  String   @default("")
+  overview     String   @default("")
+  mission      String   @default("")
+  updatedAt    DateTime @updatedAt
+}
+
+model Offering {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  sortOrder   Int    @default(0)
+}
+
+model TeamMember {
+  id              String       @id @default(cuid())
+  name            String
+  role            String
+  category        TeamCategory
+  bio             String       @default("")
+  experienceYears Int?
+  specialization  String?
+  photoUrl        String?
+  linkedinUrl     String?
+  sortOrder       Int          @default(0)
+  createdAt       DateTime     @default(now())
+}
+
+model Partner {
+  id         String  @id @default(cuid())
+  name       String
+  logoUrl    String?
+  websiteUrl String?
+  sortOrder  Int     @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  logoUrl     String?
+  websiteUrl  String?
+  description String   @default("")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  quote       String
+  authorName  String
+  authorRole  String   @default("")
+  avatarUrl   String?
+  rating      Int      @default(5)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Event {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  description    String
+  category       String?
+  mode           String    @default("ONLINE")
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String?
+  coverImageUrl  String?
+  registerUrl    String?
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+}
+
 model GeocodeCache {
   id        String   @id @default(cuid())
   query     String   @unique
@@ -379,11 +461,25 @@ model AstrologyProfile {
   timezone       String
 
   parentsNames   String?
+  fatherName     String?
+  motherName     String?
+  maritalStatus  String?
+  phone          String?
+  email          String?
   occupation     String?
+  businessType   String?
+  salary         String?
+  community      String?
+  caste          String?
+  gothram        String?
   customNotes    String?
+  system         String   @default("THIRUKKANITHAM")
 
   chart          ChartData?
   createdAt      DateTime @default(now())
+
+  matchesAsA     MatchRequest[] @relation("MatchProfileA")
+  matchesAsB     MatchRequest[] @relation("MatchProfileB")
 
   @@index([userId])
 }
@@ -396,8 +492,10 @@ model ChartData {
   ayanamsaUsed   Float
   planetsJson    String
   ascendantJson  String
+  panchangaJson  String
   dashaJson      String
   numerologyJson String
+  doshaJson      String
   computedAt     DateTime @default(now())
 
   reports        HoroscopeReport[]
@@ -409,21 +507,28 @@ model HoroscopeReport {
   chartData     ChartData   @relation(fields: [chartDataId], references: [id])
 
   depth         ReportDepth
-  voice         ReportVoice
+  chartStyle    ChartStyle
   language      String
+  reportStyle   String      @default("PROFESSIONAL")
   narrativeJson String
   createdAt     DateTime    @default(now())
 
   @@index([chartDataId])
-  @@unique([chartDataId, depth, voice, language])
+  @@unique([chartDataId, depth, chartStyle, language, reportStyle])
 }
 
 model MatchRequest {
   id            String   @id @default(cuid())
   profileAId    String
   profileBId    String
+  profileA      AstrologyProfile @relation("MatchProfileA", fields: [profileAId], references: [id])
+  profileB      AstrologyProfile @relation("MatchProfileB", fields: [profileBId], references: [id])
   ashtakootJson String
   narrativeJson String
   language      String
   createdAt     DateTime @default(now())
+
+  @@index([profileAId])
+  @@index([profileBId])
 }
+

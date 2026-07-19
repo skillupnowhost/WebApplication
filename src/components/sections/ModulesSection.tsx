@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
 import { Card } from "@/components/ui/Card";
+import { TiltCard } from "@/components/ui/TiltCard";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { ContentIcon } from "@/components/ui/ContentIcon";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
 import { AnimatedExploreCourses } from "@/components/ui/icons/AnimatedExploreCourses";
+import { useParallax } from "@/hooks/useParallax";
 import type { CourseIconKey } from "@/lib/courseIcons";
 
 const modules: {
@@ -86,34 +88,51 @@ export function ModulesSection() {
 
         <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map((m, i) => (
-            <motion.div
-              key={m.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <Link href={m.href} className="group block h-full">
-                <Card className="flex h-full flex-col p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[var(--shadow-lift)] hover:border-brand-300">
-                  <IconBadge size="xl" style={{ color: m.color }} delay={i * 0.08}>
-                    <ContentIcon keyword={m.iconKey} className="h-13 w-13 sm:h-14 sm:w-14" />
-                  </IconBadge>
-                  <h3 className="mt-5 text-lg font-semibold leading-snug">{m.title}</h3>
-                  <p className="mt-2.5 flex-1 text-sm text-muted">{m.description}</p>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand-500">
-                    Explore
-                    {m.href === "/courses" ? (
-                      <AnimatedExploreCourses className="h-5.5 w-5.5" />
-                    ) : (
-                      <AnimatedArrow className="h-5 w-5" />
-                    )}
-                  </span>
-                </Card>
-              </Link>
-            </motion.div>
+            <ModuleCard key={m.title} module={m} index={i} />
           ))}
         </div>
       </Container>
     </Section>
+  );
+}
+
+function ModuleCard({
+  module: m,
+  index: i,
+}: {
+  module: (typeof modules)[number];
+  index: number;
+}) {
+  const { ref, y: parallaxY } = useParallax(14);
+
+  return (
+    <motion.div ref={ref} style={{ y: parallaxY }}>
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <Link href={m.href} className="group block h-full">
+          <TiltCard maxTilt={7} className="h-full">
+            <Card className="card-shine relative flex h-full flex-col overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[var(--shadow-lift)]">
+              <IconBadge size="xl" style={{ color: m.color }} delay={i * 0.08}>
+                <ContentIcon keyword={m.iconKey} className="h-13 w-13 sm:h-14 sm:w-14" />
+              </IconBadge>
+              <h3 className="mt-5 text-lg font-semibold leading-snug">{m.title}</h3>
+              <p className="mt-2.5 flex-1 text-sm text-muted">{m.description}</p>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand-500">
+                Explore
+                {m.href === "/courses" ? (
+                  <AnimatedExploreCourses className="h-5.5 w-5.5" />
+                ) : (
+                  <AnimatedArrow className="h-5 w-5" />
+                )}
+              </span>
+            </Card>
+          </TiltCard>
+        </Link>
+      </motion.div>
+    </motion.div>
   );
 }

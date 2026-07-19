@@ -24,6 +24,8 @@ import { AnimatedMegaphone } from "@/components/ui/icons/AnimatedMegaphone";
 import { AnimatedCode } from "@/components/ui/icons/AnimatedCode";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
+import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
+import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
 import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
 import { ProfileMenu, type ProfileUser } from "./ProfileMenu";
@@ -39,10 +41,13 @@ const primaryLinks = [
   { href: "/internships", label: "Internships" },
   { href: "/projects", label: "Projects" },
   { href: "/astrology", label: "Astrology" },
+  { href: "/about", label: "About" },
 ];
 
 const serviceLinks = [
   { href: "/tutoring", label: "Tutoring", desc: "1:1 mentor sessions, live classes" },
+  { href: "/mentoring", label: "Mentoring", desc: "Meet the mentors behind our projects" },
+  { href: "/events", label: "Events", desc: "Live workshops, webinars & meetups" },
   { href: "/services/digital-marketing", label: "Digital Marketing", desc: "AI-driven growth campaigns" },
   { href: "/services/app-web-development", label: "App & Web Development", desc: "Full-stack builds, premium UX" },
 ];
@@ -60,10 +65,13 @@ const mobileMainLinks: MobileLink[] = [
   { href: "/internships", label: "Internships", desc: "Real-world experience", icon: AnimatedBriefcase },
   { href: "/projects", label: "Projects", desc: "Build your portfolio", icon: AnimatedFolder },
   { href: "/astrology", label: "Astrology", desc: "Your divine horoscope", icon: AnimatedMoonStar },
+  { href: "/about", label: "About", desc: "Our story, team & partners", icon: AnimatedUsers },
 ];
 
 const mobileServiceLinks: MobileLink[] = [
   { href: "/tutoring", label: "Tutoring", desc: "1:1 mentor sessions, live classes", icon: AnimatedGraduation },
+  { href: "/mentoring", label: "Mentoring", desc: "Meet the mentors behind our projects", icon: AnimatedUsers },
+  { href: "/events", label: "Events", desc: "Live workshops, webinars & meetups", icon: AnimatedCalendar },
   {
     href: "/services/digital-marketing",
     label: "Digital Marketing",
@@ -149,7 +157,7 @@ export function Navbar({ user }: { user: NavUser }) {
               className="relative flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors duration-200 hover:text-foreground cursor-pointer"
               onClick={() => setServicesOpen((s) => !s)}
             >
-              Services
+              More
               <ChevronDown className={cn("h-4 w-4 transition-transform duration-300", servicesOpen && "rotate-180")} />
               <span
                 className={cn(
@@ -337,7 +345,7 @@ function MobileMenu({
 
               <motion.div variants={itemVariants} className="my-3 flex items-center gap-3 px-2">
                 <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-soft to-transparent" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.16em] brand-gradient-text">Services</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] brand-gradient-text">More</span>
                 <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-soft to-transparent" />
               </motion.div>
 

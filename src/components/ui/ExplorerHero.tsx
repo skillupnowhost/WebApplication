@@ -6,6 +6,7 @@ import { AnimatedText } from "@/components/ui/AnimatedText";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
+import { useParallax } from "@/hooks/useParallax";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -68,10 +69,14 @@ export function ExplorerHero({
   marqueeLabel?: string;
   marqueeItems?: ReactNode[];
 }) {
+  const { ref: parallaxRef, y: parallaxY } = useParallax(30);
+
   return (
     <div className="relative">
       {/* ── Clipped aurora backdrop — all decoration lives in here ── */}
-      <div
+      <motion.div
+        ref={parallaxRef}
+        style={{ y: parallaxY }}
         className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2rem]"
         aria-hidden
       >
@@ -115,7 +120,7 @@ export function ExplorerHero({
         >
           <EyebrowIcon className="h-5.5 w-5.5" />
         </motion.span>
-      </div>
+      </motion.div>
 
       {/* ── Headline block ── */}
       <div className="relative flex flex-col items-center px-[clamp(0.5rem,3vw,2rem)] pt-[clamp(1.75rem,4.5vw,3.25rem)] text-center">

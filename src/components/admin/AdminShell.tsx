@@ -24,6 +24,11 @@ import { AnimatedSearch } from "@/components/ui/icons/AnimatedSearch";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
 import { AnimatedLogout } from "@/components/ui/icons/AnimatedLogout";
 import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
+import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
+import { AnimatedCrown } from "@/components/ui/icons/AnimatedCrown";
+import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { AnimatedTrophy } from "@/components/ui/icons/AnimatedTrophy";
+import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
 import logo from "@/images/Loginn Logo.png";
 
 export type AdminNavUser = { name: string; email: string; avatarColor: string; avatarUrl: string | null };
@@ -47,11 +52,28 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
       { href: "/admin/tutoring", label: "Tutoring", icon: AnimatedCalendar },
       { href: "/admin/classes", label: "Classes", icon: AnimatedVideoCamera },
       { href: "/admin/leads", label: "Client Requests", icon: AnimatedChat },
+      { href: "/admin/astrology", label: "Horoscope Reports", icon: AnimatedMoonStar },
+      { href: "/admin/compatibility-matches", label: "Compatibility Matches", icon: AnimatedMoonStar },
+      { href: "/admin/events", label: "Events", icon: AnimatedCalendar },
     ],
   },
   {
     label: "Finance",
     items: [{ href: "/admin/payments", label: "Payments", icon: AnimatedRupee }],
+  },
+  {
+    label: "About Page",
+    items: [
+      { href: "/admin/about-content", label: "Page Content", icon: AnimatedSparkle },
+      { href: "/admin/offerings", label: "Key Offerings", icon: AnimatedLayers },
+      { href: "/admin/team", label: "Team", icon: AnimatedCrown },
+      { href: "/admin/partners", label: "Partners", icon: AnimatedShield },
+      { href: "/admin/clients", label: "Clients", icon: AnimatedTrophy },
+    ],
+  },
+  {
+    label: "Homepage",
+    items: [{ href: "/admin/testimonials", label: "Testimonials", icon: AnimatedChat }],
   },
 ];
 

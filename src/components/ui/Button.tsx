@@ -1,5 +1,9 @@
+"use client";
+
 import { cn } from "@/lib/cn";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { useMagnetic } from "@/hooks/useMagnetic";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger";
@@ -42,8 +46,12 @@ type BaseProps = {
   icon?: ReactNode;
 };
 
+// framer-motion's drag/animation event handlers collide in type with the
+// native DOM ones of the same name — omit the ones Button has no use for.
+type MotionConflictingProps = "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart" | "onAnimationEnd";
+
 type ButtonAsButton = BaseProps &
-  Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "children"> & {
+  Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "children" | MotionConflictingProps> & {
     href?: undefined;
   };
 
@@ -53,25 +61,55 @@ type ButtonAsLink = BaseProps & {
   rel?: string;
 };
 
+const MotionLink = motion.create(Link);
+
 export function Button(props: ButtonAsButton | ButtonAsLink) {
   const { variant = "primary", size = "md", className, children, icon, ...rest } = props;
-  const classes = cn(base, variantClasses[variant], sizeClasses[size], className);
+  const classes = cn(base, size === "lg" && "glow-ring", variantClasses[variant], sizeClasses[size], className);
+  // Only large CTAs get the magnetic pull — keeps mousemove listeners off the
+  // dozens of small buttons in tables/toolbars where it'd add cost for no effect.
+  const magnetic = useMagnetic();
+  const magneticProps =
+    size === "lg"
+      ? {
+          onMouseMove: magnetic.onMouseMove,
+          onMouseLeave: magnetic.onMouseLeave,
+          style: { x: magnetic.x, y: magnetic.y },
+          "data-cursor": "magnetic" as const,
+        }
+      : {};
 
   if ("href" in rest && rest.href) {
     const { href, target, rel } = rest as { href: string; target?: string; rel?: string };
     return (
-      <Link href={href} target={target} rel={rel} className={classes}>
+      <MotionLink
+        href={href}
+        target={target}
+        rel={rel}
+        className={classes}
+        ref={size === "lg" ? (magnetic.ref as React.Ref<HTMLAnchorElement>) : undefined}
+        {...magneticProps}
+      >
         <ButtonIcon icon={icon} />
         {children}
-      </Link>
+      </MotionLink>
     );
   }
 
-  const { type = "button", ...domProps } = rest as ButtonHTMLAttributes<HTMLButtonElement>;
+  const { type = "button", ...domProps } = rest as Omit<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    MotionConflictingProps
+  >;
   return (
-    <button type={type} className={classes} {...domProps}>
+    <motion.button
+      type={type}
+      className={classes}
+      ref={size === "lg" ? (magnetic.ref as React.Ref<HTMLButtonElement>) : undefined}
+      {...magneticProps}
+      {...domProps}
+    >
       {icon}
       {children}
-    </button>
+    </motion.button>
   );
 }

@@ -1,27 +1,37 @@
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
-import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { BirthDetailsForm } from "@/components/astrology/BirthDetailsForm";
+import { AstroBreadcrumbs } from "@/components/astrology/AstroBreadcrumbs";
+import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
 
-export const metadata = { title: "Discover Your Horoscope — MyLoginn Astrology" };
+export const metadata = { title: "Generate your horoscope — MyLoginn Astrology" };
 
-export default function AstrologyNewPage() {
+export default async function AstrologyNewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ depth?: string }>;
+}) {
+  const { depth } = await searchParams;
+  const defaultDepth = depth === "FULL" ? "FULL" : "SUMMARY";
   return (
-    <Section className="pt-14 sm:pt-14">
-      <Container>
-        <Breadcrumbs items={[{ label: "Astrology", href: "/astrology" }, { label: "New reading" }]} className="mb-6" />
-        <div className="mx-auto max-w-2xl text-center">
+    <Section className="celestial-hero pt-14 sm:pt-14">
+      <div className="starfield" aria-hidden />
+      <Container className="max-w-3xl">
+        <AstroBreadcrumbs items={[{ label: "Generate Horoscope" }]} />
+        <div className="mb-8 text-center">
           <div className="flex justify-center">
-            <Eyebrow>Your Cosmic Blueprint</Eyebrow>
+            <Eyebrow>
+              <AnimatedMoonStar className="h-4 w-4" />
+              MyLoginn Astrology
+            </Eyebrow>
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Tell us when and where you were born</h1>
-          <p className="mt-4 text-muted">
-            We&apos;ll calculate your real birth chart from astronomical data — no guesswork, no generic sun-sign copy.
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight">
+            Tell us your <span className="celestial-glow-text">birth details</span>
+          </h1>
+          <p className="mt-3 text-muted">
+            One page, four required fields. Every calculation is computed live from your exact birth instant — nothing here is templated.
           </p>
         </div>
-
-        <div className="mt-12">
-          <BirthDetailsForm />
-        </div>
+        <BirthDetailsForm defaultDepth={defaultDepth} />
       </Container>
     </Section>
   );

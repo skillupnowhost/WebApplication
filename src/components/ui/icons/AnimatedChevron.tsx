@@ -12,14 +12,20 @@ export function AnimatedChevron({
 }: {
   className?: string;
   style?: CSSProperties;
-  direction?: "left" | "right";
+  direction?: "left" | "right" | "down" | "up";
 }) {
   const id = "chv" + useId().replace(/[^a-zA-Z0-9]/g, "");
   return (
     <span className={cn("relative inline-flex shrink-0 items-center justify-center", className)} style={style}>
       <motion.span
         className="inline-flex h-full w-full"
-        animate={{ x: direction === "right" ? [0, 2, 0] : [0, -2, 0] }}
+        animate={
+          direction === "down"
+            ? { y: [0, 2, 0] }
+            : direction === "up"
+              ? { y: [0, -2, 0] }
+              : { x: direction === "right" ? [0, 2, 0] : [0, -2, 0] }
+        }
         transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
@@ -30,7 +36,15 @@ export function AnimatedChevron({
             </linearGradient>
           </defs>
           <path
-            d={direction === "right" ? "M9 5l7 7-7 7" : "M15 5l-7 7 7 7"}
+            d={
+              direction === "down"
+                ? "M5 9l7 7 7-7"
+                : direction === "up"
+                  ? "M5 15l7-7 7 7"
+                  : direction === "right"
+                    ? "M9 5l7 7-7 7"
+                    : "M15 5l-7 7 7 7"
+            }
             stroke={`url(#${id}g)`}
             strokeWidth="2.6"
             strokeLinecap="round"

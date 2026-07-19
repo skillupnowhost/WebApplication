@@ -10,13 +10,21 @@ import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
 import { AnimatedLayers } from "@/components/ui/icons/AnimatedLayers";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
 import { BuildTerminal } from "@/components/services/BuildTerminal";
+import { useParallax } from "@/hooks/useParallax";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function AppWebDevHero({ techCount }: { techCount: number }) {
+  const { ref: parallaxRef, y: parallaxY } = useParallax(30);
+
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[2rem]" aria-hidden>
+      <motion.div
+        ref={parallaxRef}
+        style={{ y: parallaxY }}
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[2rem]"
+        aria-hidden
+      >
         <div className="hero-grid-light absolute inset-x-0 top-0 h-[30rem]" />
         <span
           className="absolute -top-16 left-[8%] h-64 w-[min(70%,34rem)] rounded-full bg-brand-300/25 blur-3xl"
@@ -33,7 +41,7 @@ export function AppWebDevHero({ techCount }: { techCount: number }) {
         >
           <AnimatedCode className="h-6 w-6" />
         </motion.span>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-5 lg:gap-8">
         <div className="lg:col-span-3">

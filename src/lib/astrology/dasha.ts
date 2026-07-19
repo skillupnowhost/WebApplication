@@ -1,7 +1,8 @@
-import { NAKSHATRA_LORDS, nakshatraFromSidereal } from "./panchanga";
+import { nakshatraFromSidereal } from "./panchanga";
+import { NAKSHATRA_LORDS, type PlanetName } from "./constants";
 
 /** Vimshottari Dasha period lengths in years — fixed 120-year cycle across the 9 nakshatra lords. */
-const DASHA_YEARS: Record<string, number> = {
+const DASHA_YEARS: Record<PlanetName, number> = {
   Ketu: 7,
   Venus: 20,
   Sun: 6,
@@ -13,21 +14,43 @@ const DASHA_YEARS: Record<string, number> = {
   Mercury: 17,
 };
 
+const MS_PER_YEAR = 365.2425 * 24 * 60 * 60 * 1000;
+
+export type AntarDasha = {
+  lord: PlanetName;
+  startDate: string;
+  endDate: string;
+};
+
 export type DashaPeriod = {
-  lord: string;
+  lord: PlanetName;
   startDate: string;
   endDate: string;
   years: number;
+  antardashas: AntarDasha[];
 };
 
-const MS_PER_YEAR = 365.2425 * 24 * 60 * 60 * 1000;
+function lordSequenceFrom(startLord: PlanetName): PlanetName[] {
+  const startIndex = NAKSHATRA_LORDS.indexOf(startLord);
+  return Array.from({ length: 9 }, (_, i) => NAKSHATRA_LORDS[(startIndex + i) % 9]);
+}
 
-/** Full Mahadasha timeline from birth, derived from the Moon's nakshatra position at birth. */
-export function computeVimshottariDasha(
-  birthDate: Date,
-  moonSiderealLongitude: number,
-  spanYears = 120
-): DashaPeriod[] {
+/** Antardashas (sub-periods) within one Mahadasha, proportional to each lord's full dasha length. */
+function computeAntardashas(mahaLord: PlanetName, start: number, years: number): AntarDasha[] {
+  const sequence = lordSequenceFrom(mahaLord);
+  const totalYears = 120;
+  let cursor = start;
+  return sequence.map((lord) => {
+    const subYears = (DASHA_YEARS[lord] * years) / totalYears;
+    const subStart = cursor;
+    const subEnd = cursor + subYears * MS_PER_YEAR;
+    cursor = subEnd;
+    return { lord, startDate: new Date(subStart).toISOString(), endDate: new Date(subEnd).toISOString() };
+  });
+}
+
+/** Full Mahadasha timeline (with Antardashas) from birth, derived from the Moon's nakshatra at birth. */
+export function computeVimshottariDasha(birthDate: Date, moonSiderealLongitude: number, spanYears = 120): DashaPeriod[] {
   const nakshatra = nakshatraFromSidereal(moonSiderealLongitude);
   const startLordIndex = NAKSHATRA_LORDS.indexOf(nakshatra.lord);
   const balanceYears = DASHA_YEARS[nakshatra.lord] * (1 - nakshatra.fractionElapsed);
@@ -44,7 +67,13 @@ export function computeVimshottariDasha(
     const start = cursor;
     const end = cursor + years * MS_PER_YEAR;
 
-    periods.push({ lord, startDate: new Date(start).toISOString(), endDate: new Date(end).toISOString(), years });
+    periods.push({
+      lord,
+      startDate: new Date(start).toISOString(),
+      endDate: new Date(end).toISOString(),
+      years,
+      antardashas: computeAntardashas(lord, start, years),
+    });
 
     cursor = end;
     elapsedYears += years;
@@ -58,41 +87,36 @@ export function computeVimshottariDasha(
 export type AgeBandPrediction = {
   fromAge: number;
   toAge: number;
-  lord: string;
-  theme: string;
+  mahaLord: PlanetName;
+  antarLord: PlanetName;
 };
 
-export const DASHA_THEMES: Record<string, string> = {
-  Sun: "authority, self-confidence, career recognition, and relationships with father figures",
-  Moon: "emotional life, home, family, and mental well-being",
-  Mars: "energy, courage, competition, property, and siblings",
-  Mercury: "communication, learning, business acumen, and adaptability",
-  Jupiter: "growth, wisdom, wealth, marriage, and higher education",
-  Venus: "love, comfort, creativity, luxury, and relationships",
-  Saturn: "discipline, delays, hard-won achievement, and long-term responsibility",
-  Rahu: "ambition, unconventional paths, sudden change, and material drive",
-  Ketu: "spirituality, detachment, introspection, and past-life karma",
-};
-
-/** Buckets the Mahadasha timeline into fixed-width age bands (default: every 5 years, birth to 80). */
-export function ageBandPredictions(
-  periods: DashaPeriod[],
-  birthDate: Date,
-  maxAge = 80,
-  bandSize = 5
-): AgeBandPrediction[] {
+/** Splits the Dasha timeline into fixed 5-year age bands (0-80), each tagged with the ruling Maha+Antar lord. */
+export function ageBandPredictions(periods: DashaPeriod[], birthDate: Date, maxAge = 80): AgeBandPrediction[] {
   const birthMs = birthDate.getTime();
   const bands: AgeBandPrediction[] = [];
 
-  for (let fromAge = 0; fromAge < maxAge; fromAge += bandSize) {
-    const toAge = fromAge + bandSize;
-    const midpointMs = birthMs + ((fromAge + toAge) / 2) * MS_PER_YEAR;
-    const governing = periods.find(
-      (p) => midpointMs >= new Date(p.startDate).getTime() && midpointMs < new Date(p.endDate).getTime()
+  for (let fromAge = 0; fromAge < maxAge; fromAge += 5) {
+    const midpointMs = birthMs + (fromAge + 2.5) * MS_PER_YEAR;
+    const maha = periods.find((p) => midpointMs >= new Date(p.startDate).getTime() && midpointMs < new Date(p.endDate).getTime());
+    if (!maha) continue;
+    const antar = maha.antardashas.find(
+      (a) => midpointMs >= new Date(a.startDate).getTime() && midpointMs < new Date(a.endDate).getTime()
     );
-    const lord = governing?.lord ?? periods[periods.length - 1]?.lord ?? "Jupiter";
-    bands.push({ fromAge, toAge, lord, theme: DASHA_THEMES[lord] });
+    bands.push({ fromAge, toAge: fromAge + 5, mahaLord: maha.lord, antarLord: antar?.lord ?? maha.lord });
   }
 
   return bands;
 }
+
+export const DASHA_THEMES: Record<PlanetName, string> = {
+  Sun: "authority, self-confidence, career recognition, and relationships with father figures",
+  Moon: "emotional life, home, mother, and the ebb and flow of the mind",
+  Mars: "energy, courage, siblings, property, and decisive action",
+  Mercury: "communication, learning, trade, and intellectual pursuits",
+  Jupiter: "wisdom, wealth, teachers, marriage, and expansion of good fortune",
+  Venus: "love, beauty, comfort, creativity, and material pleasures",
+  Saturn: "discipline, delay, hard work, and long-term structural gain",
+  Rahu: "ambition, unconventional paths, foreign connections, and sudden change",
+  Ketu: "detachment, spirituality, introspection, and letting go",
+};

@@ -11,16 +11,23 @@ import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
 import { LiveStatusBadge } from "@/components/contact/LiveStatusBadge";
 import { toWhatsAppLink } from "@/lib/whatsapp";
 import { CONTACT_EMAIL, CONTACT_PHONES, WHATSAPP_PHONE } from "@/lib/contactInfo";
+import { useParallax } from "@/hooks/useParallax";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function ContactHero({ learnerCount }: { learnerCount: number }) {
   const whatsappHref = toWhatsAppLink(WHATSAPP_PHONE, "Hi MyLoginn team! I have a question.");
+  const { ref: parallaxRef, y: parallaxY } = useParallax(30);
 
   return (
     <div className="relative">
       {/* Clipped aurora backdrop — keeps floating accents from widening the viewport */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[2rem]" aria-hidden>
+      <motion.div
+        ref={parallaxRef}
+        style={{ y: parallaxY }}
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[2rem]"
+        aria-hidden
+      >
         <div className="hero-grid-light absolute inset-x-0 top-0 h-[28rem]" />
         <span
           className="absolute -top-20 left-1/2 h-64 w-[min(80%,38rem)] -translate-x-1/2 rounded-full bg-brand-300/25 blur-3xl"
@@ -51,7 +58,7 @@ export function ContactHero({ learnerCount }: { learnerCount: number }) {
         >
           <AnimatedPhone className="h-5 w-5" />
         </motion.span>
-      </div>
+      </motion.div>
 
       <div className="relative flex flex-col items-center px-[clamp(0.5rem,3vw,2rem)] pt-[clamp(1rem,3vw,2rem)] text-center">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.05, ease: EASE }}>

@@ -1,45 +1,37 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 import { prisma } from "@/lib/prisma";
+import { renderPrintPdf, pdfPageSize, pdfFileName, pdfContentDisposition } from "@/lib/astrology/pdf";
 
 export const runtime = "nodejs";
-
-const PAGE_SIZES = ["A3", "A4", "A5"] as const;
-type PageSize = (typeof PAGE_SIZES)[number];
-
-function isPageSize(value: string): value is PageSize {
-  return (PAGE_SIZES as readonly string[]).includes(value);
-}
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const url = new URL(req.url);
-  const sizeParam = (url.searchParams.get("size") ?? "A4").toUpperCase();
-  const size: PageSize = isPageSize(sizeParam) ? sizeParam : "A4";
-
-  const report = await prisma.horoscopeReport.findUnique({ where: { id } });
-  if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
-
+  const size = pdfPageSize(url.searchParams.get("size"));
   const printUrl = `${url.origin}/astrology/${id}/print?size=${size}`;
 
-  const browser = await chromium.launch();
+  const report = await prisma.horoscopeReport.findUnique({
+    where: { id },
+    include: { chartData: { include: { profile: { select: { fullName: true } } } } },
+  });
+  if (!report) {
+    return NextResponse.json({ error: "Report not found." }, { status: 404 });
+  }
+
+  // Spec filenames: CustomerName_Single_Horoscope.pdf / CustomerName_Full_Horoscope.pdf
+  const filename = pdfFileName(report.chartData.profile.fullName, report.depth === "FULL" ? "Full_Horoscope" : "Single_Horoscope");
+
   try {
-    const page = await browser.newPage();
-    await page.goto(printUrl, { waitUntil: "networkidle" });
-    const pdf = await page.pdf({
-      printBackground: true,
-      preferCSSPageSize: true,
-      displayHeaderFooter: true,
-      headerTemplate: `<div style="width:100%; font-size:9px; text-align:center; color:#6c4dff; padding-top:4px;">MyLoginn Astrology</div>`,
-      footerTemplate: `<div style="width:100%; font-size:8px; text-align:center; color:#8a8aa3;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>`,
-    });
-    return new NextResponse(new Uint8Array(pdf), {
+    const pdf = await renderPrintPdf(printUrl, size);
+    return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="MyLoginn-Astrology-${size}.pdf"`,
+        "Content-Disposition": pdfContentDisposition(filename),
+        "Cache-Control": "no-store",
       },
     });
-  } finally {
-    await browser.close();
+  } catch (error) {
+    console.error("Astrology PDF generation failed:", error);
+    return NextResponse.json({ error: "Couldn't generate the PDF right now. Please try again." }, { status: 500 });
   }
 }

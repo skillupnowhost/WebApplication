@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
-import { reportRequestSchema } from "@/lib/validation";
+import { astrologyReportRequestSchema } from "@/lib/validation";
 import { getOrCreateReport } from "@/lib/astrology/report";
 
-/** Switches an existing chart to a different depth/voice/language — never recomputes the astronomy. */
 export async function POST(req: Request) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-
-  const parsed = reportRequestSchema.safeParse(body);
+  const body = await req.json();
+  const parsed = astrologyReportRequestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
 
-  const report = await getOrCreateReport(parsed.data);
-  if (!report) return NextResponse.json({ error: "Chart not found" }, { status: 404 });
-
-  return NextResponse.json({ reportId: report.id });
+  try {
+    const { report } = await getOrCreateReport(parsed.data);
+    return NextResponse.json({ reportId: report.id });
+  } catch (error) {
+    console.error("Failed to generate astrology report:", error);
+    return NextResponse.json({ error: "Couldn't generate the report. Please check the birth details and try again." }, { status: 500 });
+  }
 }

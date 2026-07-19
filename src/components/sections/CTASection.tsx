@@ -1,15 +1,51 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import type { CSSProperties } from "react";
 import { Container } from "@/components/ui/Section";
 import { Button } from "@/components/ui/Button";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
+import { useParallax } from "@/hooks/useParallax";
+
+// This panel is always rendered dark regardless of site theme, so the dark-
+// tuned WebGL scene never clashes with a light page the way it would if
+// dropped behind a normal (theme-following) section.
+const GlowGridScene = dynamic(() => import("@/components/cinematic/scenes/GlowGridScene"), { ssr: false });
+
+const trustStrip = [
+  "AI/ML & Digital Marketing Courses",
+  "1,200+ Internships Placed",
+  "CBSE & State Board Tutoring",
+  "Real Mentor Support",
+  "AI-Driven Growth Services",
+  "50k+ Learners Upskilled",
+];
 
 export function CTASection() {
+  const { ref, y: parallaxY } = useParallax(24);
+
   return (
     <section className="py-20 sm:py-28">
       <Container>
+        <div className="marquee-mask mb-8 overflow-hidden">
+          <div
+            className="animate-marquee flex w-max gap-3"
+            style={{ "--marquee-duration": "34s" } as CSSProperties}
+          >
+            {[...trustStrip, ...trustStrip].map((item, i) => (
+              <span
+                key={i}
+                className="glass-panel whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-muted"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <motion.div
+          ref={ref}
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
@@ -20,6 +56,8 @@ export function CTASection() {
           <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-[radial-gradient(60%_80%_at_50%_50%,var(--brand-500),transparent_70%)] opacity-0 blur-2xl dark:opacity-45" />
 
           <div className="relative overflow-hidden rounded-3xl brand-gradient-bg bg-size-200 px-8 py-16 text-center text-white shadow-[var(--shadow-lift)] ring-1 ring-white/10 sm:px-16 sm:py-24 dark:ring-accent-400/25">
+            <GlowGridScene />
+            <div className="starfield opacity-50" />
             {/* subtle dot-grid texture, faded toward the edges */}
             <div
               className="pointer-events-none absolute inset-0 opacity-20"
@@ -32,8 +70,14 @@ export function CTASection() {
                   "radial-gradient(ellipse 75% 65% at 50% 40%, black 40%, transparent 85%)",
               }}
             />
-            <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+            <motion.div
+              style={{ y: parallaxY }}
+              className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+            />
+            <motion.div
+              style={{ y: parallaxY }}
+              className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+            />
 
             <h2 className="relative text-4xl font-bold tracking-tight sm:text-6xl">
               Ready to build your future with AI?
