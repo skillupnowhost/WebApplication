@@ -8,9 +8,13 @@ import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
 import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
+import { AnimatedInstagram } from "@/components/ui/icons/AnimatedInstagram";
+import { AnimatedFacebook } from "@/components/ui/icons/AnimatedFacebook";
 import { LiveStatusBadge } from "@/components/contact/LiveStatusBadge";
 import { toWhatsAppLink } from "@/lib/whatsapp";
-import { CONTACT_EMAIL, CONTACT_PHONES, WHATSAPP_PHONE } from "@/lib/contactInfo";
+import { CONTACT_EMAILS, CONTACT_PHONES, WHATSAPP_PHONE, SOCIAL_LINKS } from "@/lib/contactInfo";
+
+const socialIcons = { instagram: AnimatedInstagram, facebook: AnimatedFacebook } as const;
 import { useParallax } from "@/hooks/useParallax";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -118,7 +122,7 @@ export function ContactHero({ learnerCount }: { learnerCount: number }) {
             Call now
           </motion.a>
           <motion.a
-            href={`mailto:${CONTACT_EMAIL}`}
+            href={`mailto:${CONTACT_EMAILS[0].email}`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface/85 px-5 py-3 text-sm font-semibold text-foreground/85 shadow-[var(--shadow-soft)] backdrop-blur-sm sm:px-6 sm:py-3.5"
@@ -126,6 +130,31 @@ export function ContactHero({ learnerCount }: { learnerCount: number }) {
             <AnimatedMail className="h-4.5 w-4.5" />
             Email us
           </motion.a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5, ease: EASE }}
+          className="mt-5 flex items-center justify-center gap-4"
+        >
+          {SOCIAL_LINKS.map((s) => {
+            const Icon = socialIcons[s.key];
+            return (
+              <motion.a
+                key={s.key}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`MyLoginn on ${s.label}`}
+                whileHover={{ scale: 1.15, y: -3 }}
+                whileTap={{ scale: 0.9 }}
+                className="inline-flex"
+              >
+                <Icon className="h-7 w-7" />
+              </motion.a>
+            );
+          })}
         </motion.div>
 
         <motion.div

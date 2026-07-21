@@ -15,6 +15,8 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { OtpInput } from "@/components/ui/OtpInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { FIREBASE_PHONE_AUTH_ENABLED } from "@/lib/firebaseConfig";
+import { useFirebasePhoneOtp, FIREBASE_RECAPTCHA_CONTAINER_ID } from "@/lib/useFirebasePhoneOtp";
 import { AnimatedLock } from "@/components/ui/icons/AnimatedLock";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
@@ -81,7 +83,9 @@ export default function LoginPage() {
   const [cooldown, setCooldown] = useState(0);
   const [devCode, setDevCode] = useState<string | null>(null);
 
+  const firebasePhone = useFirebasePhoneOtp();
   const identifier = channel === "phone" ? phone : otpEmail.trim().toLowerCase();
+  const usingFirebasePhone = channel === "phone" && FIREBASE_PHONE_AUTH_ENABLED;
 
   const {
     register,
@@ -136,6 +140,13 @@ export default function LoginPage() {
     setDevCode(null);
     setRequesting(true);
     try {
+      if (usingFirebasePhone) {
+        await firebasePhone.sendCode(identifier);
+        setOtp("");
+        setOtpStep("verify");
+        setCooldown(30);
+        return;
+      }
       const res = await fetch("/api/auth/otp/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,6 +162,8 @@ export default function LoginPage() {
       setOtpStep("verify");
       setDevCode(json.devCode ?? null);
       setCooldown(30);
+    } catch {
+      setOtpError(usingFirebasePhone ? "Couldn't send verification SMS. Please try again." : "Something went wrong.");
     } finally {
       setRequesting(false);
     }
@@ -160,6 +173,21 @@ export default function LoginPage() {
     setOtpError(null);
     setVerifying(true);
     try {
+      if (usingFirebasePhone) {
+        const idToken = await firebasePhone.confirmCode(code);
+        const res = await fetch("/api/auth/otp/phone-confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken, purpose: "login" }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setOtpError(json.error ?? "Invalid code");
+          return;
+        }
+        celebrateAndGo(json.user.role);
+        return;
+      }
       const res = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -171,6 +199,8 @@ export default function LoginPage() {
         return;
       }
       celebrateAndGo(json.user.role);
+    } catch {
+      setOtpError("Incorrect or expired code. Please try again.");
     } finally {
       setVerifying(false);
     }
@@ -211,6 +241,7 @@ export default function LoginPage() {
         },
       ]}
     >
+      {FIREBASE_PHONE_AUTH_ENABLED && <div id={FIREBASE_RECAPTCHA_CONTAINER_ID} />}
       <AnimatePresence mode="wait">
         {success ? (
           <motion.div
@@ -321,16 +352,21 @@ export default function LoginPage() {
                     </Button>
                   </motion.div>
 
-                  <motion.p variants={itemVariants} className="text-center text-xs text-muted">
-                    Forgot your password?{" "}
-                    <button
-                      type="button"
-                      onClick={() => switchMode("otp")}
-                      className="cursor-pointer font-medium text-brand-500 hover:underline"
-                    >
-                      Log in with an OTP instead
-                    </button>
-                  </motion.p>
+                  <motion.div variants={itemVariants} className="flex flex-col items-center gap-1.5 text-center text-xs text-muted">
+                    <Link href="/forgot-password" className="font-medium text-brand-500 hover:underline">
+                      Forgot your password?
+                    </Link>
+                    <p>
+                      Or{" "}
+                      <button
+                        type="button"
+                        onClick={() => switchMode("otp")}
+                        className="cursor-pointer font-medium text-brand-500 hover:underline"
+                      >
+                        log in with an OTP instead
+                      </button>
+                    </p>
+                  </motion.div>
                 </motion.form>
               ) : (
                 <motion.div

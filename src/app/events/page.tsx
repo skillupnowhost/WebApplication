@@ -27,20 +27,21 @@ export default async function EventsPage() {
   const categories = [...new Set(events.map((e) => e.category).filter(Boolean))];
 
   return (
-    <Section className="overflow-hidden pt-14 sm:pt-16">
-      <Container>
-        <Breadcrumbs items={[{ label: "Events" }]} className="mb-6" />
-        <EventsHero
-          upcomingCount={upcomingCount}
-          totalCount={events.length}
-          categories={categories}
-          categoryCount={categories.length}
-        />
+    <>
+      <EventsHero
+        upcomingCount={upcomingCount}
+        totalCount={events.length}
+        categories={categories}
+        categoryCount={categories.length}
+      />
 
-        <div className="mt-14 sm:mt-16">
+      <Section className="overflow-hidden pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Events" }]} className="mb-6" />
+
           <EventsExplorer events={events} />
-        </div>
-      </Container>
-    </Section>
+        </Container>
+      </Section>
+    </>
   );
 }

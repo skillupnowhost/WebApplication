@@ -109,36 +109,39 @@ export default async function TutoringPage() {
   }));
 
   return (
-    <Section className="overflow-hidden pt-14 sm:pt-14">
-      <Container>
-        <Breadcrumbs items={[{ label: "Tutoring" }]} className="mb-6" />
-        <TutoringHero tutors={tutorCards} sessionsBooked={sessionsBooked} />
+    <>
+      <TutoringHero tutors={tutorCards} sessionsBooked={sessionsBooked} />
 
-        <Reveal className="mt-16 sm:mt-20">
-          <h2 className="text-center text-xl font-semibold sm:text-2xl">Why learn with MyLoginn tutors</h2>
-          <FeatureBentoGrid
-            features={whyFeatures}
-            highlight={{ value: sessionsBooked, suffix: "+", label: "sessions booked via MyLoginn" }}
-          />
-        </Reveal>
+      <Section className="overflow-hidden pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Tutoring" }]} className="mb-6" />
 
-        <div id="tutors" className="mt-16 scroll-mt-24 sm:mt-20">
-          <TutoringExplorer tutors={tutorCards} isLoggedIn={!!user} />
-        </div>
+          <Reveal className="mt-2 sm:mt-4">
+            <h2 className="text-center text-xl font-semibold sm:text-2xl">Why learn with MyLoginn tutors</h2>
+            <FeatureBentoGrid
+              features={whyFeatures}
+              highlight={{ value: sessionsBooked, suffix: "+", label: "sessions booked via MyLoginn" }}
+            />
+          </Reveal>
 
-        <div className="mt-14">
-          <UpcomingClasses classes={upcomingClasses} isLoggedIn={!!user} />
-        </div>
+          <div id="tutors" className="mt-16 scroll-mt-24 sm:mt-20">
+            <TutoringExplorer tutors={tutorCards} isLoggedIn={!!user} />
+          </div>
 
-        <Reveal className="mt-16 sm:mt-20">
-          <HowItWorksTimeline title="How tutoring works" steps={bookingSteps} className="mt-0" />
-        </Reveal>
+          <div className="mt-14">
+            <UpcomingClasses classes={upcomingClasses} isLoggedIn={!!user} />
+          </div>
 
-        <Reveal className="mt-16 sm:mt-20">
-          <h2 className="text-xl font-semibold">Frequently asked questions</h2>
-          <FaqAccordion items={faqs} className="mt-6" />
-        </Reveal>
-      </Container>
-    </Section>
+          <Reveal className="mt-16 sm:mt-20">
+            <HowItWorksTimeline title="How tutoring works" steps={bookingSteps} className="mt-0" />
+          </Reveal>
+
+          <Reveal className="mt-16 sm:mt-20">
+            <h2 className="text-xl font-semibold">Frequently asked questions</h2>
+            <FaqAccordion items={faqs} className="mt-6" />
+          </Reveal>
+        </Container>
+      </Section>
+    </>
   );
 }

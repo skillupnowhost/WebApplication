@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { AboutHero } from "@/components/about/AboutHero";
-import { LeadershipSection, type Leader } from "@/components/about/LeadershipSection";
+import { CompanyStatsSection } from "@/components/about/CompanyStatsSection";
+import { TeamSection, type Leader } from "@/components/about/TeamSection";
 import { StaffSection } from "@/components/about/StaffSection";
 import { PartnersSection } from "@/components/about/PartnersSection";
 import { ClientsSection } from "@/components/about/ClientsSection";
@@ -9,12 +10,22 @@ export const metadata = { title: "About Us — MyLoginn" };
 
 export const dynamic = "force-dynamic";
 
-function toLeader(m: { id: string; name: string; role: string; bio: string; experienceYears: number | null; photoUrl: string | null; linkedinUrl: string | null }): Leader {
+function toLeader(m: {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  category: "FOUNDER" | "CEO" | "STAFF";
+  experienceYears: number | null;
+  photoUrl: string | null;
+  linkedinUrl: string | null;
+}): Leader {
   return {
     id: m.id,
     name: m.name,
     role: m.role,
     bio: m.bio,
+    category: m.category,
     experienceYears: m.experienceYears,
     photoUrl: m.photoUrl ?? "",
     linkedinUrl: m.linkedinUrl ?? "",
@@ -22,19 +33,32 @@ function toLeader(m: { id: string; name: string; role: string; bio: string; expe
 }
 
 export default async function AboutPage() {
-  const [content, offerings, team, partners, clients] = await Promise.all([
-    prisma.aboutContent.findUnique({ where: { id: "singleton" } }),
-    prisma.offering.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] }),
-    prisma.teamMember.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    prisma.partner.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    prisma.client.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-  ]);
+  const [content, offerings, team, partners, clients, courseCount, internshipCount, tutorCount, studentCount] =
+    await Promise.all([
+      prisma.aboutContent.findUnique({ where: { id: "singleton" } }),
+      prisma.offering.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] }),
+      prisma.teamMember.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+      prisma.partner.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+      prisma.client.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+      prisma.course.count(),
+      prisma.internship.count(),
+      prisma.tutor.count(),
+      prisma.user.count({ where: { role: "STUDENT" } }),
+    ]);
 
-  const founders = team.filter((t) => t.category === "FOUNDER").map(toLeader);
-  const ceo = team.find((t) => t.category === "CEO");
+  const leaders = team
+    .filter((t) => t.category === "FOUNDER" || t.category === "CEO")
+    .map(toLeader);
   const staff = team
     .filter((t) => t.category === "STAFF")
     .map((s) => ({ id: s.id, name: s.name, role: s.role, specialization: s.specialization ?? "", photoUrl: s.photoUrl ?? "" }));
+
+  const stats = [
+    { label: "Courses", value: courseCount },
+    { label: "Internships", value: internshipCount },
+    { label: "Mentors & Tutors", value: tutorCount },
+    { label: "Learners", value: studentCount },
+  ];
 
   return (
     <>
@@ -45,7 +69,8 @@ export default async function AboutPage() {
         mission={content?.mission ?? ""}
         offerings={offerings}
       />
-      <LeadershipSection founders={founders} ceo={ceo ? toLeader(ceo) : null} />
+      <CompanyStatsSection stats={stats} />
+      <TeamSection leaders={leaders} />
       <StaffSection staff={staff} />
       <PartnersSection
         partners={partners.map((p) => ({ id: p.id, name: p.name, logoUrl: p.logoUrl ?? "", websiteUrl: p.websiteUrl ?? "" }))}

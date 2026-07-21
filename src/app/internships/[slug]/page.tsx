@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { Reveal } from "@/components/ui/Reveal";
 import { ApplyForm } from "@/components/internships/ApplyForm";
 import { AnimatedMapPin } from "@/components/ui/icons/AnimatedMapPin";
 import { AnimatedClock } from "@/components/ui/icons/AnimatedClock";
@@ -31,14 +32,16 @@ export default async function InternshipDetailsPage({
   const deadline = internship.applyDeadline;
 
   return (
-    <Section className="pt-14 sm:pt-14">
-      <Container>
+    <Section className="relative overflow-hidden pt-14 sm:pt-14">
+      <div className="aurora-blob -left-24 top-0 h-72 w-72 bg-accent-400/20" aria-hidden />
+      <div className="aurora-blob aurora-blob-alt -right-20 top-32 h-64 w-64 bg-brand-400/15" aria-hidden />
+      <Container className="relative">
         <Breadcrumbs
           items={[{ label: "Internships", href: "/internships" }, { label: internship.title }]}
           className="mb-6"
         />
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <Reveal direction="up" className="lg:col-span-2">
             <Eyebrow>{internship.type} Internship</Eyebrow>
             <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">{internship.title}</h1>
             <p className="mt-2 text-muted">{internship.company}</p>
@@ -94,9 +97,9 @@ export default async function InternshipDetailsPage({
                 </a>
               </p>
             </div>
-          </div>
+          </Reveal>
 
-          <div>
+          <Reveal direction="up" delay={0.12}>
             <div className="lg:sticky lg:top-24">
               <ApplyForm
                 internshipId={internship.id}
@@ -104,7 +107,7 @@ export default async function InternshipDetailsPage({
                 alreadyApplied={!!existingApplication}
               />
             </div>
-          </div>
+          </Reveal>
         </div>
       </Container>
     </Section>

@@ -39,7 +39,20 @@ export function AdminClassesCalendar() {
     [data]
   );
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-border-soft bg-surface p-5 shadow-[var(--shadow-soft)]">
+        <div className="mx-auto flex w-full max-w-[300px] flex-col gap-4 sm:max-w-[320px]">
+          <span className="block h-4 w-32 animate-pulse rounded-full bg-surface-2" />
+          <div className="grid grid-cols-7 gap-1.5">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <span key={i} className="aspect-square w-full animate-pulse rounded-full bg-surface-2" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="rounded-2xl border border-border-soft bg-surface p-5 shadow-[var(--shadow-soft)]">
       <ClassCalendar classes={classes} variant="admin" />

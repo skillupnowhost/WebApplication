@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Section, Container } from "@/components/ui/Section";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
-import { AnimatedTrophy } from "@/components/ui/icons/AnimatedTrophy";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
+import { PillBadge } from "@/components/about/PillBadge";
 
 export type Client = { id: string; name: string; logoUrl: string; websiteUrl: string; description: string };
 
@@ -12,19 +12,17 @@ export function ClientsSection({ clients }: { clients: Client[] }) {
   if (clients.length === 0) return null;
 
   return (
-    <Section className="bg-surface-2/50">
+    <Section className="bg-[#FBF9F5] dark:bg-surface-2">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
             <div className="flex justify-center">
-              <Eyebrow>
-                <AnimatedTrophy className="h-4.5 w-4.5" />
-                Our clients
-              </Eyebrow>
+              <PillBadge>Our clients</PillBadge>
             </div>
           </Reveal>
           <Reveal delay={0.08}>
             <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Who we&apos;ve worked with</h2>
+            <div className="mx-auto mt-4 h-[3px] w-[80px] rounded-full brand-gradient-bg" />
           </Reveal>
         </div>
 
@@ -34,7 +32,7 @@ export function ClientsSection({ clients }: { clients: Client[] }) {
               <motion.div
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.25 }}
-                className="flex h-full flex-col rounded-2xl border border-border-soft bg-surface p-6 shadow-[var(--shadow-soft)] transition-shadow duration-300 hover:shadow-[var(--shadow-lift)]"
+                className="flex h-full flex-col rounded-2xl border border-border-soft bg-surface p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-brand-300 hover:shadow-[var(--shadow-lift)]"
               >
                 <div className="flex h-12 items-center">
                   {c.logoUrl ? (

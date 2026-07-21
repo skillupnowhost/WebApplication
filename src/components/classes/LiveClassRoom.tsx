@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 import { AnimatedRecordDot } from "@/components/ui/icons/AnimatedRecordDot";
 import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
+import { ConfirmDialog, useToast, type ConfirmState } from "@/components/ui/Modal";
 
 declare global {
   interface Window {
@@ -35,9 +36,11 @@ export function LiveClassRoom({
   displayName: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<InstanceType<NonNullable<Window["JitsiMeetExternalAPI"]>> | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
+  const [confirm, setConfirm] = useState<ConfirmState>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -120,6 +123,32 @@ export function LiveClassRoom({
     }
   }
 
+  function handleLeave() {
+    if (recordingState === "recording") {
+      setConfirm({
+        title: "Leave while recording?",
+        message: "This class is still being recorded. Leaving now stops the recording and uploads what's captured so far.",
+        confirmLabel: "Stop & leave",
+        tone: "danger",
+        onConfirm: () => {
+          stopRecording();
+          toast("success", "Recording stopped — uploading, then leaving.");
+          router.back();
+        },
+      });
+      return;
+    }
+    setConfirm({
+      title: "Leave this class?",
+      message: "You can rejoin anytime before the class ends.",
+      confirmLabel: "Leave class",
+      tone: "primary",
+      onConfirm: () => {
+        router.back();
+      },
+    });
+  }
+
   return (
     <div className="flex h-dvh flex-col bg-black">
       <Script src={`https://${JITSI_DOMAIN}/external_api.js`} onLoad={() => setScriptReady(true)} strategy="afterInteractive" />
@@ -149,7 +178,7 @@ export function LiveClassRoom({
               )}
             </AnimatePresence>
           )}
-          <Button size="sm" variant="ghost" onClick={() => router.back()} icon={<AnimatedClose className="h-4.5 w-4.5" />}>
+          <Button size="sm" variant="ghost" onClick={handleLeave} icon={<AnimatedClose className="h-4.5 w-4.5" />}>
             Leave
           </Button>
         </div>
@@ -162,6 +191,8 @@ export function LiveClassRoom({
       )}
 
       <div ref={containerRef} className="min-h-0 flex-1" />
+
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

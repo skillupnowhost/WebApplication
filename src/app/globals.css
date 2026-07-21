@@ -739,6 +739,114 @@ input[type="radio"],
   animation: luxe-streak 5.5s ease-in-out infinite;
 }
 
+/* ── "Built for outcomes" backdrop: a slow, layered light mesh distinct
+   from .mesh-hero-light — cooler cyan-leaning stops, mask-faded on every
+   edge so it never reads as a hard-edged panel at any viewport width. */
+@keyframes outcomes-drift {
+  0%, 100% { background-position: 0% 20%, 100% 10%, 55% 100%, 0 0; }
+  50% { background-position: 35% 65%, 65% 45%, 30% 65%, 0 0; }
+}
+.outcomes-mesh {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(40% 48% at 6% 12%, color-mix(in srgb, var(--brand-400) 22%, transparent) 0%, transparent 65%),
+    radial-gradient(36% 44% at 96% 6%, color-mix(in srgb, var(--accent-400) 20%, transparent) 0%, transparent 62%),
+    radial-gradient(48% 58% at 55% 108%, color-mix(in srgb, #c026d3 12%, transparent) 0%, transparent 65%),
+    linear-gradient(180deg, transparent 0%, var(--surface-2) 50%, transparent 100%);
+  background-size: 170% 170%, 160% 160%, 180% 180%, 100% 100%;
+  animation: outcomes-drift 22s ease-in-out infinite;
+  mask-image: radial-gradient(ellipse 92% 88% at 50% 40%, black 38%, transparent 92%);
+  -webkit-mask-image: radial-gradient(ellipse 92% 88% at 50% 40%, black 38%, transparent 92%);
+}
+
+/* ── "Ready to build" CTA panel backdrop: a deeper, multi-stop mesh that
+   replaces the old flat two-color diagonal gradient with real depth and
+   drift, while staying dark enough for white CTA text at every stop. */
+@keyframes cta-mesh-drift {
+  0%, 100% { background-position: 10% 25%, 90% 15%, 50% 100%, 85% 85%, 0 0; }
+  50% { background-position: 55% 70%, 35% 55%, 25% 30%, 40% 20%, 0 0; }
+}
+.cta-mesh {
+  background-color: #14103a;
+  background-image:
+    radial-gradient(60% 70% at 12% 18%, rgba(136, 116, 255, 0.75) 0%, transparent 62%),
+    radial-gradient(52% 62% at 90% 12%, rgba(34, 211, 238, 0.5) 0%, transparent 60%),
+    radial-gradient(62% 72% at 50% 102%, rgba(192, 38, 211, 0.32) 0%, transparent 65%),
+    radial-gradient(46% 56% at 92% 92%, rgba(89, 52, 240, 0.55) 0%, transparent 62%),
+    linear-gradient(160deg, #4726c4 0%, #6c4dff 45%, #0891b2 100%);
+  background-size: 180% 180%, 170% 170%, 190% 190%, 160% 160%, 100% 100%;
+  animation: cta-mesh-drift 20s ease-in-out infinite;
+}
+
+/* Hover sweep for primary/info buttons — same shimmer mechanism as
+   .card-shine, scoped to Button so every CTA on the site gets it. */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.4) 50%, transparent 62%);
+  background-size: 220% 100%;
+  background-position: 180% center;
+  transition: opacity 0.3s ease;
+}
+.btn-shine:hover::before {
+  opacity: 1;
+  animation: icon-thumb-shimmer 0.7s ease;
+}
+
+/* Reduced-radius glow ring for sm/md buttons — .glow-ring stays the
+   bigger lg-only treatment, this keeps every other button consistent
+   without overpowering small controls. */
+.glow-ring-sm {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-400) 55%, transparent);
+  transition: box-shadow 0.3s ease;
+}
+.glow-ring-sm:hover,
+.glow-ring-sm:focus-visible {
+  box-shadow: 0 0 16px 2px color-mix(in srgb, var(--accent-400) 40%, transparent),
+    0 0 28px 6px color-mix(in srgb, var(--brand-500) 24%, transparent);
+}
+
+/* ── ProcessTimeline connector: a continuously-flowing dash texture layered
+   on top of the scroll-drawn gradient fill, so the line reads as live
+   energy travelling through it rather than a flat static bar. */
+@keyframes timeline-flow-x {
+  from { background-position: 0 0; }
+  to { background-position: -28px 0; }
+}
+@keyframes timeline-flow-y {
+  from { background-position: 0 0; }
+  to { background-position: 0 -28px; }
+}
+.timeline-flow-x {
+  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 3px, transparent 3px 14px);
+  background-size: 28px 100%;
+  animation: timeline-flow-x 0.9s linear infinite;
+  mix-blend-mode: overlay;
+}
+.timeline-flow-y {
+  background-image: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0 3px, transparent 3px 14px);
+  background-size: 100% 28px;
+  animation: timeline-flow-y 0.9s linear infinite;
+  mix-blend-mode: overlay;
+}
+
+/* Glowing marker that rides the tip of the connector line as it draws in */
+.timeline-head {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #ffffff 0%, var(--accent-400) 55%, transparent 75%);
+  box-shadow: 0 0 10px 3px color-mix(in srgb, var(--accent-400) 70%, transparent),
+    0 0 20px 6px color-mix(in srgb, var(--brand-500) 40%, transparent);
+}
+
 /* ── Astrology module: celestial light surface system ──────────────
    A light, airy take on the cosmic theme that matches the rest of the
    site: pages stay on the white site background with soft violet
@@ -776,14 +884,120 @@ input[type="radio"],
   animation: celestial-drift 24s ease-in-out infinite;
 }
 
-/* Glass surface with a faint gold hairline glow, built on .glass-panel. */
+/* Glass surface with a faint gold hairline glow, built on .glass-panel.
+   The hover state is a separate ::after gradient ring (not a box-shadow
+   swap) so it doesn't fight the running celestial-border-pulse animation
+   on the base box-shadow. */
 .celestial-card {
   position: relative;
   background: var(--glass-bg);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid color-mix(in srgb, #d97706 22%, var(--glass-border));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 65%, transparent);
   animation: celestial-border-pulse 4s ease-in-out infinite;
+}
+.celestial-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  opacity: 0;
+  background: linear-gradient(135deg, #fde68a, #d97706 45%, var(--brand-400));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.celestial-card:hover::after {
+  opacity: 1;
+}
+
+/* Rotating conic sunburst — a soft "divine radiance" wash behind hero
+   content. Masked to a soft-edged disc so it reads as ambient glow, not
+   a hard pie chart. Pointer-events none, purely decorative. */
+@keyframes celestial-halo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.celestial-halo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+.celestial-halo::before {
+  content: "";
+  width: 140%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, #d97706 18%, transparent) 0deg,
+    transparent 28deg,
+    color-mix(in srgb, var(--brand-400) 15%, transparent) 95deg,
+    transparent 135deg,
+    color-mix(in srgb, #d97706 18%, transparent) 200deg,
+    transparent 245deg,
+    color-mix(in srgb, var(--brand-400) 13%, transparent) 305deg,
+    transparent 360deg
+  );
+  -webkit-mask-image: radial-gradient(circle, black 28%, transparent 65%);
+  mask-image: radial-gradient(circle, black 28%, transparent 65%);
+  animation: celestial-halo-spin 100s linear infinite;
+}
+
+/* Gopuram-style ornamental divider — hairline with a radiant diamond
+   centerpiece, used to break sections with a temple-motif flourish
+   instead of bare whitespace. */
+.celestial-divider {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, #d97706 45%, transparent) 50%, transparent);
+}
+.celestial-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: linear-gradient(135deg, #fde68a, #d97706);
+  box-shadow: 0 0 10px 2px color-mix(in srgb, #d97706 55%, transparent);
+}
+
+/* Circular icon badge with a slow-rotating dashed ring — a small yantra
+   motif that wraps each service icon on the astrology hub. */
+.celestial-icon-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #fde68a 45%, transparent),
+    color-mix(in srgb, var(--brand-100) 65%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, #d97706 26%, transparent);
+}
+.celestial-icon-badge::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 1px dashed color-mix(in srgb, #d97706 32%, transparent);
+  animation: celestial-halo-spin 34s linear infinite;
+}
+.group:hover .celestial-icon-badge::before {
+  border-color: color-mix(in srgb, #d97706 55%, transparent);
 }
 
 /* Deep-gold gradient text-clip, analogous to .brand-gradient-text —
@@ -797,8 +1011,12 @@ input[type="radio"],
 
 /* Twinkling gold-and-violet star dust — colored (not white) so it reads
    on the light page. Position a parent with overflow-hidden and drop
-   this in as an absolutely-positioned layer. */
-.starfield {
+   this in as an absolutely-positioned layer.
+   NOTE: this is a distinct class from the neutral `.starfield` above —
+   astrology pages opt into this warm-toned variant explicitly; the plain
+   white-dot `.starfield` stays the default everywhere else (hero, CTA,
+   testimonials). Keep these two selectors separate. */
+.starfield-celestial {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -814,7 +1032,7 @@ input[type="radio"],
     radial-gradient(1.6px 1.6px at 55% 88%, #f59e0b 0%, transparent 60%);
   animation: star-twinkle 3.4s ease-in-out infinite;
 }
-.starfield::after {
+.starfield-celestial::after {
   content: "";
   position: absolute;
   inset: 0;

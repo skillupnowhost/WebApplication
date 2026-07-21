@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "@/components/admin/Modal";
+import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";

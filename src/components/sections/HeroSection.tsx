@@ -26,9 +26,9 @@ const heroPhrases = [
 ];
 
 const stats: { iconKey: CourseIconKey; value: string; label: string; ring: string }[] = [
-  { iconKey: "student", value: "50k+", label: "Learners upskilled", ring: "border-brand-400/50 text-brand-600 dark:border-brand-300/40 dark:text-brand-300" },
-  { iconKey: "career", value: "1,200+", label: "Internships placed", ring: "border-teal-400/50 text-teal-600 dark:border-teal-300/40 dark:text-teal-300" },
-  { iconKey: "comm", value: "98%", label: "Mentor satisfaction", ring: "border-amber-400/50 text-amber-600 dark:border-amber-300/40 dark:text-amber-300" },
+  { iconKey: "student", value: "AI-personalized", label: "Learning paths", ring: "border-brand-400/50 text-brand-600 dark:border-brand-300/40 dark:text-brand-300" },
+  { iconKey: "career", value: "Real", label: "Internship placements", ring: "border-teal-400/50 text-teal-600 dark:border-teal-300/40 dark:text-teal-300" },
+  { iconKey: "comm", value: "Live", label: "Mentor 1:1 support", ring: "border-amber-400/50 text-amber-600 dark:border-amber-300/40 dark:text-amber-300" },
 ];
 
 export function HeroSection() {

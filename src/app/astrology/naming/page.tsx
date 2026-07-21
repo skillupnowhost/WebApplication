@@ -8,7 +8,7 @@ export const metadata = { title: "Baby Naming — MyLoginn Astrology" };
 export default function AstrologyNamingPage() {
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
-      <div className="starfield" aria-hidden />
+      <div className="starfield-celestial" aria-hidden />
       <Container className="max-w-xl">
         <AstroBreadcrumbs items={[{ label: "Baby Naming" }]} />
         <div className="mb-8 text-center">

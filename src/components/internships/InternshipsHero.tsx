@@ -10,11 +10,17 @@ import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
 
 const MONOGRAMS = [
-  "linear-gradient(135deg,#7c3aed,#c084fc)",
-  "linear-gradient(135deg,#0ea5e9,#67e8f9)",
-  "linear-gradient(135deg,#059669,#6ee7b7)",
-  "linear-gradient(135deg,#e11d48,#fb923c)",
+  "linear-gradient(135deg,#7c3aed,#a855f7 55%,#c084fc)",
+  "linear-gradient(135deg,#0ea5e9,#38bdf8 55%,#67e8f9)",
+  "linear-gradient(135deg,#059669,#10b981 55%,#6ee7b7)",
+  "linear-gradient(135deg,#e11d48,#f43f5e 55%,#fb923c)",
 ];
+
+function companyInitials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.trim().slice(0, 2).toUpperCase();
+}
 
 export function InternshipsHero({
   total,
@@ -32,11 +38,14 @@ export function InternshipsHero({
   const cluster = companies.slice(0, 4).map((c, i) => (
     <span
       key={c}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white sm:h-9 sm:w-9"
-      style={{ background: MONOGRAMS[i % MONOGRAMS.length] }}
+      className="bg-size-200 flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold tracking-tight text-white sm:h-9 sm:w-9"
+      style={{
+        background: MONOGRAMS[i % MONOGRAMS.length],
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.18)",
+      }}
       title={c}
     >
-      {c.charAt(0).toUpperCase()}
+      {companyInitials(c)}
     </span>
   ));
 

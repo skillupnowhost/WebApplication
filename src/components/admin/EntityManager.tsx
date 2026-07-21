@@ -15,7 +15,7 @@ import { ToggleChipGroup } from "@/components/ui/ToggleChipGroup";
 import { useLiveData } from "@/components/admin/useLiveData";
 import { CategoryPicker } from "@/components/admin/CategoryPicker";
 import { DataTable, LiveIndicator, type Column, type Row } from "@/components/admin/DataTable";
-import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/admin/Modal";
+import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/ui/Modal";
 
 export type FieldDef = {
   name: string;
@@ -216,7 +216,7 @@ function ImageField({ field, value, onChange }: { field: FieldDef; value: unknow
     <div>
       <span className="mb-2 block text-sm font-medium">{field.label}</span>
       <div className="flex items-center gap-4 rounded-xl border border-border-soft bg-surface p-3">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2">
           {url ? (
             // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded, arbitrary-size asset
             <img src={url} alt="" className="h-full w-full object-cover" />

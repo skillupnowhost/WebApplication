@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -13,6 +12,7 @@ import { Textarea } from "@/components/ui/Input";
 import { ContentIcon } from "@/components/ui/ContentIcon";
 import { CourseIconThumb } from "@/components/courses/CourseIconThumb";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
+import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
 import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
 import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
 import { AnimatedGraduation } from "@/components/ui/icons/AnimatedGraduation";
@@ -254,7 +254,7 @@ function BookingModal({
             </div>
           </div>
           <button onClick={onClose} className="group shrink-0 cursor-pointer rounded-full p-1.5 transition-colors hover:bg-surface-2">
-            <X className="h-5.5 w-5.5 transition-transform duration-300 group-hover:rotate-90" />
+            <AnimatedClose className="h-5.5 w-5.5" />
           </button>
         </div>
 

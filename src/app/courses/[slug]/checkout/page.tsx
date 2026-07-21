@@ -23,8 +23,10 @@ export default async function CheckoutPage({
   if (enrollment) redirect(`/courses/${slug}`);
 
   return (
-    <Section className="pt-14 sm:pt-14">
-      <Container>
+    <Section className="relative overflow-hidden pt-14 sm:pt-14">
+      <div className="aurora-blob -left-16 top-8 h-56 w-56 bg-brand-400/15" aria-hidden />
+      <div className="aurora-blob aurora-blob-alt -right-16 bottom-0 h-56 w-56 bg-accent-400/12" aria-hidden />
+      <Container className="relative">
         <div className="mx-auto max-w-xl">
           <Breadcrumbs
             items={[

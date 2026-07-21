@@ -55,27 +55,30 @@ export default async function CoursesPage() {
   const avgRating = cards.length ? cards.reduce((sum, c) => sum + c.rating, 0) / cards.length : 0;
 
   return (
-    <Section className="overflow-hidden pt-14 sm:pt-16">
-      <Container>
-        <Breadcrumbs items={[{ label: "Courses" }]} className="mb-6" />
-        <CoursesHero
-          courseCount={cards.length}
-          studentsCount={studentsCount}
-          avgRating={avgRating}
-          categories={categories}
-          instructors={instructors}
-        />
+    <>
+      <CoursesHero
+        courseCount={cards.length}
+        studentsCount={studentsCount}
+        avgRating={avgRating}
+        categories={categories}
+        instructors={instructors}
+      />
 
-        <div id="course-catalog" className="mt-14 scroll-mt-24 sm:mt-16">
-          <CoursesExplorer
-            courses={cards}
-            enrolledIds={enrolledIds}
-            recommendedIds={recommendedIds}
-            trendingIds={trendingIds}
-            isLoggedIn={!!user}
-          />
-        </div>
-      </Container>
-    </Section>
+      <Section className="overflow-hidden pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Courses" }]} className="mb-6" />
+
+          <div id="course-catalog" className="scroll-mt-24">
+            <CoursesExplorer
+              courses={cards}
+              enrolledIds={enrolledIds}
+              recommendedIds={recommendedIds}
+              trendingIds={trendingIds}
+              isLoggedIn={!!user}
+            />
+          </div>
+        </Container>
+      </Section>
+    </>
   );
 }

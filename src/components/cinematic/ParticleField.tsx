@@ -12,11 +12,13 @@ export function ParticleField({
   count,
   radius = 7,
   colors = ["#6c4dff", "#22d3ee", "#a855f7"],
+  opacity = 0.55,
 }: {
   tier: DeviceTier;
   count?: number;
   radius?: number;
   colors?: string[];
+  opacity?: number;
 }) {
   const group = useRef<Group>(null);
   const n = count ?? (tier === "full" ? 260 : 110);
@@ -34,7 +36,7 @@ export function ParticleField({
           scale={[radius * 2, radius * 1.4, radius * 2]}
           size={2.4 + i}
           speed={0.25}
-          opacity={0.55}
+          opacity={opacity}
           color={color}
           noise={1.2}
         />

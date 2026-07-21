@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useMagnetic } from "@/hooks/useMagnetic";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger" | "info";
 type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
@@ -18,6 +18,7 @@ const variantClasses: Record<Variant, string> = {
   outline:
     "bg-transparent border border-brand-400 text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20",
   danger: "bg-danger text-white hover:brightness-110",
+  info: "bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[var(--shadow-lift)] hover:brightness-110 hover:-translate-y-0.5",
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -27,7 +28,13 @@ const sizeClasses: Record<Size, string> = {
 };
 
 const base =
-  "group inline-flex items-center justify-center rounded-full font-medium transition-all duration-300 ease-out active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none cursor-pointer select-none";
+  "group inline-flex items-center justify-center rounded-full font-medium transition-all duration-300 ease-out disabled:opacity-50 disabled:pointer-events-none cursor-pointer select-none";
+
+const hoverTap = {
+  whileHover: { scale: 1.035 },
+  whileTap: { scale: 0.96 },
+  transition: { type: "spring" as const, stiffness: 420, damping: 22 },
+};
 
 function ButtonIcon({ icon }: { icon: ReactNode }) {
   if (!icon) return null;
@@ -65,7 +72,14 @@ const MotionLink = motion.create(Link);
 
 export function Button(props: ButtonAsButton | ButtonAsLink) {
   const { variant = "primary", size = "md", className, children, icon, ...rest } = props;
-  const classes = cn(base, size === "lg" && "glow-ring", variantClasses[variant], sizeClasses[size], className);
+  const classes = cn(
+    base,
+    size === "lg" ? "glow-ring" : "glow-ring-sm",
+    (variant === "primary" || variant === "info") && "btn-shine",
+    variantClasses[variant],
+    sizeClasses[size],
+    className
+  );
   // Only large CTAs get the magnetic pull — keeps mousemove listeners off the
   // dozens of small buttons in tables/toolbars where it'd add cost for no effect.
   const magnetic = useMagnetic();
@@ -88,6 +102,7 @@ export function Button(props: ButtonAsButton | ButtonAsLink) {
         rel={rel}
         className={classes}
         ref={size === "lg" ? (magnetic.ref as React.Ref<HTMLAnchorElement>) : undefined}
+        {...hoverTap}
         {...magneticProps}
       >
         <ButtonIcon icon={icon} />
@@ -105,6 +120,7 @@ export function Button(props: ButtonAsButton | ButtonAsLink) {
       type={type}
       className={classes}
       ref={size === "lg" ? (magnetic.ref as React.Ref<HTMLButtonElement>) : undefined}
+      {...hoverTap}
       {...magneticProps}
       {...domProps}
     >

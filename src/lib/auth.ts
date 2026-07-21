@@ -31,6 +31,23 @@ export function verifySession(token: string): SessionPayload | null {
   }
 }
 
+const RESET_TOKEN_PURPOSE = "password-reset";
+
+/** Short-lived token proving a user just completed OTP verification for a password reset — separate from the session cookie so it can't be reused to log in. */
+export function signPasswordResetToken(userId: string) {
+  return jwt.sign({ userId, purpose: RESET_TOKEN_PURPOSE }, JWT_SECRET, { expiresIn: "10m" });
+}
+
+export function verifyPasswordResetToken(token: string): { userId: string } | null {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as { userId: string; purpose: string };
+    if (payload.purpose !== RESET_TOKEN_PURPOSE) return null;
+    return { userId: payload.userId };
+  } catch {
+    return null;
+  }
+}
+
 export async function setSessionCookie(payload: SessionPayload) {
   const token = signSession(payload);
   const store = await cookies();

@@ -40,21 +40,22 @@ export default async function InternshipsPage() {
     : 0;
 
   return (
-    <Section className="pt-14 sm:pt-16">
-      <Container>
-        <Breadcrumbs items={[{ label: "Internships" }]} className="mb-6" />
-        <InternshipsHero
-          total={cards.length}
-          paidCount={paidCount}
-          companyCount={companies.length}
-          avgWeeks={avgWeeks}
-          companies={companies}
-        />
+    <>
+      <InternshipsHero
+        total={cards.length}
+        paidCount={paidCount}
+        companyCount={companies.length}
+        avgWeeks={avgWeeks}
+        companies={companies}
+      />
 
-        <div className="mt-14 sm:mt-16">
+      <Section className="pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Internships" }]} className="mb-6" />
+
           <InternshipsExplorer internships={cards} appliedIds={[...appliedIds]} />
-        </div>
-      </Container>
-    </Section>
+        </Container>
+      </Section>
+    </>
   );
 }

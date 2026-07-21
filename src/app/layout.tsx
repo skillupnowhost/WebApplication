@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { HideOnAdmin } from "@/components/layout/HideOnAdmin";
 import { ScrollProgressBar } from "@/components/ui/ScrollProgressBar";
+import { ToastProvider } from "@/components/ui/Modal";
 import { getCurrentUser } from "@/lib/auth";
 
 const geistSans = Geist({
@@ -56,18 +57,20 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <MotionConfig reducedMotion="user">
           <ThemeProvider>
-            <HideOnAdmin>
-              <ScrollProgressBar />
-              <Navbar user={navUser} />
-            </HideOnAdmin>
-            <main className="flex-1">
-              <PageTransition>{children}</PageTransition>
-            </main>
-            <HideOnAdmin>
-              <Footer />
-              <MobileBottomNav loggedIn={Boolean(user)} />
-              <AiAgentWidget />
-            </HideOnAdmin>
+            <ToastProvider>
+              <HideOnAdmin>
+                <ScrollProgressBar />
+                <Navbar user={navUser} />
+              </HideOnAdmin>
+              <main className="flex-1">
+                <PageTransition>{children}</PageTransition>
+              </main>
+              <HideOnAdmin>
+                <Footer />
+                <MobileBottomNav loggedIn={Boolean(user)} />
+                <AiAgentWidget />
+              </HideOnAdmin>
+            </ToastProvider>
           </ThemeProvider>
         </MotionConfig>
       </body>

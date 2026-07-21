@@ -10,12 +10,13 @@ import { StreakCalendar } from "@/components/dashboard/StreakCalendar";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { ContentIcon } from "@/components/ui/ContentIcon";
 import { Avatar } from "@/components/ui/Avatar";
-import { ShieldAlert, Settings as SettingsIcon } from "lucide-react";
 import { AnimatedFlame } from "@/components/ui/icons/AnimatedFlame";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
 import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
+import { AnimatedWarning } from "@/components/ui/icons/AnimatedWarning";
+import { AnimatedSettings } from "@/components/ui/icons/AnimatedSettings";
 import type { CourseIconKey } from "@/lib/courseIcons";
 import { recordDailyActivity, getStreakSummary, toDayKey } from "@/lib/streak";
 import { canAccessRecording } from "@/lib/tutoring-access";
@@ -91,8 +92,10 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <Section className="pt-12 sm:pt-12">
-      <Container>
+    <Section className="relative overflow-hidden pt-12 sm:pt-12">
+      <div className="aurora-blob -left-24 -top-16 h-72 w-72 bg-brand-400/15" aria-hidden />
+      <div className="aurora-blob aurora-blob-alt -right-28 top-24 h-80 w-80 bg-accent-400/10" aria-hidden />
+      <Container className="relative">
         <FadeIn id="profile" className="scroll-mt-24 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Avatar name={user.name} avatarColor={user.avatarColor} avatarUrl={user.avatarUrl} size={56} className="rounded-2xl text-lg" />
@@ -110,7 +113,7 @@ export default async function DashboardPage() {
 
         {!user.emailVerified && (
           <FadeIn delay={0.05} className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-300/40 bg-amber-500/10 px-5 py-4 text-sm text-amber-700 dark:text-amber-300">
-            <ShieldAlert className="h-6.5 w-6.5 shrink-0 animate-pulse" />
+            <AnimatedWarning className="h-6.5 w-6.5 shrink-0" />
             Your email isn&apos;t verified yet. Check your signup verification step to unlock certificates.
           </FadeIn>
         )}
@@ -330,7 +333,7 @@ export default async function DashboardPage() {
 
         <FadeIn id="settings" delay={0.3} className="scroll-mt-24 mt-10">
           <h2 className="mb-4 flex items-center gap-2 font-semibold">
-            <SettingsIcon className="h-5.5 w-5.5 transition-transform duration-300 hover:scale-110 hover:rotate-45" /> Account settings
+            <AnimatedSettings className="h-5.5 w-5.5" /> Account settings
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Card className="flex items-center gap-3.5 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]">

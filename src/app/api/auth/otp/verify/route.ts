@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { otpVerifySchema } from "@/lib/validation";
 import { checkVerificationCode } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
-import { setSessionCookie } from "@/lib/auth";
+import { setSessionCookie, signPasswordResetToken } from "@/lib/auth";
 import { recordDailyActivity } from "@/lib/streak";
 
 export async function POST(req: Request) {
@@ -38,6 +38,14 @@ export async function POST(req: Request) {
     return NextResponse.json({
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
     });
+  }
+
+  if (purpose === "reset") {
+    const user = await prisma.user.findFirst({ where });
+    if (!user) {
+      return NextResponse.json({ error: "No account found for that contact." }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true, resetToken: signPasswordResetToken(user.id) });
   }
 
   return NextResponse.json({ ok: true });

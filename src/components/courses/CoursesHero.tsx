@@ -77,7 +77,7 @@ export function CoursesHero({
       clusterLabel="Taught by working industry instructors"
       stats={[
         { icon: AnimatedLayers, label: "Categories covered", value: categories.length },
-        { icon: AnimatedStar, label: "Avg. rating x10", value: Math.round(avgRating * 10) },
+        { icon: AnimatedStar, label: "Avg. rating", value: avgRating, decimals: 1 },
       ]}
       marqueeLabel="Explore categories"
       marqueeItems={marqueeItems}

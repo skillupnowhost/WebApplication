@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Section, Container } from "@/components/ui/Section";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
-import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { PillBadge } from "@/components/about/PillBadge";
 
 export type Partner = { id: string; name: string; logoUrl: string; websiteUrl: string };
 
@@ -16,14 +16,12 @@ export function PartnersSection({ partners }: { partners: Partner[] }) {
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
             <div className="flex justify-center">
-              <Eyebrow>
-                <AnimatedShield className="h-4.5 w-4.5" />
-                Our partners
-              </Eyebrow>
+              <PillBadge>Our partners</PillBadge>
             </div>
           </Reveal>
           <Reveal delay={0.08}>
             <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Trusted alliances</h2>
+            <div className="mx-auto mt-4 h-[3px] w-[80px] rounded-full brand-gradient-bg" />
           </Reveal>
         </div>
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Section, Container } from "@/components/ui/Section";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
-import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
+import { PillBadge } from "@/components/about/PillBadge";
 
 export type StaffMember = {
   id: string;
@@ -18,19 +18,17 @@ export function StaffSection({ staff }: { staff: StaffMember[] }) {
   if (staff.length === 0) return null;
 
   return (
-    <Section className="bg-surface-2/50">
+    <Section className="bg-[#FBF9F5] dark:bg-surface-2">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
             <div className="flex justify-center">
-              <Eyebrow>
-                <AnimatedUsers className="h-4.5 w-4.5" />
-                Our team
-              </Eyebrow>
+              <PillBadge>Our team</PillBadge>
             </div>
           </Reveal>
           <Reveal delay={0.08}>
             <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">The people behind MyLoginn</h2>
+            <div className="mx-auto mt-4 h-[3px] w-[80px] rounded-full brand-gradient-bg" />
           </Reveal>
         </div>
 
@@ -40,7 +38,7 @@ export function StaffSection({ staff }: { staff: StaffMember[] }) {
               <motion.div
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.25 }}
-                className="flex h-full items-center gap-4 rounded-2xl border border-border-soft bg-surface p-5 shadow-[var(--shadow-soft)] transition-shadow duration-300 hover:shadow-[var(--shadow-lift)]"
+                className="flex h-full items-center gap-4 rounded-2xl border border-border-soft bg-surface p-5 shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-brand-300 hover:shadow-[var(--shadow-lift)]"
               >
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2">
                   {s.photoUrl ? (

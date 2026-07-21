@@ -8,7 +8,7 @@ export const metadata = { title: "Shubha Muhurtham — MyLoginn Astrology" };
 export default function AstrologyMuhurthamPage() {
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
-      <div className="starfield" aria-hidden />
+      <div className="starfield-celestial" aria-hidden />
       <Container className="max-w-xl">
         <AstroBreadcrumbs items={[{ label: "Muhurtham" }]} />
         <div className="mb-8 text-center">

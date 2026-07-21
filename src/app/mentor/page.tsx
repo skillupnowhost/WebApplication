@@ -4,11 +4,11 @@ import { Section, Container } from "@/components/ui/Section";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconBadge } from "@/components/ui/IconBadge";
+import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
 import { AnimatedGraduation } from "@/components/ui/icons/AnimatedGraduation";
 import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 import { EntityManager } from "@/components/admin/EntityManager";
-import { ToastProvider } from "@/components/admin/Modal";
 import { mentorClassConfig } from "@/components/admin/entityConfigs";
 import { MentorProfileForm } from "@/components/mentor/MentorProfileForm";
 import { GoogleConnectCard } from "@/components/mentor/GoogleConnectCard";
@@ -64,9 +64,11 @@ export default async function MentorDashboardPage() {
   ];
 
   return (
-    <Section className="pt-12 sm:pt-12">
-      <Container>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <Section className="relative overflow-hidden pt-12 sm:pt-12">
+      <div className="aurora-blob -left-24 -top-16 h-72 w-72 bg-brand-400/15" aria-hidden />
+      <div className="aurora-blob aurora-blob-alt -right-28 top-24 h-80 w-80 bg-accent-400/10" aria-hidden />
+      <Container className="relative">
+        <Reveal className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Avatar name={user.name} avatarColor={user.avatarColor} avatarUrl={user.avatarUrl} size={56} className="rounded-2xl text-lg" />
             <div>
@@ -74,39 +76,39 @@ export default async function MentorDashboardPage() {
               <p className="text-sm text-muted">{tutor.subject} mentor · {user.email}</p>
             </div>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="mt-6">
+        <Reveal delay={0.05} className="mt-6">
           <GoogleConnectCard connected={Boolean(googleAccount)} returnTo="/mentor" />
-        </div>
+        </Reveal>
 
-        <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-4">
+        <RevealGroup className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-4" stagger={0.06}>
           {stats.map((s) => (
-            <Card key={s.label} className="flex items-center gap-3.5 p-5">
-              <IconBadge size="md">
-                <AnimatedStar className="h-7 w-7" />
-              </IconBadge>
-              <div>
-                <p className="text-xl font-semibold">{s.value}</p>
-                <p className="text-xs text-muted">{s.label}</p>
-              </div>
-            </Card>
+            <RevealItem key={s.label}>
+              <Card className="flex items-center gap-3.5 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]">
+                <IconBadge size="md">
+                  <AnimatedStar className="h-7 w-7" />
+                </IconBadge>
+                <div>
+                  <p className="text-xl font-semibold">{s.value}</p>
+                  <p className="text-xs text-muted">{s.label}</p>
+                </div>
+              </Card>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
 
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="flex flex-col gap-8 lg:col-span-2">
+          <Reveal delay={0.1} className="flex flex-col gap-8 lg:col-span-2">
             <div>
               <h2 className="mb-4 flex items-center gap-2 font-semibold">
                 <AnimatedVideoCamera className="h-5.5 w-5.5" /> My classes
               </h2>
-              <ToastProvider>
-                <EntityManager config={mentorClassConfig} />
-              </ToastProvider>
+              <EntityManager config={mentorClassConfig} />
             </div>
-          </div>
+          </Reveal>
 
-          <div className="flex flex-col gap-8">
+          <Reveal delay={0.15} className="flex flex-col gap-8">
             <div>
               <h2 className="mb-4 flex items-center gap-2 font-semibold">
                 <AnimatedGraduation className="h-5.5 w-5.5" /> Class calendar
@@ -115,10 +117,10 @@ export default async function MentorDashboardPage() {
                 <MentorClassesCalendar mentorName={user.name} />
               </Card>
             </div>
-          </div>
+          </Reveal>
         </div>
 
-        <div className="mt-10">
+        <Reveal delay={0.1} className="mt-10">
           <h2 className="mb-4 font-semibold">My profile</h2>
           <Card className="p-6">
             <MentorProfileForm
@@ -132,7 +134,7 @@ export default async function MentorDashboardPage() {
               }}
             />
           </Card>
-        </div>
+        </Reveal>
       </Container>
     </Section>
   );

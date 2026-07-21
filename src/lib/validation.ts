@@ -52,6 +52,24 @@ export const otpVerifySchema = z.object({
   code: z.string().length(6),
 });
 
+export const firebasePhoneConfirmSchema = z.object({
+  idToken: z.string().min(10),
+  purpose: z.enum(["signup", "login", "reset"]),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    resetToken: z.string().min(10),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your new password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
 export const leadSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name"),
   email: emailSchema,

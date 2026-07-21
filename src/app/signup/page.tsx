@@ -17,6 +17,8 @@ import { OtpInput } from "@/components/ui/OtpInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
+import { FIREBASE_PHONE_AUTH_ENABLED } from "@/lib/firebaseConfig";
+import { useFirebasePhoneOtp, FIREBASE_RECAPTCHA_CONTAINER_ID } from "@/lib/useFirebasePhoneOtp";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
@@ -96,7 +98,9 @@ export default function SignupPage() {
   });
 
   const passwordValue = watch("password") ?? "";
+  const firebasePhone = useFirebasePhoneOtp();
   const identifier = channel === "phone" ? phone : email;
+  const usingFirebasePhone = channel === "phone" && FIREBASE_PHONE_AUTH_ENABLED;
   // Progress bar only ever shows "Your details" / "Verify" / "Done" — both the
   // required primary channel and the optional secondary one count as "Verify".
   const displayStep: Step = step === "details" || step === "success" ? step : "verifyPrimary";
@@ -113,6 +117,11 @@ export default function SignupPage() {
     setDevCode(null);
     setRequesting(true);
     try {
+      if (nextChannel === "phone" && FIREBASE_PHONE_AUTH_ENABLED) {
+        await firebasePhone.sendCode(ident);
+        setCooldown(30);
+        return;
+      }
       const res = await fetch("/api/auth/otp/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,6 +135,10 @@ export default function SignupPage() {
       }
       setDevCode(json.devCode ?? null);
       setCooldown(30);
+    } catch {
+      setOtpError(
+        nextChannel === "phone" ? "Couldn't send verification SMS. Please try again." : "Something went wrong."
+      );
     } finally {
       setRequesting(false);
     }
@@ -170,15 +183,29 @@ export default function SignupPage() {
     setOtpError(null);
     setVerifying(true);
     try {
-      const res = await fetch("/api/auth/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, purpose: "signup", channel, code }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setOtpError(json.error ?? "Invalid code");
-        return;
+      if (usingFirebasePhone) {
+        const idToken = await firebasePhone.confirmCode(code);
+        const res = await fetch("/api/auth/otp/phone-confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken, purpose: "signup" }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setOtpError(json.error ?? "Invalid code");
+          return;
+        }
+      } else {
+        const res = await fetch("/api/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier, purpose: "signup", channel, code }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setOtpError(json.error ?? "Invalid code");
+          return;
+        }
       }
       if (step === "verifyPrimary") {
         // Primary (required) channel is verified — move on to the optional
@@ -191,6 +218,8 @@ export default function SignupPage() {
         return;
       }
       goToDashboard();
+    } catch {
+      setOtpError("Incorrect or expired code. Please try again.");
     } finally {
       setVerifying(false);
     }
@@ -236,6 +265,7 @@ export default function SignupPage() {
         },
       ]}
     >
+      {FIREBASE_PHONE_AUTH_ENABLED && <div id={FIREBASE_RECAPTCHA_CONTAINER_ID} />}
       {/* Step progress */}
       {step !== "success" && (
         <div className="mb-6">

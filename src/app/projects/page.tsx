@@ -24,21 +24,22 @@ export default async function ProjectsPage() {
   const students = [...new Set(showcaseProjects.map((p) => p.student))];
 
   return (
-    <Section className="pt-14 sm:pt-16">
-      <Container>
-        <Breadcrumbs items={[{ label: "Projects" }]} className="mb-6" />
-        <ProjectsHero
-          projectCount={showcaseProjects.length}
-          mentorCount={mentorCount}
-          categoryCount={categories.length}
-          categories={categories}
-          students={students}
-        />
+    <>
+      <ProjectsHero
+        projectCount={showcaseProjects.length}
+        mentorCount={mentorCount}
+        categoryCount={categories.length}
+        categories={categories}
+        students={students}
+      />
 
-        <div className="mt-14 sm:mt-16">
+      <Section className="pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Projects" }]} className="mb-6" />
+
           <ProjectsExplorer projects={showcaseProjects} />
-        </div>
-      </Container>
-    </Section>
+        </Container>
+      </Section>
+    </>
   );
 }

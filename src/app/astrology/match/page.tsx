@@ -8,7 +8,7 @@ export const metadata = { title: "Marriage compatibility — MyLoginn Astrology"
 export default function AstrologyMatchPage() {
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
-      <div className="starfield" aria-hidden />
+      <div className="starfield-celestial" aria-hidden />
       <Container className="max-w-3xl">
         <AstroBreadcrumbs items={[{ label: "Matching" }]} />
         <div className="mb-8 text-center">

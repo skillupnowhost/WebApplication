@@ -15,3 +15,30 @@ export const CONTACT_HOURS = "Mon–Sat, 9am–7pm IST";
 
 /** Machine-readable form of CONTACT_HOURS, in Asia/Kolkata — used to compute live open/closed status. */
 export const CONTACT_HOURS_RANGE = { startHour: 9, endHour: 19, days: [1, 2, 3, 4, 5, 6] } as const;
+
+/** The three public-facing inboxes, each routed to a different desk. Shown as separate links everywhere. */
+export const CONTACT_EMAILS = [
+  {
+    key: "general",
+    label: "General & Admissions",
+    email: "myloginntech@gmail.com",
+    description: "Courses, internships, tutoring & everyday questions",
+  },
+  {
+    key: "business",
+    label: "Business & Partnerships",
+    email: "mailloginn@gmail.com",
+    description: "Partnerships, bulk enrollment & official correspondence",
+  },
+  {
+    key: "astrology",
+    label: "Astrology",
+    email: "myloginnastrology@gmail.com",
+    description: "Consultations, birth charts & astrology bookings",
+  },
+] as const;
+
+export const SOCIAL_LINKS = [
+  { key: "instagram", label: "Instagram", handle: "@myloginntech", href: "https://instagram.com/myloginntech" },
+  { key: "facebook", label: "Facebook", handle: "MyLoginn Tech", href: "https://facebook.com/MyLoginnTech" },
+] as const;

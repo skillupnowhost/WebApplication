@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { ContentIcon } from "@/components/ui/ContentIcon";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
@@ -29,20 +29,31 @@ export type InternshipCardData = {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/* Monogram tile gradients — picked deterministically per company name. */
+/* Monogram tile gradients — picked deterministically per company name.
+   Three stops (not two) so `.bg-size-200`'s slow gradient-shift animation
+   has somewhere to travel, plus a matching glow tint for the drop shadow. */
 const MONOGRAMS = [
-  "linear-gradient(135deg,#7c3aed,#c084fc)",
-  "linear-gradient(135deg,#0ea5e9,#67e8f9)",
-  "linear-gradient(135deg,#059669,#6ee7b7)",
-  "linear-gradient(135deg,#e11d48,#fb923c)",
-  "linear-gradient(135deg,#4f46e5,#a5b4fc)",
-  "linear-gradient(135deg,#d97706,#fde047)",
+  { gradient: "linear-gradient(135deg,#7c3aed,#a855f7 55%,#c084fc)", glow: "rgba(124,58,237,0.38)" },
+  { gradient: "linear-gradient(135deg,#0ea5e9,#38bdf8 55%,#67e8f9)", glow: "rgba(14,165,233,0.38)" },
+  { gradient: "linear-gradient(135deg,#059669,#10b981 55%,#6ee7b7)", glow: "rgba(5,150,105,0.38)" },
+  { gradient: "linear-gradient(135deg,#e11d48,#f43f5e 55%,#fb923c)", glow: "rgba(225,29,72,0.38)" },
+  { gradient: "linear-gradient(135deg,#4f46e5,#6366f1 55%,#a5b4fc)", glow: "rgba(79,70,229,0.38)" },
+  { gradient: "linear-gradient(135deg,#d97706,#f59e0b 55%,#fde047)", glow: "rgba(217,119,6,0.38)" },
 ];
 
 function hashString(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
   return Math.abs(h);
+}
+
+/* Two-letter monogram (first letter of the first two words) reads as a much
+   more intentional, branded mark than a single initial — falls back to the
+   first two characters for one-word company names. */
+function companyInitials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.trim().slice(0, 2).toUpperCase();
 }
 
 /* Days remaining rendered as an animated progress ring (30-day apply window). */
@@ -103,6 +114,7 @@ export function InternshipCard({
   const urgent = daysLeft > 0 && daysLeft <= 5;
   const { rotateX, rotateY, spotlightBg, onMouseMove, onMouseLeave } = useTiltSpotlight();
   const monogram = MONOGRAMS[hashString(internship.company) % MONOGRAMS.length];
+  const initials = companyInitials(internship.company);
 
   return (
     <motion.div
@@ -150,10 +162,20 @@ export function InternshipCard({
               {/* Header: monogram + company/location + deadline ring */}
               <div className="flex items-start gap-3.5">
                 <span
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white shadow-[var(--shadow-soft)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
-                  style={{ background: monogram }}
+                  className="bg-size-200 relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-base font-bold tracking-tight text-white transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
+                  style={
+                    {
+                      background: monogram.gradient,
+                      boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.2), 0 8px 18px -6px ${monogram.glow}`,
+                    } as CSSProperties
+                  }
                 >
-                  {internship.company.charAt(0).toUpperCase()}
+                  <span
+                    className="pointer-events-none absolute inset-0"
+                    style={{ background: "radial-gradient(120% 120% at 22% 14%, rgba(255,255,255,0.55), transparent 58%)" }}
+                    aria-hidden
+                  />
+                  <span className="relative">{initials}</span>
                 </span>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <p className="truncate text-sm font-semibold text-foreground/90">{internship.company}</p>
