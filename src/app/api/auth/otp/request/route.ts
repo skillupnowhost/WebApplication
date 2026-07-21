@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
   const { identifier, purpose, channel } = parsed.data;
 
-  if (purpose === "login") {
+  if (purpose === "login" || purpose === "reset") {
     const where = channel === "phone" ? { phone: identifier } : { email: identifier };
     const user = await prisma.user.findFirst({ where });
     if (!user) {

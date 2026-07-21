@@ -11,6 +11,7 @@ export function StatCounter({
   suffix = "",
   duration = 1.6,
   className,
+  immediate = false,
 }: {
   from?: number;
   to: number;
@@ -19,9 +20,17 @@ export function StatCounter({
   suffix?: string;
   duration?: number;
   className?: string;
+  /** Skip the scroll-into-view gate and start counting as soon as this
+      mounts. Use for stats that live inside an already-choreographed
+      entrance (e.g. a hero) — without this, a stat positioned just below
+      the fold can sit frozen at 0 while an identical value shown higher on
+      the same screen has already finished counting up, which reads as
+      broken/fake data rather than a deferred reveal. */
+  immediate?: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-10% 0px" });
+  const inViewDetected = useInView(ref, { once: true, margin: "-10% 0px" });
+  const inView = immediate || inViewDetected;
   const [value, setValue] = useState(from);
 
   useEffect(() => {

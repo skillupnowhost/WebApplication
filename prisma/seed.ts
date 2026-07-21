@@ -229,6 +229,7 @@ async function main() {
       rating: 4.9,
       avatarColor: "#6c4dff",
       boards: JSON.stringify(["CBSE", "ICSE"]),
+      grades: JSON.stringify(["6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade", "11th Grade", "12th Grade"]),
     },
     {
       name: "Vikram Rao",
@@ -239,6 +240,7 @@ async function main() {
       rating: 4.8,
       avatarColor: "#06b6d4",
       boards: JSON.stringify(["CBSE", "State Board"]),
+      grades: JSON.stringify(["9th Grade", "10th Grade", "11th Grade", "12th Grade"]),
     },
     {
       name: "Divya Menon",
@@ -249,6 +251,7 @@ async function main() {
       rating: 4.9,
       avatarColor: "#f97316",
       boards: JSON.stringify(["CBSE", "State Board", "ICSE"]),
+      grades: JSON.stringify(["1st Grade", "2nd Grade", "3rd Grade", "4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade"]),
     },
     {
       name: "Karthik Subramaniam",
@@ -259,6 +262,7 @@ async function main() {
       rating: 4.8,
       avatarColor: "#16a34a",
       boards: JSON.stringify(["CBSE"]),
+      grades: JSON.stringify(["6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade"]),
     },
     {
       name: "Fatima Sheikh",
@@ -269,6 +273,7 @@ async function main() {
       rating: 4.7,
       avatarColor: "#e11d48",
       boards: JSON.stringify(["CBSE", "State Board"]),
+      grades: JSON.stringify(["9th Grade", "10th Grade", "11th Grade", "12th Grade"]),
     },
   ];
 
@@ -276,6 +281,54 @@ async function main() {
   for (const tutor of tutors) {
     const existing = await prisma.tutor.findFirst({ where: { name: tutor.name } });
     tutorRecords.push(existing ?? (await prisma.tutor.create({ data: tutor })));
+  }
+
+  // Link the seeded mentor login to the first tutor profile so /mentor has real data to show.
+  const mentorTutor = tutorRecords[0];
+  if (mentorTutor.userId !== mentor.id) {
+    await prisma.tutor.update({ where: { id: mentorTutor.id }, data: { userId: mentor.id } });
+  }
+
+  const upcomingSlug = "myloginn-seed-upcoming";
+  let upcomingClass = await prisma.tutorClass.findUnique({ where: { roomSlug: upcomingSlug } });
+  if (!upcomingClass) {
+    upcomingClass = await prisma.tutorClass.create({
+      data: {
+        tutorId: mentorTutor.id,
+        subject: mentorTutor.subject,
+        title: `${mentorTutor.subject} — Live Doubt Clearing Session`,
+        description: "Join for a live interactive doubt-clearing session covering this week's topics.",
+        startsAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
+        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2 + 1000 * 60 * 60),
+        roomSlug: upcomingSlug,
+        joinUrl: `https://meet.jit.si/${upcomingSlug}`,
+        recordingAccessTier: "FREE",
+      },
+    });
+  }
+  await prisma.classBooking.upsert({
+    where: { classId_userId: { classId: upcomingClass.id, userId: student.id } },
+    update: {},
+    create: { classId: upcomingClass.id, userId: student.id },
+  });
+
+  const pastSlug = "myloginn-seed-past";
+  const pastClass = await prisma.tutorClass.findUnique({ where: { roomSlug: pastSlug } });
+  if (!pastClass) {
+    await prisma.tutorClass.create({
+      data: {
+        tutorId: mentorTutor.id,
+        subject: mentorTutor.subject,
+        title: `${mentorTutor.subject} — Foundations Recap`,
+        description: "A recorded recap session covering foundational concepts.",
+        startsAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+        endsAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3 + 1000 * 60 * 60),
+        status: "COMPLETED",
+        roomSlug: pastSlug,
+        joinUrl: `https://meet.jit.si/${pastSlug}`,
+        recordingAccessTier: "PREMIUM",
+      },
+    });
   }
 
   const internships = [

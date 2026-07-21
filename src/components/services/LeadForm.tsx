@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Radio } from "lucide-react";
 import { AnimatedChat } from "@/components/ui/icons/AnimatedChat";
 import { leadSchema, type LeadInput } from "@/lib/validation";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/Card";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
+import { useToast } from "@/components/ui/Modal";
 import { cn } from "@/lib/cn";
 
 function FieldRow({
@@ -35,7 +35,7 @@ function FieldRow({
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
               className="text-success"
             >
-              <CheckCircle2 className="h-4 w-4" />
+              <AnimatedSuccess once className="h-4 w-4" />
             </motion.span>
           )}
         </AnimatePresence>
@@ -48,15 +48,20 @@ function FieldRow({
 export function LeadForm({
   service,
   variant = "default",
+  title = "Get a free growth consultation",
+  submitLabel = "Request consultation",
 }: {
   service: string;
   variant?: "default" | "dynamic";
+  title?: string;
+  submitLabel?: string;
 }) {
   const [submitted, setSubmitted] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [requestsToday, setRequestsToday] = useState<number | null>(null);
+  const toast = useToast();
 
   const isDynamic = variant === "dynamic";
 
@@ -102,11 +107,14 @@ export function LeadForm({
       });
       const json = await res.json();
       if (!res.ok) {
-        setServerError(json.error ?? "Something went wrong");
+        const message = json.error ?? "Something went wrong";
+        setServerError(message);
+        toast("error", message);
         return;
       }
       setWhatsappLink(json.whatsappLink);
       setSubmitted(true);
+      toast("success", "Message sent — we'll be in touch soon.");
     } finally {
       setLoading(false);
     }
@@ -133,10 +141,13 @@ export function LeadForm({
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="relative flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold">Get a free growth consultation</h3>
+            <h3 className="text-lg font-semibold">{title}</h3>
             {isDynamic && (
               <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">
-                <Radio className="h-3 w-3 animate-pulse" strokeWidth={2.5} />
+                <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+                </span>
                 Specialists online
               </span>
             )}
@@ -215,7 +226,7 @@ export function LeadForm({
             className={cn("w-full", isDynamic && "bg-size-200")}
             disabled={loading}
           >
-            {loading ? "Sending…" : "Request consultation"}
+            {loading ? "Sending…" : submitLabel}
           </Button>
         </form>
       )}

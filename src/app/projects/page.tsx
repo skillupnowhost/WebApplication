@@ -1,4 +1,5 @@
 import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { prisma } from "@/lib/prisma";
 import type { ShowcaseProject } from "@/lib/showcaseProjects";
 import { ProjectsHero } from "@/components/projects/ProjectsHero";
@@ -19,21 +20,26 @@ export default async function ProjectsPage() {
   }));
 
   const mentorCount = new Set(showcaseProjects.map((p) => p.mentor)).size;
-  const categoryCount = new Set(showcaseProjects.flatMap((p) => p.tags)).size;
+  const categories = [...new Set(showcaseProjects.flatMap((p) => p.tags))];
+  const students = [...new Set(showcaseProjects.map((p) => p.student))];
 
   return (
-    <Section className="pt-14 sm:pt-16">
-      <Container>
-        <ProjectsHero
-          projectCount={showcaseProjects.length}
-          mentorCount={mentorCount}
-          categoryCount={categoryCount}
-        />
+    <>
+      <ProjectsHero
+        projectCount={showcaseProjects.length}
+        mentorCount={mentorCount}
+        categoryCount={categories.length}
+        categories={categories}
+        students={students}
+      />
 
-        <div className="mt-14 sm:mt-16">
+      <Section className="pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Projects" }]} className="mb-6" />
+
           <ProjectsExplorer projects={showcaseProjects} />
-        </div>
-      </Container>
-    </Section>
+        </Container>
+      </Section>
+    </>
   );
 }

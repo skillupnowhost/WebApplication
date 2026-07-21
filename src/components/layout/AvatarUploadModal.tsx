@@ -2,20 +2,25 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Upload, X, RotateCcw, Check } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/ui/Modal";
+import { AnimatedUploadCloud } from "@/components/ui/icons/AnimatedUploadCloud";
+import { AnimatedCameraCapture } from "@/components/ui/icons/AnimatedCameraCapture";
+import { AnimatedWarning } from "@/components/ui/icons/AnimatedWarning";
 
 const MAX_SIZE = 4 * 1024 * 1024;
 const ACCEPTED = ["image/png", "image/jpeg", "image/webp"];
 
 export function AvatarUploadModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
+  const toast = useToast();
   const [mode, setMode] = useState<"choose" | "camera">("choose");
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState<ConfirmState>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +36,21 @@ export function AvatarUploadModal({ open, onClose }: { open: boolean; onClose: (
   function handleClose() {
     reset();
     onClose();
+  }
+
+  function discardPreview() {
+    setConfirm({
+      title: "Discard this photo?",
+      message: "You'll lose this preview and go back to choosing a new one.",
+      confirmLabel: "Discard",
+      tone: "danger",
+      onConfirm: () => {
+        setPreview(null);
+        setFile(null);
+        setError(null);
+        setMode("choose");
+      },
+    });
   }
 
   function stopCamera() {
@@ -91,12 +111,6 @@ export function AvatarUploadModal({ open, onClose }: { open: boolean; onClose: (
     setPreview(URL.createObjectURL(f));
   }
 
-  function retake() {
-    setPreview(null);
-    setFile(null);
-    setMode("choose");
-  }
-
   async function handleSave() {
     if (!file) return;
     setSaving(true);
@@ -107,9 +121,12 @@ export function AvatarUploadModal({ open, onClose }: { open: boolean; onClose: (
       const res = await fetch("/api/account/avatar", { method: "POST", body: formData });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "Couldn't update your photo");
+        const message = json.error ?? "Couldn't update your photo";
+        setError(message);
+        toast("error", message);
         return;
       }
+      toast("success", "Profile photo updated");
       handleClose();
       router.refresh();
     } finally {
@@ -118,93 +135,111 @@ export function AvatarUploadModal({ open, onClose }: { open: boolean; onClose: (
   }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm"
-          onClick={handleClose}
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            onClick={(e) => e.stopPropagation()}
-            className="glass-panel w-full max-w-sm rounded-2xl p-6"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Update profile photo</h2>
-              <button onClick={handleClose} className="group cursor-pointer rounded-full p-1.5 hover:bg-surface-2" aria-label="Close">
-                <X className="h-5.5 w-5.5 transition-transform duration-300 group-hover:rotate-90" />
-              </button>
-            </div>
+    <>
+      <Modal open={open} onClose={handleClose} title="Update profile photo" subtitle="A sharp, well-lit photo helps mentors and peers recognize you">
+        <div className="flex flex-col items-center gap-5">
+          {preview ? (
+            <>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                className="relative"
+              >
+                <div className="absolute -inset-2 rounded-full bg-[conic-gradient(from_0deg,var(--brand-500),var(--accent-500),var(--brand-500))] opacity-70 blur-md" />
+                {/* eslint-disable-next-line @next/next/no-img-element -- transient blob preview, not a static asset */}
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="relative h-40 w-40 rounded-full border-4 border-surface object-cover shadow-[var(--shadow-lift)]"
+                />
+              </motion.div>
 
-            <div className="mt-5">
-              {preview ? (
-                <div className="flex flex-col items-center gap-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- transient blob preview, not a static asset */}
-                  <img src={preview} alt="Preview" className="h-36 w-36 rounded-full object-cover shadow-[var(--shadow-lift)]" />
-                  {error && <p className="text-sm text-danger">{error}</p>}
-                  <div className="flex w-full gap-3">
-                    <Button variant="secondary" className="flex-1" onClick={retake} icon={<RotateCcw className="h-4.5 w-4.5" />}>
-                      Retake
-                    </Button>
-                    <Button className="flex-1" onClick={handleSave} disabled={saving} icon={<Check className="h-4.5 w-4.5" />}>
-                      {saving ? "Saving…" : "Save"}
-                    </Button>
-                  </div>
-                </div>
-              ) : mode === "camera" ? (
-                <div className="flex flex-col items-center gap-4">
-                  <video ref={videoRef} autoPlay playsInline muted className="h-56 w-full scale-x-[-1] rounded-xl bg-black object-cover" />
-                  {error && <p className="text-sm text-danger">{error}</p>}
-                  <div className="flex w-full gap-3">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={() => {
-                        stopCamera();
-                        setMode("choose");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button className="flex-1" onClick={capture} icon={<Camera className="h-4.5 w-4.5" />}>
-                      Capture
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {error && <p className="text-sm text-danger">{error}</p>}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="group flex cursor-pointer items-center gap-3 rounded-xl border border-border-soft px-4 py-3.5 text-left text-sm font-medium transition-colors duration-150 hover:bg-surface-2"
-                  >
-                    <Upload className="h-5.5 w-5.5 text-brand-500 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5" /> Upload a photo
-                  </button>
-                  <button
-                    onClick={startCamera}
-                    className="group flex cursor-pointer items-center gap-3 rounded-xl border border-border-soft px-4 py-3.5 text-left text-sm font-medium transition-colors duration-150 hover:bg-surface-2"
-                  >
-                    <Camera className="h-5.5 w-5.5 text-brand-500 transition-transform duration-300 group-hover:scale-110" /> Use camera
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    onChange={handleFilePick}
-                  />
-                </div>
+              {error && (
+                <p className="flex items-center gap-1.5 text-sm text-danger">
+                  <AnimatedWarning className="h-4.5 w-4.5" /> {error}
+                </p>
               )}
+
+              <div className="flex w-full gap-3">
+                <Button variant="danger" className="flex-1" onClick={discardPreview} disabled={saving}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="info"
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={saving}
+                  icon={<AnimatedUploadCloud className="h-4.5 w-4.5" />}
+                >
+                  {saving ? "Uploading…" : "Upload photo"}
+                </Button>
+              </div>
+            </>
+          ) : mode === "camera" ? (
+            <>
+              <video ref={videoRef} autoPlay playsInline muted className="h-56 w-full scale-x-[-1] rounded-2xl bg-black object-cover" />
+              {error && (
+                <p className="flex items-center gap-1.5 text-sm text-danger">
+                  <AnimatedWarning className="h-4.5 w-4.5" /> {error}
+                </p>
+              )}
+              <div className="flex w-full gap-3">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    stopCamera();
+                    setMode("choose");
+                  }}
+                >
+                  Back
+                </Button>
+                <Button variant="info" className="flex-1" onClick={capture} icon={<AnimatedCameraCapture className="h-5 w-5" />}>
+                  Capture
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex w-full flex-col gap-3">
+              {error && (
+                <p className="flex items-center gap-1.5 text-sm text-danger">
+                  <AnimatedWarning className="h-4.5 w-4.5" /> {error}
+                </p>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border-soft px-4 py-4 text-left text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-[var(--shadow-soft)]"
+              >
+                <AnimatedUploadCloud className="h-7 w-7 transition-transform duration-300 group-hover:scale-110" />
+                <span>
+                  <span className="block">Upload a photo</span>
+                  <span className="block text-xs font-normal text-muted">JPG, PNG or WEBP · up to 4MB</span>
+                </span>
+              </button>
+              <button
+                onClick={startCamera}
+                className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border-soft px-4 py-4 text-left text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-[var(--shadow-soft)]"
+              >
+                <AnimatedCameraCapture className="h-7 w-7 transition-transform duration-300 group-hover:scale-110" />
+                <span>
+                  <span className="block">Use camera</span>
+                  <span className="block text-xs font-normal text-muted">Take a photo right now</span>
+                </span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleFilePick}
+              />
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          )}
+        </div>
+      </Modal>
+
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+    </>
   );
 }

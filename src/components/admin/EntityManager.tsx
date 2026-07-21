@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -9,15 +9,18 @@ import { AnimatedPlus } from "@/components/ui/icons/AnimatedPlus";
 import { AnimatedEdit } from "@/components/ui/icons/AnimatedEdit";
 import { AnimatedTrash } from "@/components/ui/icons/AnimatedTrash";
 import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
+import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
+import { AnimatedImage } from "@/components/ui/icons/AnimatedImage";
+import { ToggleChipGroup } from "@/components/ui/ToggleChipGroup";
 import { useLiveData } from "@/components/admin/useLiveData";
 import { CategoryPicker } from "@/components/admin/CategoryPicker";
 import { DataTable, LiveIndicator, type Column, type Row } from "@/components/admin/DataTable";
-import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/admin/Modal";
+import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/ui/Modal";
 
 export type FieldDef = {
   name: string;
   label: string;
-  type: "text" | "email" | "password" | "number" | "textarea" | "select" | "checkbox" | "date" | "category";
+  type: "text" | "email" | "password" | "number" | "textarea" | "select" | "checkbox" | "date" | "datetime-local" | "category" | "checkboxGroup" | "rating" | "image";
   options?: { label: string; value: string }[];
   required?: boolean;
   placeholder?: string;
@@ -27,6 +30,10 @@ export type FieldDef = {
   min?: number;
   max?: number;
   step?: string;
+  /** Row key whose existing values are offered as autocomplete suggestions (new values stay allowed). */
+  suggestionsFrom?: string;
+  /** For "select" fields: an API endpoint returning `{ options: {label,value}[] }`, fetched once when the form opens. */
+  optionsEndpoint?: string;
 };
 
 export type EntityConfig = {
@@ -45,6 +52,8 @@ export type EntityConfig = {
   canDelete?: boolean;
   /** Select-type fields offered in the bulk-edit modal for multi-selected rows. */
   bulkFields?: FieldDef[];
+  /** API path prefix — defaults to "/api/admin"; lets non-admin screens (e.g. mentor dashboard) reuse this component. */
+  basePath?: string;
 };
 
 type FormValues = Record<string, unknown>;
@@ -55,20 +64,244 @@ function initialValues(fields: FieldDef[], source?: Row, defaults?: Record<strin
     const raw = source?.[f.name] ?? defaults?.[f.name];
     if (f.type === "checkbox") values[f.name] = Boolean(raw);
     else if (f.type === "date" && typeof raw === "string") values[f.name] = raw.slice(0, 10);
-    else values[f.name] = raw ?? "";
+    else if (f.type === "datetime-local" && typeof raw === "string") {
+      // Render the local-time wall clock the <input type="datetime-local"> control expects,
+      // not the UTC digits from the stored ISO string (those would be off by the tz offset).
+      const d = new Date(raw);
+      values[f.name] = new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+    } else values[f.name] = raw ?? "";
   }
   return values;
+}
+
+/** Text input with live suggestions from existing records — pick one or type a new value. */
+function SuggestField({
+  field,
+  value,
+  onChange,
+  suggestions,
+  autoFocus,
+}: {
+  field: FieldDef;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  suggestions: string[];
+  autoFocus?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(-1);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const matches = useMemo(() => {
+    const q = String(value ?? "").trim().toLowerCase();
+    const list = q
+      ? suggestions.filter((s) => s.toLowerCase().includes(q) && s.toLowerCase() !== q)
+      : suggestions;
+    return list.slice(0, 8);
+  }, [suggestions, value]);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  function pick(s: string) {
+    onChange(s);
+    setOpen(false);
+    setHighlight(-1);
+  }
+
+  const showList = open && matches.length > 0;
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <Input
+        label={field.label}
+        type="text"
+        required={field.required}
+        placeholder={field.placeholder}
+        hint={field.hint}
+        autoFocus={autoFocus}
+        autoComplete="off"
+        value={String(value ?? "")}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+          setHighlight(-1);
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && showList) {
+            e.stopPropagation();
+            setOpen(false);
+            return;
+          }
+          if (!showList) return;
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setHighlight((h) => (h + 1) % matches.length);
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setHighlight((h) => (h <= 0 ? matches.length - 1 : h - 1));
+          } else if (e.key === "Enter" && highlight >= 0) {
+            e.preventDefault();
+            pick(matches[highlight]);
+          }
+        }}
+      />
+      <AnimatePresence>
+        {showList && (
+          <motion.ul
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 right-0 top-full z-30 mt-1.5 max-h-48 overflow-y-auto rounded-2xl border border-border-soft bg-surface p-1.5 shadow-[var(--shadow-lift)]"
+          >
+            {matches.map((s, i) => (
+              <li key={s}>
+                <button
+                  type="button"
+                  onClick={() => pick(s)}
+                  onMouseEnter={() => setHighlight(i)}
+                  className={`flex w-full cursor-pointer items-center rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                    i === highlight ? "bg-brand-50 text-brand-700 dark:bg-brand-900/25 dark:text-brand-200" : "hover:bg-surface-2"
+                  }`}
+                >
+                  {s}
+                </button>
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Uploads to /api/admin/upload and stores the returned URL as the field value. */
+function ImageField({ field, value, onChange }: { field: FieldDef; value: unknown; onChange: (v: unknown) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const url = String(value ?? "");
+
+  async function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Upload failed");
+        return;
+      }
+      onChange(json.url);
+    } catch {
+      setError("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <span className="mb-2 block text-sm font-medium">{field.label}</span>
+      <div className="flex items-center gap-4 rounded-xl border border-border-soft bg-surface p-3">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded, arbitrary-size asset
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <AnimatedImage className="h-8 w-8 opacity-50" />
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="secondary" onClick={() => inputRef.current?.click()} disabled={uploading}>
+              {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
+            </Button>
+            {url && (
+              <Button type="button" size="sm" variant="ghost" onClick={() => onChange("")} disabled={uploading}>
+                Remove
+              </Button>
+            )}
+          </div>
+          {error && <p className="text-xs text-danger">{error}</p>}
+          {field.hint && !error && <p className="text-xs text-muted">{field.hint}</p>}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
+          onChange={handlePick}
+        />
+      </div>
+    </div>
+  );
 }
 
 function FieldControl({
   field,
   value,
   onChange,
+  suggestions,
+  dynamicOptions,
+  autoFocus,
 }: {
   field: FieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
+  suggestions?: string[];
+  dynamicOptions?: { label: string; value: string }[];
+  autoFocus?: boolean;
 }) {
+  if (field.type === "image") {
+    return <ImageField field={field} value={value} onChange={onChange} />;
+  }
+  if (field.type === "rating") {
+    const current = Number(value ?? 0);
+    return (
+      <div>
+        <span className="mb-2 block text-sm font-medium">{field.label}</span>
+        <div className="flex items-center gap-1.5 rounded-xl border border-border-soft bg-surface px-4 py-3">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(n)}
+              aria-label={`${n} star${n === 1 ? "" : "s"}`}
+              className="cursor-pointer transition-transform duration-150 hover:scale-125 active:scale-90"
+            >
+              <AnimatedStar className={`h-6 w-6 ${n <= Math.round(current) ? "opacity-100" : "opacity-25"}`} />
+            </button>
+          ))}
+          <span className="ml-2 text-sm font-semibold tabular-nums text-muted">{current.toFixed(1)}</span>
+        </div>
+        {field.hint && <p className="mt-1.5 text-xs text-muted">{field.hint}</p>}
+      </div>
+    );
+  }
+  if (field.type === "checkboxGroup") {
+    return (
+      <ToggleChipGroup
+        label={field.label}
+        options={field.options ?? []}
+        value={String(value ?? "")}
+        onChange={onChange}
+        hint={field.hint}
+      />
+    );
+  }
   if (field.type === "textarea") {
     return (
       <Textarea
@@ -77,9 +310,15 @@ function FieldControl({
         required={field.required}
         placeholder={field.placeholder}
         hint={field.hint}
+        autoFocus={autoFocus}
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
       />
+    );
+  }
+  if (field.type === "text" && suggestions?.length) {
+    return (
+      <SuggestField field={field} value={value} onChange={onChange} suggestions={suggestions} autoFocus={autoFocus} />
     );
   }
   if (field.type === "category") {
@@ -96,7 +335,7 @@ function FieldControl({
     return (
       <Select
         label={field.label}
-        options={field.options ?? []}
+        options={field.options ?? dynamicOptions ?? []}
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -134,6 +373,7 @@ function FieldControl({
       min={field.min}
       max={field.max}
       step={field.step}
+      autoFocus={autoFocus}
       value={String(value ?? "")}
       onChange={(e) => onChange(e.target.value)}
     />
@@ -143,10 +383,12 @@ function FieldControl({
 export function EntityManager({ config }: { config: EntityConfig }) {
   const { entity, titleSingular, titlePlural, description, columns, createFields, editFields, createDefaults, nameKey, bulkFields } = config;
   const canDelete = config.canDelete !== false;
+  const basePath = config.basePath ?? "/api/admin";
 
-  const { data, error, loading, updatedAt, refresh } = useLiveData<{ rows: Row[] }>(`/api/admin/${entity}`);
+  const { data, error, loading, updatedAt, refresh } = useLiveData<{ rows: Row[] }>(`${basePath}/${entity}`);
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const toast = useToast();
+  const [dynamicOptions, setDynamicOptions] = useState<Record<string, { label: string; value: string }[]>>({});
 
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingRow, setEditingRow] = useState<Row | null>(null);
@@ -157,6 +399,24 @@ export function EntityManager({ config }: { config: EntityConfig }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkValues, setBulkValues] = useState<FormValues>({});
+
+  // Snapshot of the form when it opened — used to detect unsaved edits on close.
+  const openedSnapshot = useRef("");
+
+  // Distinct existing values per field that opts into suggestions (e.g. mentor subjects).
+  const suggestionsByField = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const f of [...(createFields ?? []), ...(editFields ?? [])]) {
+      if (!f.suggestionsFrom || map[f.name]) continue;
+      const seen = new Set<string>();
+      for (const r of rows) {
+        const v = String(r[f.suggestionsFrom] ?? "").trim();
+        if (v) seen.add(v);
+      }
+      map[f.name] = [...seen].sort((a, b) => a.localeCompare(b));
+    }
+    return map;
+  }, [rows, createFields, editFields]);
 
   // Drop selections that no longer exist after a live refresh.
   useEffect(() => {
@@ -169,15 +429,33 @@ export function EntityManager({ config }: { config: EntityConfig }) {
 
   const activeFields = formMode === "create" ? createFields ?? [] : editFields ?? [];
 
+  // Fetch each field's optionsEndpoint once per form-open — mirrors suggestionsFrom, but for
+  // select dropdowns backed by a live list from another entity (e.g. linkable user accounts).
+  useEffect(() => {
+    if (formMode === null) return;
+    for (const f of activeFields) {
+      if (!f.optionsEndpoint || dynamicOptions[f.name]) continue;
+      fetch(f.optionsEndpoint)
+        .then((res) => res.json())
+        .then((json) => setDynamicOptions((prev) => ({ ...prev, [f.name]: json.options ?? [] })))
+        .catch(() => setDynamicOptions((prev) => ({ ...prev, [f.name]: [] })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formMode]);
+
   function openCreate() {
-    setValues(initialValues(createFields ?? [], undefined, createDefaults));
+    const v = initialValues(createFields ?? [], undefined, createDefaults);
+    openedSnapshot.current = JSON.stringify(v);
+    setValues(v);
     setFormError(null);
     setFormMode("create");
   }
 
   function openEdit(row: Row) {
+    const v = initialValues(editFields ?? [], row);
+    openedSnapshot.current = JSON.stringify(v);
     setEditingRow(row);
-    setValues(initialValues(editFields ?? [], row));
+    setValues(v);
     setFormError(null);
     setFormMode("edit");
   }
@@ -187,8 +465,45 @@ export function EntityManager({ config }: { config: EntityConfig }) {
     setEditingRow(null);
   }
 
+  /** Esc / Cancel / backdrop — ask before throwing away unsaved edits. */
+  function requestCloseForm() {
+    if (JSON.stringify(values) === openedSnapshot.current) {
+      closeForm();
+      return;
+    }
+    setConfirm({
+      title: "Discard changes?",
+      message: (
+        <>Your unsaved edits to this {titleSingular.toLowerCase()} will be lost.</>
+      ),
+      confirmLabel: "Yes, discard",
+      tone: "danger",
+      onConfirm: closeForm,
+    });
+  }
+
+  function closeBulk() {
+    setBulkOpen(false);
+    setBulkValues({});
+  }
+
+  function requestCloseBulk() {
+    const dirty = Object.values(bulkValues).some((v) => String(v ?? "").trim() !== "");
+    if (!dirty) {
+      closeBulk();
+      return;
+    }
+    setConfirm({
+      title: "Discard changes?",
+      message: <>Your bulk edit selections will be lost.</>,
+      confirmLabel: "Yes, discard",
+      tone: "danger",
+      onConfirm: closeBulk,
+    });
+  }
+
   async function send(method: "POST" | "PATCH" | "DELETE", id: string | null, body?: FormValues) {
-    const url = id ? `/api/admin/${entity}/${encodeURIComponent(id)}` : `/api/admin/${entity}`;
+    const url = id ? `${basePath}/${entity}/${encodeURIComponent(id)}` : `${basePath}/${entity}`;
     const res = await fetch(url, {
       method,
       headers: body ? { "Content-Type": "application/json" } : undefined,
@@ -378,7 +693,7 @@ export function EntityManager({ config }: { config: EntityConfig }) {
 
       <Modal
         open={formMode !== null}
-        onClose={closeForm}
+        onClose={requestCloseForm}
         wide={activeFields.length > 5}
         title={formMode === "create" ? `Add ${titleSingular.toLowerCase()}` : `Edit ${titleSingular.toLowerCase()}`}
         subtitle={
@@ -392,19 +707,22 @@ export function EntityManager({ config }: { config: EntityConfig }) {
           }}
         >
           <div className={`grid grid-cols-1 gap-4 ${activeFields.length > 5 ? "sm:grid-cols-2" : ""}`}>
-            {activeFields.map((f) => (
+            {activeFields.map((f, i) => (
               <div key={f.name} className={f.full ? "sm:col-span-full" : undefined}>
                 <FieldControl
                   field={f}
                   value={values[f.name]}
                   onChange={(v) => setValues((prev) => ({ ...prev, [f.name]: v }))}
+                  suggestions={suggestionsByField[f.name]}
+                  dynamicOptions={dynamicOptions[f.name]}
+                  autoFocus={i === 0}
                 />
               </div>
             ))}
           </div>
           {formError && <p className="mt-4 rounded-xl bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{formError}</p>}
           <div className="mt-6 flex flex-wrap justify-end gap-3">
-            <Button size="sm" variant="ghost" onClick={closeForm}>
+            <Button size="sm" variant="ghost" onClick={requestCloseForm}>
               Cancel
             </Button>
             <Button size="sm" type="submit">
@@ -451,7 +769,7 @@ export function EntityManager({ config }: { config: EntityConfig }) {
       {/* Bulk edit modal — only the fields you set are applied to every selected row. */}
       <Modal
         open={bulkOpen}
-        onClose={() => setBulkOpen(false)}
+        onClose={requestCloseBulk}
         title={`Bulk edit ${selectedIds.size} ${selectedIds.size === 1 ? titleSingular.toLowerCase() : titlePlural.toLowerCase()}`}
         subtitle="Leave a field on “No change” to keep each record's current value."
       >
@@ -473,7 +791,7 @@ export function EntityManager({ config }: { config: EntityConfig }) {
             ))}
           </div>
           <div className="mt-6 flex flex-wrap justify-end gap-3">
-            <Button size="sm" variant="ghost" onClick={() => setBulkOpen(false)}>
+            <Button size="sm" variant="ghost" onClick={requestCloseBulk}>
               Cancel
             </Button>
             <Button size="sm" type="submit" disabled={!(bulkFields ?? []).some((f) => String(bulkValues[f.name] ?? "").trim() !== "")}>

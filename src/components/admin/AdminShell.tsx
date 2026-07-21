@@ -17,13 +17,19 @@ import { AnimatedLayers } from "@/components/ui/icons/AnimatedLayers";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedFolder } from "@/components/ui/icons/AnimatedFolder";
 import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
+import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 import { AnimatedChat } from "@/components/ui/icons/AnimatedChat";
 import { AnimatedRupee } from "@/components/ui/icons/AnimatedRupee";
 import { AnimatedSearch } from "@/components/ui/icons/AnimatedSearch";
 import { AnimatedArrow } from "@/components/ui/icons/AnimatedArrow";
 import { AnimatedLogout } from "@/components/ui/icons/AnimatedLogout";
 import { AnimatedClose } from "@/components/ui/icons/AnimatedClose";
-import logo from "@/images/Logos/Logo-trimmed.png";
+import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
+import { AnimatedCrown } from "@/components/ui/icons/AnimatedCrown";
+import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { AnimatedTrophy } from "@/components/ui/icons/AnimatedTrophy";
+import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
+import logo from "@/images/Loginn Logo.png";
 
 export type AdminNavUser = { name: string; email: string; avatarColor: string; avatarUrl: string | null };
 
@@ -44,12 +50,30 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
       { href: "/admin/applications", label: "Applications", icon: AnimatedMail },
       { href: "/admin/projects", label: "Projects", icon: AnimatedFolder },
       { href: "/admin/tutoring", label: "Tutoring", icon: AnimatedCalendar },
+      { href: "/admin/classes", label: "Classes", icon: AnimatedVideoCamera },
       { href: "/admin/leads", label: "Client Requests", icon: AnimatedChat },
+      { href: "/admin/astrology", label: "Horoscope Reports", icon: AnimatedMoonStar },
+      { href: "/admin/compatibility-matches", label: "Compatibility Matches", icon: AnimatedMoonStar },
+      { href: "/admin/events", label: "Events", icon: AnimatedCalendar },
     ],
   },
   {
     label: "Finance",
     items: [{ href: "/admin/payments", label: "Payments", icon: AnimatedRupee }],
+  },
+  {
+    label: "About Page",
+    items: [
+      { href: "/admin/about-content", label: "Page Content", icon: AnimatedSparkle },
+      { href: "/admin/offerings", label: "Key Offerings", icon: AnimatedLayers },
+      { href: "/admin/team", label: "Team", icon: AnimatedCrown },
+      { href: "/admin/partners", label: "Partners", icon: AnimatedShield },
+      { href: "/admin/clients", label: "Clients", icon: AnimatedTrophy },
+    ],
+  },
+  {
+    label: "Homepage",
+    items: [{ href: "/admin/testimonials", label: "Testimonials", icon: AnimatedChat }],
   },
 ];
 
@@ -78,8 +102,8 @@ function SidebarContent({ user, onNavigate }: { user: AdminNavUser; onNavigate?:
 
   return (
     <div className="flex h-full flex-col">
-      <Link href="/" className="flex items-center gap-2 px-5 pb-2 pt-5" onClick={onNavigate}>
-        <Image src={logo} alt="MyLoginn" className="h-9 w-auto" preload />
+      <Link href="/" className="flex items-center px-5 pb-2 pt-5" onClick={onNavigate}>
+        <Image src={logo} alt="MyLoginn" className="h-16 w-auto object-contain" preload />
       </Link>
 
       <nav className="mt-2 flex-1 overflow-y-auto px-3 pb-4">
@@ -295,7 +319,7 @@ export function AdminShell({ user, children }: { user: AdminNavUser; children: R
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Close menu"
-                className="absolute right-3 top-4 cursor-pointer rounded-full p-1.5 transition-transform duration-200 hover:scale-110 active:scale-90"
+                className="absolute right-3 top-4 cursor-pointer rounded-full p-1.5 transition-all duration-200 hover:scale-110 hover:bg-surface-2 active:scale-90"
               >
                 <AnimatedClose className="h-5 w-5" />
               </button>

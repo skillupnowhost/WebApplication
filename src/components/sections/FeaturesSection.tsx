@@ -1,10 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { ContentIcon } from "@/components/ui/ContentIcon";
+import { AnimatedText } from "@/components/ui/AnimatedText";
+import { useParallax } from "@/hooks/useParallax";
 import type { CourseIconKey } from "@/lib/courseIcons";
+
+const GlowGridScene = dynamic(() => import("@/components/cinematic/scenes/GlowGridScene"), { ssr: false });
 
 const features: { iconKey: CourseIconKey; title: string; description: string }[] = [
   {
@@ -30,35 +36,65 @@ const features: { iconKey: CourseIconKey; title: string; description: string }[]
 ];
 
 export function FeaturesSection() {
-  return (
-    <Section className="bg-surface-2/50">
-      <Container>
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="flex justify-center">
-            <Eyebrow>Why MyLoginn</Eyebrow>
-          </div>
-          <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Built for outcomes, not just content
-          </h2>
-        </div>
+  const { ref: lineRef, y: lineY } = useParallax(18);
 
-        <div className="mt-14 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.55, delay: i * 0.1 }}
-              className="text-center sm:text-left"
-            >
-              <IconBadge size="xl" className="mx-auto text-brand-500 dark:text-brand-400 sm:mx-0" delay={i * 0.1}>
-                <ContentIcon keyword={f.iconKey} className="h-13 w-13 sm:h-14 sm:w-14" />
-              </IconBadge>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm text-muted">{f.description}</p>
-            </motion.div>
-          ))}
+  return (
+    <Section className="relative overflow-hidden">
+      <div className="outcomes-mesh" />
+      <div className="pointer-events-none absolute inset-0 opacity-25 dark:opacity-45">
+        <GlowGridScene />
+      </div>
+
+      <Container className="relative grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+        <Reveal className="lg:sticky lg:top-32 lg:self-start">
+          <Eyebrow>Why MyLoginn</Eyebrow>
+          <h2 className="mt-5 max-w-md text-3xl font-semibold tracking-tight sm:text-4xl">
+            <AnimatedText text="Built for outcomes, not just content" />
+          </h2>
+          <p className="mt-4 max-w-sm text-muted">
+            Every path on MyLoginn is engineered around a real outcome &mdash; a
+            job, a certificate, a shipped project &mdash; not passive video
+            watching.
+          </p>
+        </Reveal>
+
+        <div ref={lineRef} className="relative">
+          <motion.div
+            aria-hidden
+            style={{ y: lineY }}
+            className="pointer-events-none absolute -left-5 top-0 hidden h-full w-px sm:block"
+          >
+            <div
+              className="h-full w-full bg-gradient-to-b from-transparent via-brand-400/60 to-transparent"
+              style={{ boxShadow: "0 0 20px 1px color-mix(in srgb, var(--accent-400) 45%, transparent)" }}
+            />
+          </motion.div>
+
+          <RevealGroup className="flex flex-col" stagger={0.12}>
+            {features.map((f, i) => (
+              <RevealItem key={f.title}>
+                <div
+                  className={`group flex items-start gap-5 border-border-soft py-6 transition-colors duration-300 ${
+                    i > 0 ? "border-t" : ""
+                  }`}
+                >
+                  <IconBadge
+                    size="lg"
+                    className="shrink-0 bg-transparent text-brand-500 dark:text-brand-400"
+                    delay={i * 0.1}
+                  >
+                    <ContentIcon keyword={f.iconKey} className="h-10 w-10 sm:h-12 sm:w-12" />
+                  </IconBadge>
+                  <div className="pt-1">
+                    <h3 className="font-semibold transition-transform duration-300 group-hover:translate-x-1">
+                      {f.title}
+                    </h3>
+                    <p className="mt-1.5 text-sm text-muted">{f.description}</p>
+                  </div>
+                </div>
+              </RevealItem>
+            ))}
+          </RevealGroup>
         </div>
       </Container>
     </Section>

@@ -1,15 +1,76 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { Reveal } from "@/components/ui/Reveal";
+import { FaqAccordion } from "@/components/ui/FaqAccordion";
 import { TutoringExplorer, type TutorData } from "@/components/tutoring/TutoringExplorer";
 import { TutoringHero } from "@/components/tutoring/TutoringHero";
+import { UpcomingClasses } from "@/components/tutoring/UpcomingClasses";
+import { FeatureBentoGrid, type Feature } from "@/components/services/FeatureBentoGrid";
+import { HowItWorksTimeline, type TimelineStep } from "@/components/services/HowItWorksTimeline";
+import type { ClassCardData } from "@/components/classes/ClassCalendar";
 
 export const metadata = { title: "Tutoring — MyLoginn" };
 
+const whyFeatures: Feature[] = [
+  {
+    iconKey: "student",
+    title: "1:1 personalized sessions",
+    description: "Every session is matched to the student's board, grade and pace — not a generic batch class.",
+    span: true,
+  },
+  {
+    iconKey: "data",
+    title: "Progress dashboards",
+    description: "Parents and students track attendance, topics covered and mentor notes in real time.",
+  },
+  {
+    iconKey: "comm",
+    title: "Structured feedback",
+    description: "Tutors share detailed notes after every session, not just a grade.",
+  },
+  {
+    iconKey: "career",
+    title: "Exam-ready practice",
+    description: "Board-aligned practice questions and mock tests as exams approach.",
+  },
+];
+
+const bookingSteps: TimelineStep[] = [
+  { title: "Pick a tutor", description: "Browse by subject, board and grade to find the right fit." },
+  { title: "Book your slot", description: "Choose a preferred time — the tutor confirms schedule and fee directly with you." },
+  { title: "Attend live sessions", description: "Join over video with real-time whiteboarding and screen share." },
+  { title: "Track progress", description: "Review session notes and progress on your dashboard after every class." },
+];
+
+const faqs = [
+  {
+    question: "How is a session priced?",
+    answer:
+      "Tutoring is paid 1:1 mentorship — the fee depends on the subject and tutor. Once you request a booking, the tutor confirms the exact fee and schedule with you directly before your first session.",
+  },
+  {
+    question: "Which boards and grades are covered?",
+    answer:
+      "Our tutors cover CBSE and State Board curricula from 1st grade through 12th. Each tutor's profile lists the specific boards and grades they teach.",
+  },
+  {
+    question: "Can I switch tutors if it's not the right fit?",
+    answer: "Yes — you're free to book with a different tutor at any time. There's no long-term lock-in.",
+  },
+  {
+    question: "How do live classes work?",
+    answer:
+      "Sessions run over video with live screen share and whiteboarding. Confirmed classes also appear under Upcoming Live Classes on this page and on your dashboard.",
+  },
+];
+
 export default async function TutoringPage() {
-  const [user, tutors] = await Promise.all([
+  const [user, tutors, sessionsBooked] = await Promise.all([
     getCurrentUser(),
     prisma.tutor.findMany({ orderBy: { name: "asc" } }),
+    prisma.tutoringBooking.count(),
   ]);
 
   const tutorCards: TutorData[] = tutors.map((t) => ({
@@ -22,17 +83,65 @@ export default async function TutoringPage() {
     rating: t.rating,
     avatarColor: t.avatarColor,
     boards: JSON.parse(t.boards) as string[],
+    grades: JSON.parse(t.grades) as string[],
+  }));
+
+  const upcoming = await prisma.tutorClass.findMany({
+    where: { status: "SCHEDULED", startsAt: { gte: new Date() } },
+    orderBy: { startsAt: "asc" },
+    include: { tutor: { select: { name: true } }, bookings: { where: { userId: user?.id ?? "" } } },
+  });
+
+  const upcomingClasses: ClassCardData[] = upcoming.map((c) => ({
+    id: c.id,
+    title: c.title,
+    subject: c.subject,
+    mentorName: c.tutor.name,
+    startsAt: c.startsAt.toISOString(),
+    endsAt: c.endsAt.toISOString(),
+    status: c.status,
+    joinUrl: c.joinUrl,
+    googleEventLink: c.googleEventLink,
+    recordingAccessTier: c.recordingAccessTier,
+    hasRecording: false,
+    canAccessRecording: false,
+    isEnrolled: c.bookings.length > 0,
   }));
 
   return (
-    <Section className="pt-14">
-      <Container>
-        <TutoringHero />
+    <>
+      <TutoringHero tutors={tutorCards} sessionsBooked={sessionsBooked} />
 
-        <div className="mt-14">
-          <TutoringExplorer tutors={tutorCards} isLoggedIn={!!user} />
-        </div>
-      </Container>
-    </Section>
+      <Section className="overflow-hidden pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Tutoring" }]} className="mb-6" />
+
+          <Reveal className="mt-2 sm:mt-4">
+            <h2 className="text-center text-xl font-semibold sm:text-2xl">Why learn with MyLoginn tutors</h2>
+            <FeatureBentoGrid
+              features={whyFeatures}
+              highlight={{ value: sessionsBooked, suffix: "+", label: "sessions booked via MyLoginn" }}
+            />
+          </Reveal>
+
+          <div id="tutors" className="mt-16 scroll-mt-24 sm:mt-20">
+            <TutoringExplorer tutors={tutorCards} isLoggedIn={!!user} />
+          </div>
+
+          <div className="mt-14">
+            <UpcomingClasses classes={upcomingClasses} isLoggedIn={!!user} />
+          </div>
+
+          <Reveal className="mt-16 sm:mt-20">
+            <HowItWorksTimeline title="How tutoring works" steps={bookingSteps} className="mt-0" />
+          </Reveal>
+
+          <Reveal className="mt-16 sm:mt-20">
+            <h2 className="text-xl font-semibold">Frequently asked questions</h2>
+            <FaqAccordion items={faqs} className="mt-6" />
+          </Reveal>
+        </Container>
+      </Section>
+    </>
   );
 }

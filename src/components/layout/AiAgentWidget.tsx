@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Send, X } from "lucide-react";
-import { AnimatedAgent } from "@/components/ui/icons/AnimatedAgent";
+import { AnimatedChatbot } from "@/components/ui/icons/AnimatedChatbot";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
 import { cn } from "@/lib/cn";
 
@@ -137,7 +138,7 @@ export function AiAgentWidget() {
             <div className="relative flex items-center gap-3 border-b border-border-soft px-4 py-3">
               <span className="relative flex h-10 w-10 items-center justify-center">
                 <span className="pointer-events-none absolute inset-0 rounded-full brand-gradient-bg opacity-20 blur-md animate-pulse" />
-                <AnimatedAgent className="h-8 w-8" />
+                <AnimatedChatbot className="h-9 w-9" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold leading-tight">MyLoginn AI Agent</p>
@@ -267,7 +268,7 @@ export function AiAgentWidget() {
               transition={{ duration: 0.2 }}
               className="relative transition-transform duration-300 group-hover:scale-110"
             >
-              <AnimatedAgent className="h-9 w-9" />
+              <AnimatedChatbot className="h-10 w-10" />
             </motion.span>
           )}
         </AnimatePresence>
@@ -276,13 +277,49 @@ export function AiAgentWidget() {
   );
 }
 
+/** Matches markdown-style links, e.g. [Courses](/courses) or [email](mailto:a@b.com). */
+const LINK_PATTERN = /\[([^\]]+)\]\(((?:https?:\/\/|mailto:|tel:|\/)[^\s)]+)\)/g;
+
+const LINK_CLASSNAME =
+  "font-medium text-brand-500 underline decoration-brand-400/50 underline-offset-2 transition-colors hover:text-brand-600 dark:text-brand-300 dark:hover:text-brand-200";
+
+/** Renders assistant text, turning any `[label](href)` markdown links into real clickable links. */
+function renderMessageContent(text: string) {
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  LINK_PATTERN.lastIndex = 0;
+  while ((match = LINK_PATTERN.exec(text))) {
+    if (match.index > lastIndex) nodes.push(<Fragment key={key++}>{text.slice(lastIndex, match.index)}</Fragment>);
+
+    const [full, label, href] = match;
+    nodes.push(
+      href.startsWith("/") ? (
+        <Link key={key++} href={href} className={LINK_CLASSNAME}>
+          {label}
+        </Link>
+      ) : (
+        <a key={key++} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className={LINK_CLASSNAME}>
+          {label}
+        </a>
+      )
+    );
+    lastIndex = match.index + full.length;
+  }
+  if (lastIndex < text.length) nodes.push(<Fragment key={key++}>{text.slice(lastIndex)}</Fragment>);
+
+  return nodes;
+}
+
 function AgentBubble({ text, typing }: { text: string; typing?: boolean }) {
   return (
-    <div className="flex items-end gap-2">
+    <div className="flex items-start gap-2">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center">
-        <AnimatedAgent className="h-6 w-6" />
+        <AnimatedChatbot className="h-7 w-7" />
       </span>
-      <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border-soft bg-surface-2/70 px-3.5 py-2.5 text-sm">
+      <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border-soft bg-surface-2/70 px-3.5 py-2.5 text-sm leading-relaxed">
         {typing ? (
           <span className="flex items-center gap-1 py-1" aria-label="Agent is typing">
             {[0, 0.15, 0.3].map((d) => (
@@ -295,7 +332,7 @@ function AgentBubble({ text, typing }: { text: string; typing?: boolean }) {
             ))}
           </span>
         ) : (
-          <p className="whitespace-pre-wrap break-words">{text}</p>
+          <p className="whitespace-pre-wrap break-words">{renderMessageContent(text)}</p>
         )}
       </div>
     </div>

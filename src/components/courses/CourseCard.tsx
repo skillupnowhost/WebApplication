@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Percent } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AnimatedClock } from "@/components/ui/icons/AnimatedClock";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
+import { AnimatedPercent } from "@/components/ui/icons/AnimatedPercent";
 import { AnimatedAi } from "@/components/ui/icons/AnimatedAi";
 import { AnimatedFlame } from "@/components/ui/icons/AnimatedFlame";
 import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
@@ -120,7 +120,7 @@ export function CourseCard({
               )}
               {discountPct && (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
-                  <Percent className="h-4 w-4 transition-transform duration-300 group-hover:scale-125" /> {discountPct}% off
+                  <AnimatedPercent className="h-4 w-4" /> {discountPct}% off
                 </span>
               )}
             </div>

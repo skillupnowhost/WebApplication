@@ -2,13 +2,16 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container, Eyebrow } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Percent, ListChecks } from "lucide-react";
+import { Reveal } from "@/components/ui/Reveal";
 import { AnimatedClock } from "@/components/ui/icons/AnimatedClock";
 import { AnimatedSuccess } from "@/components/ui/icons/AnimatedSuccess";
 import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
 import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
+import { AnimatedPercent } from "@/components/ui/icons/AnimatedPercent";
+import { AnimatedChecklist } from "@/components/ui/icons/AnimatedChecklist";
 import { CourseIconThumb } from "@/components/courses/CourseIconThumb";
 
 export default async function CourseDetailPage({
@@ -35,10 +38,16 @@ export default async function CourseDetailPage({
       : null;
 
   return (
-    <Section className="pt-14">
-      <Container>
+    <Section className="relative overflow-hidden pt-14 sm:pt-14">
+      <div className="aurora-blob -left-24 top-0 h-72 w-72 bg-brand-400/20" aria-hidden />
+      <div className="aurora-blob aurora-blob-alt -right-20 top-24 h-64 w-64 bg-accent-400/15" aria-hidden />
+      <Container className="relative">
+        <Breadcrumbs
+          items={[{ label: "Courses", href: "/courses" }, { label: course.title }]}
+          className="mb-6"
+        />
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <Reveal direction="up" className="lg:col-span-2">
             <div className="flex items-center gap-4">
               <CourseIconThumb category={course.category} title={course.title} variant="round" className="h-16 w-16 shrink-0" />
               <div>
@@ -78,7 +87,7 @@ export default async function CourseDetailPage({
 
             <div className="mt-8">
               <h2 className="flex items-center gap-2 font-semibold">
-                <ListChecks className="h-5.5 w-5.5 text-brand-500 transition-transform duration-300 hover:scale-110" /> Syllabus
+                <AnimatedChecklist className="h-5.5 w-5.5" /> Syllabus
               </h2>
               <ul className="mt-3 flex flex-col gap-2 text-sm text-muted">
                 {syllabus.map((item, i) => (
@@ -91,9 +100,9 @@ export default async function CourseDetailPage({
                 ))}
               </ul>
             </div>
-          </div>
+          </Reveal>
 
-          <div>
+          <Reveal direction="up" delay={0.12}>
             <div className="lg:sticky lg:top-24">
               <Card className="p-6">
                 <div className="flex items-center gap-2">
@@ -104,7 +113,7 @@ export default async function CourseDetailPage({
                 </div>
                 {discountPct && (
                   <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
-                    <Percent className="h-4 w-4" /> {discountPct}% off, limited time
+                    <AnimatedPercent className="h-4 w-4" /> {discountPct}% off, limited time
                   </span>
                 )}
 
@@ -131,7 +140,7 @@ export default async function CourseDetailPage({
                 <p className="mt-4 text-center text-xs text-muted">Lifetime access · Certificate on completion</p>
               </Card>
             </div>
-          </div>
+          </Reveal>
         </div>
       </Container>
     </Section>

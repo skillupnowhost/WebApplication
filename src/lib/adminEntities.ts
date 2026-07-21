@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { updateClass, deleteClass } from "@/lib/classes";
 import { z } from "zod";
 
 /**
@@ -23,8 +24,8 @@ async function uniqueSlug(base: string, exists: (slug: string) => Promise<boolea
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 
-/** Tutor.boards is stored as a JSON string array — expose it as "A, B". */
-function boardsToText(raw: string) {
+/** Tutor.boards / Tutor.grades are stored as JSON string arrays — expose them as "A, B". */
+function jsonListToText(raw: string): string {
   try {
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr.join(", ") : raw;
@@ -33,7 +34,7 @@ function boardsToText(raw: string) {
   }
 }
 
-function textToBoards(text: string) {
+function textToJsonList(text: string) {
   return JSON.stringify(
     text
       .split(",")
@@ -54,6 +55,7 @@ const userCreate = z.object({
 });
 const userUpdate = userCreate.partial().omit({ password: true }).extend({
   points: z.coerce.number().int().min(0).optional(),
+  tutoringTier: z.enum(["FREE", "STANDARD", "PREMIUM"]).optional(),
 });
 
 const courseCreate = z.object({
@@ -77,6 +79,8 @@ const mentorCreate = z.object({
   experienceYears: z.coerce.number().int().min(0).max(60),
   rating: z.coerce.number().min(0).max(5).default(4.9),
   boards: z.string().trim().default("CBSE"),
+  grades: z.string().trim().default("6th Grade, 7th Grade, 8th Grade, 9th Grade, 10th Grade"),
+  userId: z.string().trim().optional().nullable(),
 });
 const mentorUpdate = mentorCreate.partial();
 
@@ -119,6 +123,81 @@ const bookingUpdate = z.object({
   notes: z.string().trim().optional().nullable(),
 });
 
+const classUpdate = z.object({
+  title: z.string().trim().min(3).optional(),
+  startsAt: z.coerce.date().optional(),
+  endsAt: z.coerce.date().optional(),
+  status: z.enum(["SCHEDULED", "LIVE", "COMPLETED", "CANCELLED"]).optional(),
+  recordingAccessTier: z.enum(["FREE", "STANDARD", "PREMIUM"]).optional(),
+});
+
+const offeringCreate = z.object({
+  title: z.string().trim().min(2),
+  description: z.string().trim().min(5),
+});
+const offeringUpdate = offeringCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const teamMemberCreate = z.object({
+  name: z.string().trim().min(2),
+  role: z.string().trim().min(2),
+  category: z.enum(["FOUNDER", "CEO", "STAFF"]),
+  bio: z.string().trim().optional().default(""),
+  experienceYears: z.coerce.number().int().min(0).max(60).optional().nullable(),
+  specialization: z.string().trim().optional().nullable(),
+  photoUrl: z.string().trim().optional().nullable(),
+  linkedinUrl: z.string().trim().optional().nullable(),
+});
+const teamMemberUpdate = teamMemberCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const partnerCreate = z.object({
+  name: z.string().trim().min(2),
+  logoUrl: z.string().trim().optional().nullable(),
+  websiteUrl: z.string().trim().optional().nullable(),
+});
+const partnerUpdate = partnerCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const clientCreate = z.object({
+  name: z.string().trim().min(2),
+  logoUrl: z.string().trim().optional().nullable(),
+  websiteUrl: z.string().trim().optional().nullable(),
+  description: z.string().trim().optional().default(""),
+});
+const clientUpdate = clientCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const testimonialCreate = z.object({
+  quote: z.string().trim().min(10),
+  authorName: z.string().trim().min(2),
+  authorRole: z.string().trim().optional().default(""),
+  avatarUrl: z.string().trim().optional().nullable(),
+  rating: z.coerce.number().int().min(1).max(5).default(5),
+});
+const testimonialUpdate = testimonialCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const eventCreate = z.object({
+  title: z.string().trim().min(3),
+  description: z.string().trim().min(10),
+  category: z.string().trim().optional().nullable(),
+  mode: z.enum(["ONLINE", "OFFLINE", "HYBRID"]).default("ONLINE"),
+  startsAt: z.coerce.date(),
+  endsAt: z.coerce.date().optional().nullable(),
+  location: z.string().trim().optional().nullable(),
+  coverImageUrl: z.string().trim().optional().nullable(),
+  registerUrl: z.string().trim().optional().nullable(),
+});
+const eventUpdate = eventCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
 const leadUpdate = z.object({
   status: z.enum(["new", "contacted", "closed"]),
 });
@@ -154,6 +233,7 @@ export const adminEntities: Record<string, EntityDef> = {
         emailVerified: u.emailVerified,
         points: u.points,
         streak: u.currentStreak,
+        tutoringTier: u.tutoringTier,
         enrollments: u._count.enrollments,
         projects: u._count.projects,
         createdAt: iso(u.createdAt),
@@ -185,6 +265,7 @@ export const adminEntities: Record<string, EntityDef> = {
           ...(data.role !== undefined && { role: data.role }),
           ...(data.emailVerified !== undefined && { emailVerified: data.emailVerified }),
           ...(data.points !== undefined && { points: data.points }),
+          ...(data.tutoringTier !== undefined && { tutoringTier: data.tutoringTier }),
         },
         select: { id: true },
       });
@@ -274,7 +355,7 @@ export const adminEntities: Record<string, EntityDef> = {
     list: async () => {
       const tutors = await prisma.tutor.findMany({
         orderBy: { name: "asc" },
-        include: { _count: { select: { bookings: true } } },
+        include: { _count: { select: { bookings: true } }, user: { select: { name: true, email: true } } },
       });
       return tutors.map((t) => ({
         id: t.id,
@@ -283,25 +364,44 @@ export const adminEntities: Record<string, EntityDef> = {
         qualification: t.qualification,
         experienceYears: t.experienceYears,
         rating: t.rating,
-        boards: boardsToText(t.boards),
+        boards: jsonListToText(t.boards),
+        grades: jsonListToText(t.grades),
         bookings: t._count.bookings,
         bio: t.bio,
+        userId: t.userId,
+        account: t.user ? `${t.user.name} (${t.user.email})` : "— not linked —",
       }));
     },
     create: async (body) => {
-      const data = mentorCreate.parse(body);
-      return prisma.tutor.create({ data: { ...data, boards: textToBoards(data.boards) }, select: { id: true } });
+      const { userId, ...data } = mentorCreate.parse(body);
+      return prisma.tutor.create({
+        data: {
+          ...data,
+          boards: textToJsonList(data.boards),
+          grades: textToJsonList(data.grades),
+          userId: userId || null,
+        },
+        select: { id: true },
+      });
     },
     update: async (id, body) => {
-      const data = mentorUpdate.parse(body);
+      const { userId, ...data } = mentorUpdate.parse(body);
       return prisma.tutor.update({
         where: { id },
-        data: { ...data, ...(data.boards !== undefined && { boards: textToBoards(data.boards) }) },
+        data: {
+          ...data,
+          ...(data.boards !== undefined && { boards: textToJsonList(data.boards) }),
+          ...(data.grades !== undefined && { grades: textToJsonList(data.grades) }),
+          ...(userId !== undefined && { userId: userId || null }),
+        },
         select: { id: true },
       });
     },
     remove: async (id) => {
       await prisma.$transaction([
+        prisma.classBooking.deleteMany({ where: { tutorClass: { tutorId: id } } }),
+        prisma.classRecording.deleteMany({ where: { tutorClass: { tutorId: id } } }),
+        prisma.tutorClass.deleteMany({ where: { tutorId: id } }),
         prisma.tutoringBooking.deleteMany({ where: { tutorId: id } }),
         prisma.tutor.delete({ where: { id } }),
       ]);
@@ -463,6 +563,37 @@ export const adminEntities: Record<string, EntityDef> = {
     },
   },
 
+  classes: {
+    list: async () => {
+      const rows = await prisma.tutorClass.findMany({
+        orderBy: { startsAt: "desc" },
+        include: { tutor: { select: { name: true } }, _count: { select: { bookings: true, recordings: true } } },
+      });
+      return rows.map((c) => ({
+        id: c.id,
+        title: c.title,
+        mentor: c.tutor.name,
+        subject: c.subject,
+        startsAt: iso(c.startsAt),
+        endsAt: iso(c.endsAt),
+        status: c.status,
+        recordingAccessTier: c.recordingAccessTier,
+        joinUrl: c.joinUrl,
+        googleEventLink: c.googleEventLink,
+        bookings: c._count.bookings,
+        recordings: c._count.recordings,
+      }));
+    },
+    update: async (id, body) => {
+      const data = classUpdate.parse(body);
+      const updated = await updateClass(id, data);
+      return { id: updated.id };
+    },
+    remove: async (id) => {
+      await deleteClass(id);
+    },
+  },
+
   leads: {
     list: async () => {
       const rows = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
@@ -484,6 +615,208 @@ export const adminEntities: Record<string, EntityDef> = {
     },
     remove: async (id) => {
       await prisma.lead.delete({ where: { id } });
+    },
+  },
+
+  astrologyReports: {
+    list: async () => {
+      const rows = await prisma.horoscopeReport.findMany({
+        orderBy: { createdAt: "desc" },
+        include: { chartData: { include: { profile: true } } },
+      });
+      return rows.map((r) => ({
+        id: r.id,
+        subject: r.chartData.profile.fullName,
+        birthPlace: r.chartData.profile.birthPlace,
+        depth: r.depth,
+        chartStyle: r.chartStyle,
+        language: r.language,
+        ayanamsaUsed: r.chartData.ayanamsaUsed.toFixed(3),
+        createdAt: iso(r.createdAt),
+      }));
+    },
+    remove: async (id) => {
+      await prisma.horoscopeReport.delete({ where: { id } });
+    },
+  },
+
+  astrologyMatches: {
+    list: async () => {
+      const rows = await prisma.matchRequest.findMany({
+        orderBy: { createdAt: "desc" },
+        include: { profileA: true, profileB: true },
+      });
+      return rows.map((m) => {
+        const ashtakoot = JSON.parse(m.ashtakootJson) as { totalPoints: number; verdict: string };
+        return {
+          id: m.id,
+          partnerA: m.profileA.fullName,
+          partnerB: m.profileB.fullName,
+          score: `${ashtakoot.totalPoints}/36`,
+          verdict: ashtakoot.verdict,
+          language: m.language,
+          createdAt: iso(m.createdAt),
+        };
+      });
+    },
+    remove: async (id) => {
+      await prisma.matchRequest.delete({ where: { id } });
+    },
+  },
+
+  offerings: {
+    list: async () => {
+      const rows = await prisma.offering.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] });
+      return rows.map((o) => ({ id: o.id, title: o.title, description: o.description, sortOrder: o.sortOrder }));
+    },
+    create: async (body) => {
+      const data = offeringCreate.parse(body);
+      return prisma.offering.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = offeringUpdate.parse(body);
+      return prisma.offering.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.offering.delete({ where: { id } });
+    },
+  },
+
+  team: {
+    list: async () => {
+      const rows = await prisma.teamMember.findMany({ orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }] });
+      return rows.map((t) => ({
+        id: t.id,
+        name: t.name,
+        role: t.role,
+        category: t.category,
+        bio: t.bio,
+        experienceYears: t.experienceYears,
+        specialization: t.specialization ?? "",
+        photoUrl: t.photoUrl ?? "",
+        linkedinUrl: t.linkedinUrl ?? "",
+        sortOrder: t.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = teamMemberCreate.parse(body);
+      return prisma.teamMember.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = teamMemberUpdate.parse(body);
+      return prisma.teamMember.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.teamMember.delete({ where: { id } });
+    },
+  },
+
+  partners: {
+    list: async () => {
+      const rows = await prisma.partner.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+      return rows.map((p) => ({
+        id: p.id,
+        name: p.name,
+        logoUrl: p.logoUrl ?? "",
+        websiteUrl: p.websiteUrl ?? "",
+        sortOrder: p.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = partnerCreate.parse(body);
+      return prisma.partner.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = partnerUpdate.parse(body);
+      return prisma.partner.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.partner.delete({ where: { id } });
+    },
+  },
+
+  clients: {
+    list: async () => {
+      const rows = await prisma.client.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+      return rows.map((c) => ({
+        id: c.id,
+        name: c.name,
+        logoUrl: c.logoUrl ?? "",
+        websiteUrl: c.websiteUrl ?? "",
+        description: c.description,
+        sortOrder: c.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = clientCreate.parse(body);
+      return prisma.client.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = clientUpdate.parse(body);
+      return prisma.client.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.client.delete({ where: { id } });
+    },
+  },
+
+  testimonials: {
+    list: async () => {
+      const rows = await prisma.testimonial.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] });
+      return rows.map((t) => ({
+        id: t.id,
+        quote: t.quote,
+        authorName: t.authorName,
+        authorRole: t.authorRole,
+        avatarUrl: t.avatarUrl ?? "",
+        rating: t.rating,
+        sortOrder: t.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = testimonialCreate.parse(body);
+      return prisma.testimonial.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = testimonialUpdate.parse(body);
+      return prisma.testimonial.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.testimonial.delete({ where: { id } });
+    },
+  },
+
+  events: {
+    list: async () => {
+      const rows = await prisma.event.findMany({ orderBy: [{ startsAt: "asc" }] });
+      return rows.map((e) => ({
+        id: e.id,
+        slug: e.slug,
+        title: e.title,
+        description: e.description,
+        category: e.category ?? "",
+        mode: e.mode,
+        startsAt: iso(e.startsAt),
+        endsAt: iso(e.endsAt),
+        location: e.location ?? "",
+        coverImageUrl: e.coverImageUrl ?? "",
+        registerUrl: e.registerUrl ?? "",
+        sortOrder: e.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = eventCreate.parse(body);
+      const slug = await uniqueSlug(data.title, async (s) =>
+        Boolean(await prisma.event.findUnique({ where: { slug: s } }))
+      );
+      return prisma.event.create({ data: { ...data, slug }, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = eventUpdate.parse(body);
+      return prisma.event.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.event.delete({ where: { id } });
     },
   },
 

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Section, Container } from "@/components/ui/Section";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { InternshipsHero } from "@/components/internships/InternshipsHero";
 import { InternshipsExplorer } from "@/components/internships/InternshipsExplorer";
 import type { InternshipCardData } from "@/components/internships/InternshipCard";
@@ -33,25 +34,28 @@ export default async function InternshipsPage() {
   }));
 
   const paidCount = cards.filter((c) => c.paid).length;
-  const companyCount = new Set(cards.map((c) => c.company)).size;
+  const companies = [...new Set(cards.map((c) => c.company))];
   const avgWeeks = cards.length
     ? Math.round(cards.reduce((sum, c) => sum + c.durationWeeks, 0) / cards.length)
     : 0;
 
   return (
-    <Section className="pt-14 sm:pt-16">
-      <Container>
-        <InternshipsHero
-          total={cards.length}
-          paidCount={paidCount}
-          companyCount={companyCount}
-          avgWeeks={avgWeeks}
-        />
+    <>
+      <InternshipsHero
+        total={cards.length}
+        paidCount={paidCount}
+        companyCount={companies.length}
+        avgWeeks={avgWeeks}
+        companies={companies}
+      />
 
-        <div className="mt-14 sm:mt-16">
+      <Section className="pt-10 sm:pt-14">
+        <Container>
+          <Breadcrumbs items={[{ label: "Internships" }]} className="mb-6" />
+
           <InternshipsExplorer internships={cards} appliedIds={[...appliedIds]} />
-        </div>
-      </Container>
-    </Section>
+        </Container>
+      </Section>
+    </>
   );
 }

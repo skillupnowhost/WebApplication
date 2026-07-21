@@ -1,0 +1,49 @@
+"use client";
+
+import { useId } from "react";
+import { motion } from "framer-motion";
+import type { CSSProperties } from "react";
+import { cn } from "@/lib/cn";
+
+/** Virgo — the maiden's crossed loop, whole glyph breathing slowly. */
+export function AnimatedVirgo({ className, style }: { className?: string; style?: CSSProperties }) {
+  const id = "zvi" + useId().replace(/[^a-zA-Z0-9]/g, "");
+  return (
+    <span className={cn("relative inline-flex shrink-0 items-center justify-center", className)} style={style}>
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full overflow-visible">
+        <defs>
+          <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fde68a" />
+            <stop offset="100%" stopColor="#d97706" />
+          </linearGradient>
+          <filter id={`${id}glow`}>
+            <feGaussianBlur stdDeviation="0.6" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <motion.path
+          d="M5 8v9M5 8c0-2 3-2 3 0v9M8 8c0-2 3-2 3 0v6c0 3 3.2 4 5 1.8c1.3-1.6-.2-3.6-2-2.8"
+          stroke={`url(#${id}g)`}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter={`url(#${id}glow)`}
+          style={{ transformOrigin: "12px 13px" }}
+          animate={{ scale: [1, 1.05, 1], opacity: [0.85, 1, 0.85] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.circle
+          cx="19"
+          cy="7"
+          r="1"
+          fill="#fef3c7"
+          animate={{ opacity: [0, 1, 0], scale: [0.4, 1.2, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+        />
+      </svg>
+    </span>
+  );
+}

@@ -8,14 +8,14 @@ import { TiltCard } from "@/components/ui/TiltCard";
 import { StatCounter } from "@/components/ui/StatCounter";
 import type { CourseIconKey } from "@/lib/courseIcons";
 
-type Feature = {
+export type Feature = {
   iconKey: CourseIconKey;
   title: string;
   description: string;
   span?: boolean;
 };
 
-const features: Feature[] = [
+const defaultFeatures: Feature[] = [
   {
     iconKey: "ai",
     title: "Automated campaigns",
@@ -44,7 +44,13 @@ const features: Feature[] = [
   },
 ];
 
-export function FeatureBentoGrid() {
+export function FeatureBentoGrid({
+  features = defaultFeatures,
+  highlight = { value: 480, suffix: "+", label: "campaigns tuned this week" },
+}: {
+  features?: Feature[];
+  highlight?: { value: number; suffix?: string; label: string } | null;
+}) {
   return (
     <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
       {features.map((f, i) => (
@@ -65,12 +71,12 @@ export function FeatureBentoGrid() {
                     <ContentIcon keyword={f.iconKey} className="h-10.5 w-10.5" />
                   </IconBadge>
                 </div>
-                {f.span && (
+                {f.span && highlight && (
                   <div className="text-right">
                     <p className="text-lg font-semibold text-foreground sm:text-xl">
-                      <StatCounter to={480} suffix="+" />
+                      <StatCounter to={highlight.value} suffix={highlight.suffix} />
                     </p>
-                    <p className="text-[11px] text-muted">campaigns tuned this week</p>
+                    <p className="text-[11px] text-muted">{highlight.label}</p>
                   </div>
                 )}
               </div>

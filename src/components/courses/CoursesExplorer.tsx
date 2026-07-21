@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedAi } from "@/components/ui/icons/AnimatedAi";
 import { AnimatedSearch } from "@/components/ui/icons/AnimatedSearch";
+import { Reveal } from "@/components/ui/Reveal";
 import { CourseCard, type CourseCardData } from "./CourseCard";
 
 export function CoursesExplorer({
@@ -38,10 +39,10 @@ export function CoursesExplorer({
     <div>
       {isLoggedIn && recommended.length > 0 && (
         <div className="mb-14">
-          <div className="flex items-center gap-2">
+          <Reveal direction="left" className="flex items-center gap-2">
             <AnimatedAi className="h-7 w-7" />
             <h2 className="text-lg font-semibold">AI-recommended for you</h2>
-          </div>
+          </Reveal>
           <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-7 lg:grid-cols-3">
             {recommended.slice(0, 3).map((course, i) => (
               <CourseCard
@@ -57,7 +58,7 @@ export function CoursesExplorer({
         </div>
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <Reveal direction="up" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
@@ -91,7 +92,7 @@ export function CoursesExplorer({
             className="w-full rounded-full border border-border-soft bg-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 dark:focus:ring-brand-900/30"
           />
         </div>
-      </div>
+      </Reveal>
 
       <motion.div layout className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-7 lg:grid-cols-3">
         <AnimatePresence mode="popLayout">
