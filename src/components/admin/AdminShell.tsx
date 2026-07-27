@@ -29,6 +29,13 @@ import { AnimatedCrown } from "@/components/ui/icons/AnimatedCrown";
 import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
 import { AnimatedTrophy } from "@/components/ui/icons/AnimatedTrophy";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
+import { AnimatedImage } from "@/components/ui/icons/AnimatedImage";
+import { AnimatedBulb } from "@/components/ui/icons/AnimatedBulb";
+import { AnimatedFlame } from "@/components/ui/icons/AnimatedFlame";
+import { AnimatedTrending } from "@/components/ui/icons/AnimatedTrending";
+import { AnimatedSpeaker } from "@/components/ui/icons/AnimatedSpeaker";
+import { AnimatedLock } from "@/components/ui/icons/AnimatedLock";
+import { AnimatedSettings } from "@/components/ui/icons/AnimatedSettings";
 import logo from "@/images/Loginn Logo.png";
 
 export type AdminNavUser = { name: string; email: string; avatarColor: string; avatarUrl: string | null };
@@ -39,22 +46,56 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
     items: [{ href: "/admin", label: "Dashboard", icon: AnimatedHome }],
   },
   {
-    label: "Management",
+    label: "Academy Management",
     items: [
       { href: "/admin/courses", label: "Courses", icon: AnimatedGraduation },
       { href: "/admin/categories", label: "Categories", icon: AnimatedLayers },
-      { href: "/admin/users", label: "Users", icon: AnimatedUsers },
-      { href: "/admin/mentors", label: "Mentors", icon: AnimatedUser },
       { href: "/admin/enrollments", label: "Enrollments", icon: AnimatedBook },
-      { href: "/admin/internships", label: "Internships", icon: AnimatedBriefcase },
-      { href: "/admin/applications", label: "Applications", icon: AnimatedMail },
-      { href: "/admin/projects", label: "Projects", icon: AnimatedFolder },
+      { href: "/admin/mentors", label: "Mentors", icon: AnimatedUser },
       { href: "/admin/tutoring", label: "Tutoring", icon: AnimatedCalendar },
       { href: "/admin/classes", label: "Classes", icon: AnimatedVideoCamera },
-      { href: "/admin/leads", label: "Client Requests", icon: AnimatedChat },
+      { href: "/admin/projects", label: "Projects", icon: AnimatedFolder },
+    ],
+  },
+  {
+    label: "Internship Management",
+    items: [
+      { href: "/admin/internships", label: "Internships", icon: AnimatedBriefcase },
+      { href: "/admin/applications", label: "Applications", icon: AnimatedMail },
+    ],
+  },
+  {
+    label: "Astrology Management",
+    items: [
       { href: "/admin/astrology", label: "Horoscope Reports", icon: AnimatedMoonStar },
       { href: "/admin/compatibility-matches", label: "Compatibility Matches", icon: AnimatedMoonStar },
+    ],
+  },
+  {
+    label: "User Management",
+    items: [
+      { href: "/admin/users", label: "Users", icon: AnimatedUsers },
+      { href: "/admin/leads", label: "Contact Enquiries", icon: AnimatedChat },
+    ],
+  },
+  {
+    label: "Team Management",
+    items: [
+      { href: "/admin/team", label: "Team", icon: AnimatedCrown },
+      { href: "/admin/milestones", label: "Milestones", icon: AnimatedFlame },
+    ],
+  },
+  {
+    label: "Content Management",
+    items: [
+      { href: "/admin/about-content", label: "About Page Content", icon: AnimatedSparkle },
+      { href: "/admin/offerings", label: "Key Offerings", icon: AnimatedLayers },
+      { href: "/admin/gallery", label: "Gallery", icon: AnimatedImage },
+      { href: "/admin/faq", label: "FAQ", icon: AnimatedBulb },
       { href: "/admin/events", label: "Events", icon: AnimatedCalendar },
+      { href: "/admin/partners", label: "Partners", icon: AnimatedShield },
+      { href: "/admin/clients", label: "Clients", icon: AnimatedTrophy },
+      { href: "/admin/testimonials", label: "Testimonials", icon: AnimatedChat },
     ],
   },
   {
@@ -62,18 +103,18 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
     items: [{ href: "/admin/payments", label: "Payments", icon: AnimatedRupee }],
   },
   {
-    label: "About Page",
+    label: "Insights",
     items: [
-      { href: "/admin/about-content", label: "Page Content", icon: AnimatedSparkle },
-      { href: "/admin/offerings", label: "Key Offerings", icon: AnimatedLayers },
-      { href: "/admin/team", label: "Team", icon: AnimatedCrown },
-      { href: "/admin/partners", label: "Partners", icon: AnimatedShield },
-      { href: "/admin/clients", label: "Clients", icon: AnimatedTrophy },
+      { href: "/admin/reports", label: "Reports & Analytics", icon: AnimatedTrending },
+      { href: "/admin/notifications", label: "Notifications", icon: AnimatedSpeaker },
     ],
   },
   {
-    label: "Homepage",
-    items: [{ href: "/admin/testimonials", label: "Testimonials", icon: AnimatedChat }],
+    label: "Settings",
+    items: [
+      { href: "/admin/auth-settings", label: "Authentication Settings", icon: AnimatedLock },
+      { href: "/admin/settings", label: "System Settings", icon: AnimatedSettings },
+    ],
   },
 ];
 

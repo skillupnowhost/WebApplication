@@ -12,10 +12,14 @@ import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/Card";
 import { AnimatedCelestialWheel } from "@/components/ui/icons/AnimatedCelestialWheel";
 import { AnimatedChevron } from "@/components/ui/icons/AnimatedChevron";
-import { PlaceAutocomplete, type PlacePick } from "./PlaceAutocomplete";
+import type { PlacePick } from "./PlaceAutocomplete";
+import { GlobalPlacePicker } from "./GlobalPlacePicker";
 import { DateSelect, TimeSelect } from "./DateTimeFields";
 import { LanguageChips } from "./LanguageChips";
+import { TransliterateInput } from "./TransliterateInput";
+import { KulamInput } from "./KulamInput";
 import { t, type AstrologyLanguage } from "@/lib/astrology/i18n";
+import { COLOR_THEME_VALUES } from "@/lib/astrology/report";
 import { cn } from "@/lib/cn";
 
 const formSchema = astrologyProfileSchema
@@ -24,8 +28,9 @@ const formSchema = astrologyProfileSchema
     birthTimeUnknown: z.boolean().default(false),
     depth: z.enum(["SUMMARY", "FULL"]),
     chartStyle: z.enum(["NORTH_INDIAN", "SOUTH_INDIAN", "EAST_INDIAN"]),
-    language: z.enum(["en", "ta", "hi", "te", "ml"]),
+    language: z.enum(["en", "ta", "hi", "te", "ml", "kn", "bn", "mr", "gu", "pa", "ur"]),
     reportStyle: z.enum(["PROFESSIONAL", "TRADITIONAL", "MODERN"]),
+    colorTheme: z.enum(COLOR_THEME_VALUES),
   });
 
 type FormInput = z.input<typeof formSchema>;
@@ -64,9 +69,11 @@ function SectionCard({
 export function BirthDetailsForm({
   language = "en",
   defaultDepth = "SUMMARY",
+  defaultReportStyle = "PROFESSIONAL",
 }: {
   language?: AstrologyLanguage;
   defaultDepth?: "SUMMARY" | "FULL";
+  defaultReportStyle?: "PROFESSIONAL" | "TRADITIONAL" | "MODERN";
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -87,7 +94,8 @@ export function BirthDetailsForm({
       depth: defaultDepth,
       chartStyle: "SOUTH_INDIAN",
       language,
-      reportStyle: "PROFESSIONAL",
+      reportStyle: defaultReportStyle,
+      colorTheme: "DEFAULT",
       system: "THIRUKKANITHAM",
       birthPlace: "",
     },
@@ -95,9 +103,7 @@ export function BirthDetailsForm({
 
   const birthTimeUnknown = watch("birthTimeUnknown");
   const lang = (watch("language") ?? language) as AstrologyLanguage;
-  const birthPlace = watch("birthPlace") ?? "";
   const depth = watch("depth");
-  const reportStyle = watch("reportStyle");
 
   useEffect(() => {
     if (birthTimeUnknown) setValue("birthTime", "12:00", { shouldValidate: true });
@@ -149,6 +155,7 @@ export function BirthDetailsForm({
           chartStyle: data.chartStyle,
           language: data.language,
           reportStyle: data.reportStyle,
+          colorTheme: data.colorTheme,
         }),
       });
       const reportJson = await reportRes.json();
@@ -177,7 +184,14 @@ export function BirthDetailsForm({
         <SectionCard title={t(lang, "formTitleBirth")} badge={t(lang, "requiredNote")}>
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label={t(lang, "fullName")} placeholder="e.g. Priya Sundaram" {...register("fullName")} error={errors.fullName?.message} />
+              <TransliterateInput
+                label={t(lang, "fullName")}
+                placeholder="e.g. Priya Sundaram"
+                lang={lang}
+                value={watch("fullName") ?? ""}
+                onChange={(v) => setValue("fullName", v, { shouldValidate: !!errors.fullName })}
+                error={errors.fullName?.message}
+              />
               <Select label={t(lang, "gender")} {...register("gender")}>
                 <option value="">—</option>
                 <option value="male">{t(lang, "genderMale")}</option>
@@ -206,16 +220,16 @@ export function BirthDetailsForm({
               <input type="checkbox" className="h-4 w-4 rounded border-border-soft accent-amber-500" {...register("birthTimeUnknown")} />
               {t(lang, "birthTimeUnknown")}
             </label>
-            <PlaceAutocomplete
-              label={t(lang, "birthPlace")}
-              value={birthPlace}
-              placeholder="e.g. Madurai, Tamil Nadu, India"
-              error={errors.birthPlace?.message}
-              searchingText={t(lang, "placeSearching")}
-              noResultsText={t(lang, "placeNoResults")}
-              onChange={(text) => setValue("birthPlace", text, { shouldValidate: !!errors.birthPlace })}
-              onPick={setPlacePick}
-            />
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">{t(lang, "birthPlace")}</p>
+              <GlobalPlacePicker
+                lang={lang}
+                value={watch("birthPlace") ?? ""}
+                error={errors.birthPlace?.message}
+                onChange={(text) => setValue("birthPlace", text, { shouldValidate: !!errors.birthPlace })}
+                onPick={setPlacePick}
+              />
+            </div>
           </div>
         </SectionCard>
 
@@ -243,8 +257,18 @@ export function BirthDetailsForm({
                 className="overflow-hidden"
               >
                 <div className="grid grid-cols-1 gap-4 px-5 pb-5 sm:grid-cols-2 sm:px-6 sm:pb-6">
-                  <Input label={t(lang, "fatherName")} {...register("fatherName")} />
-                  <Input label={t(lang, "motherName")} {...register("motherName")} />
+                  <TransliterateInput
+                    label={t(lang, "fatherName")}
+                    lang={lang}
+                    value={watch("fatherName") ?? ""}
+                    onChange={(v) => setValue("fatherName", v)}
+                  />
+                  <TransliterateInput
+                    label={t(lang, "motherName")}
+                    lang={lang}
+                    value={watch("motherName") ?? ""}
+                    onChange={(v) => setValue("motherName", v)}
+                  />
                   <Select label={t(lang, "maritalStatus")} {...register("maritalStatus")}>
                     <option value="">—</option>
                     <option value="single">{t(lang, "maritalSingle")}</option>
@@ -258,8 +282,13 @@ export function BirthDetailsForm({
                   <Input label={t(lang, "businessType")} {...register("businessType")} />
                   <Input label={t(lang, "salary")} {...register("salary")} />
                   <Input label={t(lang, "community")} {...register("community")} />
-                  <Input label={t(lang, "caste")} {...register("caste")} />
                   <Input label={t(lang, "gothram")} {...register("gothram")} />
+                  <KulamInput
+                    label={t(lang, "caste")}
+                    lang={lang}
+                    value={watch("caste") ?? ""}
+                    onChange={(v) => setValue("caste", v)}
+                  />
                   <div className="sm:col-span-2">
                     <Textarea label={t(lang, "customNotes")} rows={3} {...register("customNotes")} />
                   </div>
@@ -311,34 +340,6 @@ export function BirthDetailsForm({
                 <option value="NORTH_INDIAN">{t(lang, "styleNorth")}</option>
                 <option value="EAST_INDIAN">{t(lang, "styleEast")}</option>
               </Select>
-            </div>
-
-            {/* Output style — radio cards */}
-            <div>
-              <p className="mb-1.5 text-sm font-medium text-foreground">{t(lang, "chooseOutputStyle")}</p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {(
-                  [
-                    { value: "PROFESSIONAL", label: t(lang, "outputProfessional") },
-                    { value: "TRADITIONAL", label: t(lang, "outputTraditional") },
-                    { value: "MODERN", label: t(lang, "outputModern") },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setValue("reportStyle", opt.value)}
-                    className={cn(
-                      "cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all duration-200",
-                      reportStyle === opt.value
-                        ? "border-amber-400/60 bg-[color-mix(in_oklab,var(--color-amber-500)_12%,transparent)]"
-                        : "border-border-soft bg-surface hover:border-amber-400/30"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </SectionCard>

@@ -13,6 +13,7 @@ import { GlassCard } from "@/components/ui/Card";
 import { AnimatedCelestialWheel } from "@/components/ui/icons/AnimatedCelestialWheel";
 import { DateSelect } from "./DateTimeFields";
 import { LanguageChips } from "./LanguageChips";
+import { TransliterateInput } from "./TransliterateInput";
 import { t, type AstrologyLanguage, type AstrologyDictionaryKey } from "@/lib/astrology/i18n";
 
 type FormInput = z.input<typeof astrologyMuhurthamQuerySchema>;
@@ -72,7 +73,14 @@ export function MuhurthamForm({ language = "en" }: { language?: AstrologyLanguag
 
       <form onSubmit={handleSubmit(onSubmit)} className="astro-form relative flex flex-col gap-4">
         <h3 className="text-lg font-semibold">{t(lang, "muhurthamFormTitle")}</h3>
-        <Input label={t(lang, "yourName")} placeholder="e.g. Arun Kumar" {...register("name")} error={errors.name?.message} />
+        <TransliterateInput
+          label={t(lang, "yourName")}
+          placeholder="e.g. Arun Kumar"
+          lang={lang}
+          value={watch("name") ?? ""}
+          onChange={(v) => setValue("name", v, { shouldValidate: !!errors.name })}
+          error={errors.name?.message}
+        />
         <Select label={t(lang, "eventType")} {...register("event")} error={errors.event?.message}>
           {MUHURTHAM_EVENTS.map((ev) => (
             <option key={ev} value={ev}>

@@ -43,42 +43,50 @@ enum TeamCategory {
   STAFF
 }
 
+enum TeamDepartment {
+  DEVELOPMENT
+  TUTORING
+  ASTROLOGY
+  OPERATIONS
+  ADMINISTRATION
+}
+
 model User {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String
-  email         String   @unique
+  email         String    @unique
   phone         String?
   passwordHash  String
-  role          Role     @default(STUDENT)
-  emailVerified Boolean  @default(false)
-  phoneVerified Boolean  @default(false)
+  role          Role      @default(STUDENT)
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
   country       String?
-  avatarColor   String   @default("#6366f1")
+  avatarColor   String    @default("#6366f1")
   avatarUrl     String?
   grade         String?
   board         String?
-  tutoringTier  FeeTier  @default(FREE)
-  points        Int      @default(0)
-  currentStreak Int      @default(0)
-  longestStreak Int      @default(0)
+  tutoringTier  FeeTier   @default(FREE)
+  points        Int       @default(0)
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
   lastActiveAt  DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  enrollments        Enrollment[]
+  enrollments            Enrollment[]
   internshipApplications InternshipApplication[]
-  tutoringBookings   TutoringBooking[]
-  projects           Project[]
-  mentoredProjects   Project[] @relation("MentorProjects")
-  otpCodes           OtpCode[]
-  notifications      Notification[]
-  payments           Payment[]
-  dailyActivities    DailyActivity[]
-  pointsTransactions PointsTransaction[]
-  mentorProfile      Tutor?         @relation("MentorAccount")
-  googleAccount      GoogleAccount?
-  classBookings      ClassBooking[]
-  astrologyProfiles  AstrologyProfile[]
+  tutoringBookings       TutoringBooking[]
+  projects               Project[]
+  mentoredProjects       Project[]               @relation("MentorProjects")
+  otpCodes               OtpCode[]
+  notifications          Notification[]
+  payments               Payment[]
+  dailyActivities        DailyActivity[]
+  pointsTransactions     PointsTransaction[]
+  mentorProfile          Tutor?                  @relation("MentorAccount")
+  googleAccount          GoogleAccount?
+  classBookings          ClassBooking[]
+  astrologyProfiles      AstrologyProfile[]
 }
 
 model DailyActivity {
@@ -119,43 +127,43 @@ model ShowcaseProject {
 }
 
 model OtpCode {
-  id        String   @id @default(cuid())
+  id         String   @id @default(cuid())
   identifier String
-  code      String
-  purpose   String
-  expiresAt DateTime
-  consumed  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  code       String
+  purpose    String
+  expiresAt  DateTime
+  consumed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([identifier, purpose])
 }
 
 model Course {
-  id           String   @id @default(cuid())
-  title        String
-  slug         String   @unique
-  category     String
-  level        String
-  description  String
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  category        String
+  level           String
+  description     String
   longDescription String?
-  instructor   String
+  instructor      String
   instructorTitle String?
-  durationWeeks Int
-  price        Int
-  originalPrice Int?
-  rating       Float     @default(4.8)
-  studentsCount Int      @default(0)
-  imageColor   String    @default("#6366f1")
-  tags         String
-  syllabus     String
-  featured     Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  durationWeeks   Int
+  price           Int
+  originalPrice   Int?
+  rating          Float    @default(4.8)
+  studentsCount   Int      @default(0)
+  imageColor      String   @default("#6366f1")
+  tags            String
+  syllabus        String
+  featured        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  enrollments  Enrollment[]
-  payments     Payment[]
+  enrollments Enrollment[]
+  payments    Payment[]
 }
 
 model Enrollment {
@@ -192,18 +200,18 @@ model Payment {
 }
 
 model Tutor {
-  id          String  @id @default(cuid())
-  name        String
-  subject     String
-  bio         String
-  qualification String
+  id              String  @id @default(cuid())
+  name            String
+  subject         String
+  bio             String
+  qualification   String
   experienceYears Int
-  rating      Float   @default(4.9)
-  avatarColor String  @default("#22c55e")
-  boards      String
-  grades      String  @default("[\"1st Grade\",\"2nd Grade\",\"3rd Grade\",\"4th Grade\",\"5th Grade\",\"6th Grade\",\"7th Grade\",\"8th Grade\",\"9th Grade\",\"10th Grade\",\"11th Grade\",\"12th Grade\"]")
-  userId      String? @unique
-  user        User?   @relation("MentorAccount", fields: [userId], references: [id])
+  rating          Float   @default(4.9)
+  avatarColor     String  @default("#22c55e")
+  boards          String
+  grades          String  @default("[\"1st Grade\",\"2nd Grade\",\"3rd Grade\",\"4th Grade\",\"5th Grade\",\"6th Grade\",\"7th Grade\",\"8th Grade\",\"9th Grade\",\"10th Grade\",\"11th Grade\",\"12th Grade\"]")
+  userId          String? @unique
+  user            User?   @relation("MentorAccount", fields: [userId], references: [id])
 
   bookings TutoringBooking[]
   classes  TutorClass[]
@@ -268,39 +276,39 @@ model ClassRecording {
 }
 
 model TutoringBooking {
-  id         String   @id @default(cuid())
-  userId     String
-  tutorId    String
-  subject    String
-  grade      String
-  board      String
+  id            String   @id @default(cuid())
+  userId        String
+  tutorId       String
+  subject       String
+  grade         String
+  board         String
   preferredSlot String
-  status     String   @default("pending")
-  notes      String?
-  createdAt  DateTime @default(now())
+  status        String   @default("pending")
+  notes         String?
+  createdAt     DateTime @default(now())
 
   user  User  @relation(fields: [userId], references: [id])
   tutor Tutor @relation(fields: [tutorId], references: [id])
 }
 
 model Internship {
-  id          String   @id @default(cuid())
-  title       String
-  slug        String   @unique
-  company     String
-  type        String
-  paid        Boolean  @default(true)
-  stipend     Int?
-  location    String
-  durationWeeks Int
-  description String
-  requirements String
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  company          String
+  type             String
+  paid             Boolean  @default(true)
+  stipend          Int?
+  location         String
+  durationWeeks    Int
+  description      String
+  requirements     String
   responsibilities String
-  mentorName  String
-  mentorEmail String
-  applyDeadline DateTime
-  featured    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  mentorName       String
+  mentorEmail      String
+  applyDeadline    DateTime
+  featured         Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
   applications InternshipApplication[]
 }
@@ -321,32 +329,32 @@ model InternshipApplication {
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   mentorId    String?
   title       String
   description String
-  status      String   @default("in_progress")
-  progress    Int      @default(0)
+  status      String    @default("in_progress")
+  progress    Int       @default(0)
   feedback    String?
   dueDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   user   User  @relation(fields: [userId], references: [id])
   mentor User? @relation("MentorProjects", fields: [mentorId], references: [id])
 }
 
 model Lead {
-  id          String   @id @default(cuid())
-  name        String
-  email       String
-  phone       String
-  company     String?
-  service     String
-  message     String?
-  status      String   @default("new")
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  company   String?
+  service   String
+  message   String?
+  status    String   @default("new")
+  createdAt DateTime @default(now())
 }
 
 model Notification {
@@ -361,12 +369,12 @@ model Notification {
 }
 
 model AboutContent {
-  id           String   @id @default("singleton")
-  heroTitle    String   @default("About MyLoginn")
-  heroTagline  String   @default("")
-  overview     String   @default("")
-  mission      String   @default("")
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default("singleton")
+  heroTitle   String   @default("About MyLoginn")
+  heroTagline String   @default("")
+  overview    String   @default("")
+  mission     String   @default("")
+  updatedAt   DateTime @updatedAt
 }
 
 model Offering {
@@ -377,25 +385,53 @@ model Offering {
 }
 
 model TeamMember {
-  id              String       @id @default(cuid())
+  id              String          @id @default(cuid())
   name            String
   role            String
   category        TeamCategory
-  bio             String       @default("")
+  department      TeamDepartment?
+  bio             String          @default("")
   experienceYears Int?
   specialization  String?
   photoUrl        String?
   linkedinUrl     String?
-  sortOrder       Int          @default(0)
-  createdAt       DateTime     @default(now())
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+}
+
+model CompanyMilestone {
+  id          String   @id @default(cuid())
+  year        String
+  title       String
+  description String   @default("")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model GalleryItem {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  caption   String   @default("")
+  category  String   @default("Event")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model FaqItem {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String   @default("General Company Information")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Partner {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   name       String
   logoUrl    String?
   websiteUrl String?
-  sortOrder  Int     @default(0)
+  sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
 }
 
@@ -410,30 +446,30 @@ model Client {
 }
 
 model Testimonial {
-  id          String   @id @default(cuid())
-  quote       String
-  authorName  String
-  authorRole  String   @default("")
-  avatarUrl   String?
-  rating      Int      @default(5)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  quote      String
+  authorName String
+  authorRole String   @default("")
+  avatarUrl  String?
+  rating     Int      @default(5)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
 }
 
 model Event {
-  id             String    @id @default(cuid())
-  slug           String    @unique
-  title          String
-  description    String
-  category       String?
-  mode           String    @default("ONLINE")
-  startsAt       DateTime
-  endsAt         DateTime?
-  location       String?
-  coverImageUrl  String?
-  registerUrl    String?
-  sortOrder      Int       @default(0)
-  createdAt      DateTime  @default(now())
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  description   String
+  category      String?
+  mode          String    @default("ONLINE")
+  startsAt      DateTime
+  endsAt        DateTime?
+  location      String?
+  coverImageUrl String?
+  registerUrl   String?
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
 }
 
 model GeocodeCache {
@@ -446,10 +482,53 @@ model GeocodeCache {
   createdAt DateTime @default(now())
 }
 
+model KulamSuggestion {
+  id        String   @id @default(cuid())
+  name      String
+  alias     String
+  language  String
+  createdAt DateTime @default(now())
+
+  @@unique([name, language])
+  @@index([language])
+  @@index([alias])
+}
+
+model IndianState {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  nameLocal Json
+  cities    IndianCity[]
+}
+
+model IndianCity {
+  id        String      @id @default(cuid())
+  stateId   String
+  state     IndianState @relation(fields: [stateId], references: [id])
+  name      String
+  nameLocal Json
+  latitude  Float
+  longitude Float
+  timezone  String
+
+  @@unique([stateId, name])
+  @@index([name])
+}
+
+model TransliterationCache {
+  id        String   @id @default(cuid())
+  latin     String
+  language  String
+  result    String
+  createdAt DateTime @default(now())
+
+  @@unique([latin, language])
+}
+
 model AstrologyProfile {
-  id             String   @id @default(cuid())
-  userId         String?
-  user           User?    @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
 
   fullName       String
   gender         String?
@@ -460,34 +539,34 @@ model AstrologyProfile {
   longitude      Float
   timezone       String
 
-  parentsNames   String?
-  fatherName     String?
-  motherName     String?
-  maritalStatus  String?
-  phone          String?
-  email          String?
-  occupation     String?
-  businessType   String?
-  salary         String?
-  community      String?
-  caste          String?
-  gothram        String?
-  customNotes    String?
-  system         String   @default("THIRUKKANITHAM")
+  parentsNames  String?
+  fatherName    String?
+  motherName    String?
+  maritalStatus String?
+  phone         String?
+  email         String?
+  occupation    String?
+  businessType  String?
+  salary        String?
+  community     String?
+  caste         String?
+  gothram       String?
+  customNotes   String?
+  system        String  @default("THIRUKKANITHAM")
 
-  chart          ChartData?
-  createdAt      DateTime @default(now())
+  chart     ChartData?
+  createdAt DateTime   @default(now())
 
-  matchesAsA     MatchRequest[] @relation("MatchProfileA")
-  matchesAsB     MatchRequest[] @relation("MatchProfileB")
+  matchesAsA MatchRequest[] @relation("MatchProfileA")
+  matchesAsB MatchRequest[] @relation("MatchProfileB")
 
   @@index([userId])
 }
 
 model ChartData {
-  id             String   @id @default(cuid())
-  profileId      String   @unique
-  profile        AstrologyProfile @relation(fields: [profileId], references: [id])
+  id        String           @id @default(cuid())
+  profileId String           @unique
+  profile   AstrologyProfile @relation(fields: [profileId], references: [id])
 
   ayanamsaUsed   Float
   planetsJson    String
@@ -498,27 +577,28 @@ model ChartData {
   doshaJson      String
   computedAt     DateTime @default(now())
 
-  reports        HoroscopeReport[]
+  reports HoroscopeReport[]
 }
 
 model HoroscopeReport {
-  id            String      @id @default(cuid())
-  chartDataId   String
-  chartData     ChartData   @relation(fields: [chartDataId], references: [id])
+  id          String    @id @default(cuid())
+  chartDataId String
+  chartData   ChartData @relation(fields: [chartDataId], references: [id])
 
   depth         ReportDepth
   chartStyle    ChartStyle
   language      String
   reportStyle   String      @default("PROFESSIONAL")
+  colorTheme    String      @default("DEFAULT")
   narrativeJson String
   createdAt     DateTime    @default(now())
 
-  @@index([chartDataId])
   @@unique([chartDataId, depth, chartStyle, language, reportStyle])
+  @@index([chartDataId])
 }
 
 model MatchRequest {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   profileAId    String
   profileBId    String
   profileA      AstrologyProfile @relation("MatchProfileA", fields: [profileAId], references: [id])
@@ -526,9 +606,28 @@ model MatchRequest {
   ashtakootJson String
   narrativeJson String
   language      String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime         @default(now())
 
   @@index([profileAId])
   @@index([profileBId])
 }
 
+/// Site-wide admin toggles. Singleton row (id is always "singleton").
+model SystemSettings {
+  id                 String   @id @default("singleton")
+  maintenanceMode    Boolean  @default(false)
+  allowNewSignups    Boolean  @default(true)
+  supportEmail       String   @default("myloginntech@gmail.com")
+  announcementBanner String?
+  updatedAt          DateTime @updatedAt
+}
+
+/// Authentication-related knobs surfaced for admin visibility. Singleton row (id is always "singleton").
+/// NOTE: persisted only — not yet read by src/lib/otp.ts / src/lib/auth.ts (see admin auth-settings screen for details).
+model AuthSettings {
+  id                       String   @id @default("singleton")
+  requireEmailVerification Boolean  @default(false)
+  requirePhoneVerification Boolean  @default(false)
+  otpResendCooldownSeconds Int      @default(30)
+  updatedAt                DateTime @updatedAt
+}

@@ -8,7 +8,8 @@ import { z } from "zod";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/Card";
-import { PlaceAutocomplete, type PlacePick } from "./PlaceAutocomplete";
+import type { PlacePick } from "./PlaceAutocomplete";
+import { GlobalPlacePicker } from "./GlobalPlacePicker";
 import { DateSelect, TimeSelect } from "./DateTimeFields";
 import { LanguageChips } from "./LanguageChips";
 import { t, type AstrologyLanguage } from "@/lib/astrology/i18n";
@@ -26,7 +27,7 @@ const personSchema = z.object({
 const matchFormSchema = z.object({
   partnerA: personSchema,
   partnerB: personSchema,
-  language: z.enum(["en", "ta", "hi", "te", "ml"]),
+  language: z.enum(["en", "ta", "hi", "te", "ml", "kn", "bn", "mr", "gu", "pa", "ur"]),
 });
 
 type MatchFormInput = z.infer<typeof matchFormSchema>;
@@ -164,18 +165,18 @@ export function MatchForm({ language = "en" }: { language?: AstrologyLanguage })
                     setValue(`${p.prefix}.birthTime`, v, { shouldValidate: !!errors[p.prefix]?.birthTime })
                   }
                 />
-                <PlaceAutocomplete
-                  label={t(lang, "birthPlace")}
-                  value={watch(`${p.prefix}.birthPlace`) ?? ""}
-                  placeholder="City, State, Country"
-                  error={errors[p.prefix]?.birthPlace?.message}
-                  searchingText={t(lang, "placeSearching")}
-                  noResultsText={t(lang, "placeNoResults")}
-                  onChange={(text) =>
-                    setValue(`${p.prefix}.birthPlace`, text, { shouldValidate: !!errors[p.prefix]?.birthPlace })
-                  }
-                  onPick={(pick) => setPicks((prev) => ({ ...prev, [p.prefix]: pick }))}
-                />
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">{t(lang, "birthPlace")}</p>
+                  <GlobalPlacePicker
+                    lang={lang}
+                    value={watch(`${p.prefix}.birthPlace`) ?? ""}
+                    error={errors[p.prefix]?.birthPlace?.message}
+                    onChange={(text) =>
+                      setValue(`${p.prefix}.birthPlace`, text, { shouldValidate: !!errors[p.prefix]?.birthPlace })
+                    }
+                    onPick={(pick) => setPicks((prev) => ({ ...prev, [p.prefix]: pick }))}
+                  />
+                </div>
               </div>
             </section>
           ))}

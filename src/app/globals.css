@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./astrology-fonts.css";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
@@ -1093,7 +1094,12 @@ input[type="radio"],
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
 }
 
-/* ---- Jathagam document: luxury white report theme (royal blue + gold), print-first ---- */
+/* ---- Jathagam document: luxury white report theme (royal blue + gold), print-first ----
+   Structural note: layout spacing (margins/padding/flex/grid) is set inline via Tailwind
+   utility classes on the JSX side (see ReportPrimitives.tsx); this stylesheet only owns the
+   token-driven "hard" visual pieces (typography treatment, card/table/chip skins, ornaments)
+   that read from the --jd-* custom properties so the 3 structural styles (below) and the 10
+   independent colour themes (further down this file) can layer over the same markup. */
 .jathagam-doc {
   --jd-ink: #101d3a;
   --jd-ink-soft: #47536f;
@@ -1111,11 +1117,21 @@ input[type="radio"],
   font-feature-settings: "tnum" 1;
 }
 .jathagam-doc .jd-kicker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--jd-gold);
+}
+.jathagam-doc .jd-kicker::before {
+  content: "";
+  width: 14px;
+  height: 1.5px;
+  background: var(--jd-gold-bright);
 }
 .jathagam-doc .jd-section-title {
   font-size: 11px;
@@ -1127,6 +1143,15 @@ input[type="radio"],
   align-items: center;
   gap: 0.6rem;
 }
+.jathagam-doc .jd-section-title::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 1px;
+  background: var(--jd-gold-bright);
+  transform: rotate(45deg);
+}
 .jathagam-doc .jd-section-title::after {
   content: "";
   height: 1px;
@@ -1135,15 +1160,17 @@ input[type="radio"],
 }
 .jathagam-doc .jd-card {
   border: 1px solid var(--jd-hairline);
-  border-radius: 0.9rem;
+  border-top: 2px solid var(--jd-hairline);
+  border-radius: 0.6rem;
   background: var(--jd-paper);
+  transition: border-color 0.2s ease;
 }
 .jathagam-doc .jd-soft {
   background: var(--jd-paper-soft);
 }
 .jathagam-doc .jd-label {
   font-size: 9.5px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--jd-ink-soft);
 }
@@ -1151,25 +1178,32 @@ input[type="radio"],
   font-size: 12.5px;
   font-weight: 600;
   color: var(--jd-ink);
+  font-feature-settings: "tnum" 1;
 }
 .jathagam-doc .jd-table {
   width: 100%;
   font-size: 11.5px;
   border-collapse: collapse;
 }
+.jathagam-doc .jd-table thead tr {
+  background: var(--jd-paper-soft);
+}
 .jathagam-doc .jd-table th {
   font-size: 9.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--jd-ink-soft);
-  font-weight: 600;
+  font-weight: 700;
   text-align: left;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border-bottom: 1.5px solid var(--jd-gold-bright);
 }
 .jathagam-doc .jd-table td {
   padding: 5px 8px;
   border-bottom: 1px solid var(--jd-hairline);
+}
+.jathagam-doc .jd-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--jd-paper-soft) 55%, transparent);
 }
 .jathagam-doc .jd-table tr:last-child td {
   border-bottom: none;
@@ -1179,9 +1213,10 @@ input[type="radio"],
   align-items: center;
   gap: 4px;
   border-radius: 999px;
-  padding: 2px 10px;
+  padding: 2.5px 11px;
   font-size: 10.5px;
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .jathagam-doc .jd-chip-good { background: #ecfdf5; color: var(--jd-good); border: 1px solid #bbe7dd; }
 .jathagam-doc .jd-chip-bad { background: #fef2f2; color: var(--jd-bad); border: 1px solid #f5cccc; }
@@ -1202,6 +1237,31 @@ input[type="radio"],
 .jathagam-doc .jd-charts svg text {
   fill: var(--jd-ink);
 }
+.jathagam-doc .jd-divider {
+  display: block;
+  height: 10px;
+  margin: 0.4rem 0 0.8rem;
+  opacity: 0.7;
+}
+.jathagam-doc .jd-section-icon {
+  display: none;
+}
+.jathagam-doc .jd-corner-ornament {
+  display: none;
+}
+/* Crest badge — the circular ring behind the masthead's leading glyph (ReportPrimitives'
+   ReportMasthead). Sits behind an AnimatedX icon supplied by the caller; each structural style
+   below re-skins the ring only, so the same markup works in all three. */
+.jathagam-doc .jd-crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 999px;
+  border: 1.5px solid var(--jd-gold-bright);
+  color: var(--jd-royal);
+  background: var(--jd-paper);
+}
 
 /* ---- Report output styles ----
    The default .jathagam-doc is the PROFESSIONAL theme (royal blue + gold on white).
@@ -1221,35 +1281,159 @@ input[type="radio"],
   --jd-hairline: #e2d3ab;
   --jd-good: #386641;
   --jd-bad: #9a3412;
+  /* Default warm-manuscript ink palette for section headings — always on for
+     Traditional (not gated behind picking the separate Multi-Colour theme),
+     so the style itself reads as a colourful hand-inked document out of the
+     box. The dedicated jd-theme-multi block (further down) overrides these
+     same variables with its own richer set when that theme is explicitly
+     chosen, since it's declared later in the cascade at equal specificity. */
+  --jd-multi-1: #9a3020;
+  --jd-multi-2: #1f6b45;
+  --jd-multi-3: #1f3f8f;
+  --jd-multi-4: #92600a;
+  --jd-multi-5: #6b2fa0;
+  --jd-multi-6: #a3281f;
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(180, 127, 26, 0.08) 0%, transparent 55%),
+    radial-gradient(140% 90% at 50% 0%, rgba(180, 127, 26, 0.14) 0%, transparent 55%),
+    radial-gradient(90% 60% at 100% 100%, rgba(124, 45, 18, 0.09) 0%, transparent 60%),
+    radial-gradient(70% 50% at 0% 0%, rgba(61, 43, 18, 0.06) 0%, transparent 65%),
+    radial-gradient(70% 50% at 100% 100%, rgba(61, 43, 18, 0.06) 0%, transparent 65%),
+    repeating-linear-gradient(115deg, rgba(146, 96, 10, 0.04) 0px, rgba(146, 96, 10, 0.04) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(rgba(146, 96, 10, 0.055) 0px, rgba(146, 96, 10, 0.055) 1px, transparent 1px, transparent 27px),
     var(--jd-paper);
   border: 1px solid var(--jd-hairline);
   outline: 3px double var(--jd-gold-bright);
   outline-offset: -10px;
-  font-family: Georgia, "Times New Roman", "Noto Serif", serif;
+  box-shadow: inset 0 0 0 6px var(--jd-paper);
 }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+1) .jd-section-title,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+1) .jd-section-title { color: var(--jd-multi-1); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+1) .jd-section-title::after,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+1) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-1), transparent); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+2) .jd-section-title,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+2) .jd-section-title { color: var(--jd-multi-2); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+2) .jd-section-title::after,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+2) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-2), transparent); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+3) .jd-section-title,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+3) .jd-section-title { color: var(--jd-multi-3); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+3) .jd-section-title::after,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+3) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-3), transparent); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+4) .jd-section-title,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+4) .jd-section-title { color: var(--jd-multi-4); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+4) .jd-section-title::after,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+4) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-4), transparent); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+5) .jd-section-title,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+5) .jd-section-title { color: var(--jd-multi-5); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n+5) .jd-section-title::after,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n+5) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-5), transparent); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n) .jd-section-title,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n) .jd-section-title { color: var(--jd-multi-6); }
+.jathagam-doc.jd-style-traditional .astro-report-section:nth-of-type(6n) .jd-section-title::after,
+.jathagam-doc.jd-style-traditional .jd-onepage-section:nth-of-type(6n) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-6), transparent); }
 .jathagam-doc.jd-style-traditional h1,
 .jathagam-doc.jd-style-traditional h2,
 .jathagam-doc.jd-style-traditional h3 {
-  font-family: "Segoe Script", "Lucida Handwriting", Georgia, cursive;
+  /* The site-wide `h1,h2,h3{font-family:var(--font-display)...}` rule (near the
+     top of this file) matches these elements directly, and a direct match always
+     wins over an inherited value regardless of specificity — so without this,
+     the report's own big title silently falls back to the site's Sora/Geist
+     heading font instead of the self-hosted handwriting face. */
+  font-family: var(--astro-font-hand, inherit);
   letter-spacing: 0.02em;
+}
+.jathagam-doc.jd-style-traditional .jd-section-title::before {
+  background: currentColor;
 }
 .jathagam-doc.jd-style-traditional .jd-section-title::after {
   background: linear-gradient(to right, var(--jd-gold-bright), transparent);
 }
 .jathagam-doc.jd-style-traditional .jd-card {
   border-color: var(--jd-hairline);
-  border-radius: 0.4rem;
-  background: color-mix(in srgb, var(--jd-paper) 60%, #fffdf6);
+  border-top-color: var(--jd-gold-bright);
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--jd-paper) 55%, #fffdf6);
+  box-shadow: 0 1px 0 rgba(61, 43, 18, 0.06) inset;
 }
-.jathagam-doc.jd-style-traditional .jd-chip-good { background: #eef3e6; border-color: #cfdcba; }
-.jathagam-doc.jd-style-traditional .jd-chip-bad { background: #f9ece2; border-color: #ecc9ac; }
-.jathagam-doc.jd-style-traditional .jd-chip-gold { background: #f6ecd2; border-color: #ddc283; }
-.jathagam-doc.jd-style-traditional .jd-chip-neutral { background: var(--jd-paper-soft); border-color: var(--jd-hairline); }
+/* Slight tilt + lift shadow — reads like the rasi/navamsa charts were hand-pasted
+   onto the page rather than laid out on a perfect digital grid. */
+.jathagam-doc.jd-style-traditional .jd-pasted {
+  box-shadow: 0 2px 5px rgba(61, 43, 18, 0.22), 0 0 0 1px rgba(61, 43, 18, 0.06);
+}
+.jathagam-doc.jd-style-traditional .jd-chip-good { background: #dcecd2; border-color: #9dc282; color: #285c33; }
+.jathagam-doc.jd-style-traditional .jd-chip-bad { background: #f6dccb; border-color: #dd9c69; color: #9a3412; }
+.jathagam-doc.jd-style-traditional .jd-chip-gold { background: #f3dfa0; border-color: #c9972e; color: #7a5205; }
+.jathagam-doc.jd-style-traditional .jd-chip-neutral { background: #ecdfc0; border-color: #d3b972; color: var(--jd-ink); }
+/* Crest ring + wax-seal accent — the masthead's leading glyph gets an inked-medallion ring;
+   ReportMasthead additionally renders a small wax-seal disc next to it only for Traditional. */
+.jathagam-doc.jd-style-traditional .jd-crest {
+  border: 2px solid var(--jd-gold-bright);
+  border-style: double;
+  background: color-mix(in srgb, var(--jd-paper) 70%, #fffdf6);
+}
+.jathagam-doc.jd-style-traditional .jd-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #b5432f, #7c2d12 70%);
+  color: #f3dfa0;
+  box-shadow: 0 2px 4px rgba(61, 20, 7, 0.35), inset 0 0 0 1.5px rgba(255, 255, 255, 0.15);
+  transform: rotate(-6deg);
+}
+/* Ink-stamp treatment for the "CONFIDENTIAL" badge — reads like a genuine hand-stamped
+   document seal instead of a flat digital pill. Only applied in Traditional; Professional/
+   Modern keep the plain gold pill via the base .jd-chip-gold rule. */
+.jathagam-doc.jd-style-traditional .jd-stamp {
+  position: relative;
+  background: transparent;
+  border: 1.5px solid var(--jd-bad);
+  color: var(--jd-bad);
+  font-family: var(--astro-font-hand, inherit);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  transform: rotate(-4deg);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--jd-bad) 30%, transparent);
+  mix-blend-mode: multiply;
+}
 .jathagam-doc.jd-style-traditional .jd-bar { background: #e8dbb9; }
 .jathagam-doc.jd-style-traditional .jd-bar > span {
   background: linear-gradient(to right, var(--jd-royal), var(--jd-gold-bright));
+}
+/* ---- Traditional structural additions: temple-corner ornaments + multi-colour manuscript headings ---- */
+.jathagam-doc.jd-style-traditional {
+  position: relative;
+  isolation: isolate;
+}
+.jathagam-doc.jd-style-traditional .jd-corner-ornament {
+  display: block;
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.95;
+  color: var(--jd-gold-bright);
+}
+.jathagam-doc.jd-style-traditional .jd-corner-tl { top: 6px; left: 6px; }
+.jathagam-doc.jd-style-traditional .jd-corner-tr { top: 6px; right: 6px; transform: scaleX(-1); }
+.jathagam-doc.jd-style-traditional .jd-corner-bl { bottom: 6px; left: 6px; transform: scaleY(-1); }
+.jathagam-doc.jd-style-traditional .jd-corner-br { bottom: 6px; right: 6px; transform: scale(-1, -1); }
+.jathagam-doc.jd-style-traditional.jd-onepage .jd-corner-ornament { width: 30px; height: 30px; }
+.jathagam-doc.jd-style-traditional.jd-onepage .jd-seal { width: 26px; height: 26px; font-size: 7px; }
+.jathagam-doc.jd-style-traditional .jd-section-title {
+  font-family: var(--astro-font-hand, inherit);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-size: 12.5px;
+  text-shadow: 0.3px 0.3px 0 color-mix(in srgb, currentColor 25%, transparent);
+}
+.jathagam-doc.jd-style-traditional .jd-divider {
+  display: block;
+  height: 16px;
+  margin: 0.5rem 0 0.9rem;
+  color: var(--jd-gold-bright);
+  opacity: 0.85;
 }
 
 .jathagam-doc.jd-style-modern {
@@ -1264,29 +1448,301 @@ input[type="radio"],
   --jd-hairline: #e8e4f8;
   --jd-good: #0f766e;
   --jd-bad: #be123c;
+  position: relative;
+  isolation: isolate;
   background:
-    radial-gradient(90% 40% at 100% 0%, rgba(168, 85, 247, 0.07) 0%, transparent 60%),
-    radial-gradient(80% 30% at 0% 100%, rgba(109, 40, 217, 0.05) 0%, transparent 60%),
+    radial-gradient(90% 40% at 100% 0%, color-mix(in srgb, var(--jd-gold-bright) 9%, transparent) 0%, transparent 60%),
+    radial-gradient(80% 30% at 0% 100%, color-mix(in srgb, var(--jd-royal) 6%, transparent) 0%, transparent 60%),
     var(--jd-paper);
-  font-family: var(--font-sans, ui-sans-serif), system-ui, sans-serif;
+}
+/* Premium hero band across the very top edge of the document. */
+.jathagam-doc.jd-style-modern::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--jd-royal), var(--jd-gold-bright), var(--jd-royal-deep));
+  z-index: 1;
 }
 .jathagam-doc.jd-style-modern .jd-kicker {
-  background: linear-gradient(120deg, #7c3aed, #a855f7 60%, #6d28d9);
+  background: linear-gradient(120deg, var(--jd-royal), var(--jd-gold-bright) 60%, var(--jd-royal-deep));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
+.jathagam-doc.jd-style-modern .jd-kicker::before {
+  background: linear-gradient(90deg, var(--jd-royal), var(--jd-gold-bright));
+}
 .jathagam-doc.jd-style-modern .jd-card {
+  border: 1px solid transparent;
   border-radius: 1.1rem;
-  box-shadow: 0 1px 2px rgba(23, 22, 58, 0.04), 0 6px 20px rgba(109, 40, 217, 0.05);
+  background:
+    linear-gradient(var(--jd-paper), var(--jd-paper)) padding-box,
+    linear-gradient(135deg, color-mix(in srgb, var(--jd-gold-bright) 55%, transparent), color-mix(in srgb, var(--jd-royal) 40%, transparent)) border-box;
+  box-shadow: 0 1px 2px rgba(23, 22, 58, 0.04), 0 8px 24px color-mix(in srgb, var(--jd-royal) 7%, transparent);
+}
+.jathagam-doc.jd-style-modern .jd-card.jd-soft {
+  background:
+    linear-gradient(var(--jd-paper-soft), var(--jd-paper-soft)) padding-box,
+    linear-gradient(135deg, color-mix(in srgb, var(--jd-gold-bright) 55%, transparent), color-mix(in srgb, var(--jd-royal) 40%, transparent)) border-box;
+}
+.jathagam-doc.jd-style-modern .jd-section-title::before {
+  display: none;
 }
 .jathagam-doc.jd-style-modern .jd-section-title::after {
-  background: linear-gradient(to right, #a855f7, transparent);
+  background: linear-gradient(to right, var(--jd-gold-bright), transparent);
 }
-.jathagam-doc.jd-style-modern .jd-chip-gold { background: #f5edfe; color: #7c3aed; border-color: #e3ccfb; }
-.jathagam-doc.jd-style-modern .jd-table th { border-bottom-color: #a855f7; }
+.jathagam-doc.jd-style-modern .jd-chip-gold {
+  background: linear-gradient(120deg, color-mix(in srgb, var(--jd-gold-bright) 18%, var(--jd-paper)), color-mix(in srgb, var(--jd-royal) 10%, var(--jd-paper)));
+  color: var(--jd-royal-deep);
+  border-color: color-mix(in srgb, var(--jd-gold-bright) 35%, var(--jd-paper));
+}
+.jathagam-doc.jd-style-modern .jd-table th { border-bottom-color: var(--jd-gold-bright); }
 .jathagam-doc.jd-style-modern .jd-bar > span {
-  background: linear-gradient(to right, #6d28d9, #a855f7);
+  background: linear-gradient(to right, var(--jd-royal), var(--jd-gold-bright));
+}
+/* ---- Modern structural additions: icon-led section headers + premium divider ---- */
+.jathagam-doc.jd-style-modern .jd-section-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  gap: 0.5rem;
+}
+.jathagam-doc.jd-style-modern .jd-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--jd-royal), var(--jd-gold-bright));
+  filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--jd-royal) 30%, transparent));
+}
+.jathagam-doc.jd-style-modern .jd-divider {
+  display: block;
+  height: 14px;
+  margin: 0.5rem 0 0.9rem;
+  opacity: 0.9;
+}
+.jathagam-doc.jd-style-modern .astro-report-section,
+.jathagam-doc.jd-style-modern .jd-onepage-section {
+  border-radius: 1rem;
+}
+.jathagam-doc.jd-style-modern .jd-crest {
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--jd-royal), var(--jd-gold-bright));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--jd-royal) 35%, transparent);
+}
+
+/* ---- Colour theme system: 10 independent palettes layered on top of any of the 3 structural
+   styles above (`.jd-style-professional`(default)/traditional/modern). A theme class only ever
+   overrides the same `--jd-*` custom properties the base/style rules already declare — it never
+   redeclares `background`/`border`/etc., so it composes for free with every style's decorative CSS,
+   which all read colour from these variables. Source order matters: these rules come after the
+   `.jd-style-*` rules above so they win at equal specificity. `DEFAULT` applies no class at all,
+   i.e. "use the active style's own built-in palette". ---- */
+.jathagam-doc.jd-theme-gold {
+  --jd-ink: #2a1f04;
+  --jd-ink-soft: #6b5a2c;
+  --jd-royal: #8a6a05;
+  --jd-royal-deep: #5c4700;
+  --jd-gold: #b8860b;
+  --jd-gold-bright: #d4af37;
+  --jd-paper: #fffdf5;
+  --jd-paper-soft: #faf3d9;
+  --jd-hairline: #ecdca0;
+  --jd-good: #2f6b3f;
+  --jd-bad: #a3341c;
+}
+.jathagam-doc.jd-theme-royal-blue {
+  --jd-ink: #0c1730;
+  --jd-ink-soft: #3d4a6b;
+  --jd-royal: #123a9e;
+  --jd-royal-deep: #0b2568;
+  --jd-gold: #5b6fa8;
+  --jd-gold-bright: #4f7fe0;
+  --jd-paper: #ffffff;
+  --jd-paper-soft: #eef2fc;
+  --jd-hairline: #dbe3f7;
+  --jd-good: #0f766e;
+  --jd-bad: #b91c1c;
+}
+.jathagam-doc.jd-theme-emerald {
+  --jd-ink: #0b2a1f;
+  --jd-ink-soft: #3f6152;
+  --jd-royal: #0f6b45;
+  --jd-royal-deep: #0a4a30;
+  --jd-gold: #0f8a5f;
+  --jd-gold-bright: #16a870;
+  --jd-paper: #ffffff;
+  --jd-paper-soft: #eefaf4;
+  --jd-hairline: #cdeee0;
+  --jd-good: #0f766e;
+  --jd-bad: #b91c1c;
+}
+.jathagam-doc.jd-theme-purple {
+  --jd-ink: #241536;
+  --jd-ink-soft: #5c4a75;
+  --jd-royal: #7c3aed;
+  --jd-royal-deep: #5b21b6;
+  --jd-gold: #a21caf;
+  --jd-gold-bright: #c026d3;
+  --jd-paper: #fffaff;
+  --jd-paper-soft: #f9f0fb;
+  --jd-hairline: #eeddf3;
+  --jd-good: #0f766e;
+  --jd-bad: #be123c;
+}
+.jathagam-doc.jd-theme-maroon {
+  --jd-ink: #2b0d10;
+  --jd-ink-soft: #6b3a3f;
+  --jd-royal: #7f1d2e;
+  --jd-royal-deep: #530f1c;
+  --jd-gold: #8c5a2b;
+  --jd-gold-bright: #b5793a;
+  --jd-paper: #fff8f6;
+  --jd-paper-soft: #fbe9e7;
+  --jd-hairline: #f0cfc9;
+  --jd-good: #3f7d52;
+  --jd-bad: #c2410c;
+}
+.jathagam-doc.jd-theme-orange {
+  --jd-ink: #2b1704;
+  --jd-ink-soft: #6b4a24;
+  --jd-royal: #c2410c;
+  --jd-royal-deep: #7c2d12;
+  --jd-gold: #ea580c;
+  --jd-gold-bright: #f97316;
+  --jd-paper: #fffaf5;
+  --jd-paper-soft: #fff0e0;
+  --jd-hairline: #fbd9b8;
+  --jd-good: #166534;
+  --jd-bad: #b91c1c;
+}
+.jathagam-doc.jd-theme-teal {
+  --jd-ink: #062b2b;
+  --jd-ink-soft: #3a6363;
+  --jd-royal: #0f766e;
+  --jd-royal-deep: #0a4f4a;
+  --jd-gold: #0d9488;
+  --jd-gold-bright: #14b8a6;
+  --jd-paper: #f4fffd;
+  --jd-paper-soft: #e6fbf7;
+  --jd-hairline: #c8ede6;
+  --jd-good: #15803d;
+  --jd-bad: #b91c1c;
+}
+.jathagam-doc.jd-theme-classic-black {
+  --jd-ink: #111111;
+  --jd-ink-soft: #4b4b4b;
+  --jd-royal: #161616;
+  --jd-royal-deep: #000000;
+  --jd-gold: #8a8a8a;
+  --jd-gold-bright: #b0b0b0;
+  --jd-paper: #ffffff;
+  --jd-paper-soft: #f5f5f5;
+  --jd-hairline: #dcdcdc;
+  --jd-good: #166534;
+  --jd-bad: #b91c1c;
+}
+.jathagam-doc.jd-theme-premium-white {
+  --jd-ink: #1c1c1c;
+  --jd-ink-soft: #6b6b6b;
+  --jd-royal: #2b2b2b;
+  --jd-royal-deep: #000000;
+  --jd-gold: #a68a54;
+  --jd-gold-bright: #c9a876;
+  --jd-paper: #ffffff;
+  --jd-paper-soft: #fbfbfb;
+  --jd-hairline: #ececec;
+  --jd-good: #166534;
+  --jd-bad: #b91c1c;
+}
+/* Multi-colour Traditional: deliberately varies per section rather than being a single flat
+   palette, evoking a hand-painted multi-colour manuscript heading style regardless of which of
+   the 3 structural styles is active. */
+.jathagam-doc.jd-theme-multi {
+  --jd-ink: #241708;
+  --jd-ink-soft: #6b5636;
+  --jd-royal: #7c2d12;
+  --jd-royal-deep: #4a1a0a;
+  --jd-gold: #92600a;
+  --jd-gold-bright: #c9a227;
+  --jd-paper: #fbf4e4;
+  --jd-paper-soft: #f3e6c8;
+  --jd-hairline: #e4d2a0;
+  --jd-good: #2f6b3f;
+  --jd-bad: #9a3412;
+  --jd-multi-1: #a3281f;
+  --jd-multi-2: #0f6b45;
+  --jd-multi-3: #123a9e;
+  --jd-multi-4: #6d28d9;
+  --jd-multi-5: #b8860b;
+  --jd-multi-6: #9f2b3f;
+}
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+1) .jd-section-title,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+1) .jd-section-title { color: var(--jd-multi-1); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+1) .jd-section-title::after,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+1) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-1), transparent); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+2) .jd-section-title,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+2) .jd-section-title { color: var(--jd-multi-2); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+2) .jd-section-title::after,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+2) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-2), transparent); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+3) .jd-section-title,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+3) .jd-section-title { color: var(--jd-multi-3); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+3) .jd-section-title::after,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+3) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-3), transparent); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+4) .jd-section-title,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+4) .jd-section-title { color: var(--jd-multi-4); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+4) .jd-section-title::after,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+4) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-4), transparent); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+5) .jd-section-title,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+5) .jd-section-title { color: var(--jd-multi-5); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n+5) .jd-section-title::after,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n+5) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-5), transparent); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n) .jd-section-title,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n) .jd-section-title { color: var(--jd-multi-6); }
+.jathagam-doc.jd-theme-multi .astro-report-section:nth-of-type(6n) .jd-section-title::after,
+.jathagam-doc.jd-theme-multi .jd-onepage-section:nth-of-type(6n) .jd-section-title::after { background: linear-gradient(to right, var(--jd-multi-6), transparent); }
+
+/* ---- Single-page compact mode: the SUMMARY+TRADITIONAL Jathagam rendered to fit one physical A4 page ---- */
+.jathagam-doc.jd-onepage {
+  font-size: 0.78em;
+}
+.jathagam-doc.jd-onepage .jd-onepage-section {
+  margin-bottom: 0.26rem;
+}
+.jathagam-doc.jd-onepage .jd-section-title {
+  font-size: 8.5px;
+  margin-bottom: 0.2rem;
+}
+.jathagam-doc.jd-onepage .jd-card {
+  border-radius: 0.45rem;
+}
+.jathagam-doc.jd-onepage .jd-label {
+  font-size: 7.4px;
+}
+.jathagam-doc.jd-onepage .jd-value {
+  font-size: 9.5px;
+}
+.jathagam-doc.jd-onepage .jd-table {
+  font-size: 8.5px;
+}
+.jathagam-doc.jd-onepage .jd-divider {
+  /* The single-A4-page layout has zero spare vertical budget — the divider ornament (a nice-to-have
+     on the FULL report, which spans many pages anyway) would push the SUMMARY report onto a 2nd
+     physical page, so it's suppressed here. Corner ornaments stay (they're position:absolute and
+     cost zero flow height) and icon-led headers stay (they sit inline on the existing title line). */
+  display: none;
+}
+.jathagam-doc.jd-onepage .jd-table th,
+.jathagam-doc.jd-onepage .jd-table td {
+  padding: 1.5px 5px;
+}
+.jathagam-doc.jd-onepage .jd-chip {
+  font-size: 8px;
+  padding: 1px 6px;
 }
 
 /* Astrology report pagination — keeps sections intact across PDF/print page breaks */

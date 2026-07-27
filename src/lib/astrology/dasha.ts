@@ -16,10 +16,17 @@ const DASHA_YEARS: Record<PlanetName, number> = {
 
 const MS_PER_YEAR = 365.2425 * 24 * 60 * 60 * 1000;
 
+export type PratyantarDasha = {
+  lord: PlanetName;
+  startDate: string;
+  endDate: string;
+};
+
 export type AntarDasha = {
   lord: PlanetName;
   startDate: string;
   endDate: string;
+  pratyantardashas: PratyantarDasha[];
 };
 
 export type DashaPeriod = {
@@ -35,6 +42,20 @@ function lordSequenceFrom(startLord: PlanetName): PlanetName[] {
   return Array.from({ length: 9 }, (_, i) => NAKSHATRA_LORDS[(startIndex + i) % 9]);
 }
 
+/** Pratyantardashas (3rd-level sub-periods) within one Antardasha, proportional the same way Antardashas are within a Mahadasha. */
+function computePratyantardashas(antarLord: PlanetName, start: number, years: number): PratyantarDasha[] {
+  const sequence = lordSequenceFrom(antarLord);
+  const totalYears = 120;
+  let cursor = start;
+  return sequence.map((lord) => {
+    const subYears = (DASHA_YEARS[lord] * years) / totalYears;
+    const subStart = cursor;
+    const subEnd = cursor + subYears * MS_PER_YEAR;
+    cursor = subEnd;
+    return { lord, startDate: new Date(subStart).toISOString(), endDate: new Date(subEnd).toISOString() };
+  });
+}
+
 /** Antardashas (sub-periods) within one Mahadasha, proportional to each lord's full dasha length. */
 function computeAntardashas(mahaLord: PlanetName, start: number, years: number): AntarDasha[] {
   const sequence = lordSequenceFrom(mahaLord);
@@ -45,7 +66,12 @@ function computeAntardashas(mahaLord: PlanetName, start: number, years: number):
     const subStart = cursor;
     const subEnd = cursor + subYears * MS_PER_YEAR;
     cursor = subEnd;
-    return { lord, startDate: new Date(subStart).toISOString(), endDate: new Date(subEnd).toISOString() };
+    return {
+      lord,
+      startDate: new Date(subStart).toISOString(),
+      endDate: new Date(subEnd).toISOString(),
+      pratyantardashas: computePratyantardashas(lord, subStart, subYears),
+    };
   });
 }
 

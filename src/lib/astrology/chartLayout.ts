@@ -1,5 +1,6 @@
 import { RASHIS } from "./constants";
 import type { SiderealPlanet } from "./chart";
+import type { AstrologyLanguage } from "./i18n";
 
 export type ChartStyleValue = "NORTH_INDIAN" | "SOUTH_INDIAN" | "EAST_INDIAN";
 
@@ -69,19 +70,34 @@ export function eastIndianCellForHouse(houseNumber: number): { row: number; col:
   return EAST_INDIAN_HOUSE_WALK[(houseNumber - 1) % 12];
 }
 
-export function rashiLabel(rashiIndex: number, language: "en" | "ta" | "hi" | "te" | "ml" = "en"): string {
+export function rashiLabel(rashiIndex: number, language: AstrologyLanguage = "en"): string {
   const rashi = RASHIS[rashiIndex];
   if (language === "ta") return rashi.tamil;
   if (language === "hi") return rashi.hindi;
   if (language === "te") return rashi.telugu;
   if (language === "ml") return rashi.malayalam;
+  if (language === "kn") return rashi.kannada;
+  if (language === "bn") return rashi.bengali;
+  if (language === "mr") return rashi.marathi;
+  if (language === "gu") return rashi.gujarati;
+  if (language === "pa") return rashi.punjabi;
+  if (language === "ur") return rashi.urdu;
   return rashi.english;
 }
 
-export function nakshatraLabel(n: { english: string; tamil: string; hindi: string; telugu: string; malayalam: string }, language: "en" | "ta" | "hi" | "te" | "ml" = "en"): string {
+export function nakshatraLabel(
+  n: { english: string; tamil: string; hindi: string; telugu: string; malayalam: string; kannada: string; bengali: string; marathi: string; gujarati: string; punjabi: string; urdu: string },
+  language: AstrologyLanguage = "en"
+): string {
   if (language === "ta") return n.tamil;
   if (language === "hi") return n.hindi;
   if (language === "te") return n.telugu;
   if (language === "ml") return n.malayalam;
+  if (language === "kn") return n.kannada;
+  if (language === "bn") return n.bengali;
+  if (language === "mr") return n.marathi;
+  if (language === "gu") return n.gujarati;
+  if (language === "pa") return n.punjabi;
+  if (language === "ur") return n.urdu;
   return n.english;
 }

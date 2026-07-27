@@ -7,11 +7,11 @@ import type { AstrologyLanguage } from "./i18n";
  */
 
 type NumberTexts = {
-  essence: Record<AstrologyLanguage, string>;
-  career: Record<AstrologyLanguage, string>;
-  business: Record<AstrologyLanguage, string>;
-  marriage: Record<AstrologyLanguage, string>;
-  health: Record<AstrologyLanguage, string>;
+  essence: Partial<Record<AstrologyLanguage, string>> & { en: string };
+  career: Partial<Record<AstrologyLanguage, string>> & { en: string };
+  business: Partial<Record<AstrologyLanguage, string>> & { en: string };
+  marriage: Partial<Record<AstrologyLanguage, string>> & { en: string };
+  health: Partial<Record<AstrologyLanguage, string>> & { en: string };
 };
 
 export const NUMBER_TEXTS: Record<number, NumberTexts> = {

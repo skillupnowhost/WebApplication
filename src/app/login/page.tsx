@@ -16,7 +16,7 @@ import { OtpInput } from "@/components/ui/OtpInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { FIREBASE_PHONE_AUTH_ENABLED } from "@/lib/firebaseConfig";
-import { useFirebasePhoneOtp, FIREBASE_RECAPTCHA_CONTAINER_ID } from "@/lib/useFirebasePhoneOtp";
+import { useFirebasePhoneOtp, FIREBASE_RECAPTCHA_CONTAINER_ID, firebasePhoneErrorMessage } from "@/lib/useFirebasePhoneOtp";
 import { AnimatedLock } from "@/components/ui/icons/AnimatedLock";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
 import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
@@ -162,8 +162,8 @@ export default function LoginPage() {
       setOtpStep("verify");
       setDevCode(json.devCode ?? null);
       setCooldown(30);
-    } catch {
-      setOtpError(usingFirebasePhone ? "Couldn't send verification SMS. Please try again." : "Something went wrong.");
+    } catch (err) {
+      setOtpError(usingFirebasePhone ? firebasePhoneErrorMessage(err) : "Something went wrong.");
     } finally {
       setRequesting(false);
     }

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/validation";
 import { formatPhoneDisplay } from "@/lib/whatsapp";
+import { CONTACT_EMAIL } from "@/lib/contactInfo";
 import { cn } from "@/lib/cn";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +18,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { FIREBASE_PHONE_AUTH_ENABLED } from "@/lib/firebaseConfig";
-import { useFirebasePhoneOtp, FIREBASE_RECAPTCHA_CONTAINER_ID } from "@/lib/useFirebasePhoneOtp";
+import { useFirebasePhoneOtp, FIREBASE_RECAPTCHA_CONTAINER_ID, firebasePhoneErrorMessage } from "@/lib/useFirebasePhoneOtp";
 import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
 import { AnimatedLock } from "@/components/ui/icons/AnimatedLock";
 import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
@@ -138,10 +139,8 @@ export default function ForgotPasswordPage() {
       setStep("verify");
       setDevCode(json.devCode ?? null);
       setCooldown(30);
-    } catch {
-      setIdentifyError(
-        usingFirebasePhone ? "Couldn't send verification SMS. Please try again." : "Something went wrong."
-      );
+    } catch (err) {
+      setIdentifyError(usingFirebasePhone ? firebasePhoneErrorMessage(err) : "Something went wrong.");
     } finally {
       setRequesting(false);
     }
@@ -542,7 +541,16 @@ export default function ForgotPasswordPage() {
           >
             <AnimatedSuccess once className="h-16 w-16" />
             <h1 className="mt-5 text-xl font-semibold">Password reset!</h1>
-            <p className="mt-2 text-sm text-muted">Taking you to your dashboard…</p>
+            <p className="mt-2 max-w-xs text-sm text-muted">
+              Your MyLoginn password has been changed successfully. Taking you to your dashboard…
+            </p>
+            <p className="mt-4 max-w-xs text-xs text-muted">
+              Didn&apos;t make this change?{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-brand-500 hover:underline">
+                Contact support
+              </a>{" "}
+              right away.
+            </p>
           </motion.div>
         )}
       </AnimatePresence>

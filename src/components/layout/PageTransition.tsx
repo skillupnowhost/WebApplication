@@ -10,7 +10,13 @@ export function PageTransition({ children }: { children: ReactNode }) {
   // The admin shell positions fixed overlays (drawer, modals, toasts); the
   // animated wrapper's transform/filter would turn into their containing
   // block and pin them to the page instead of the viewport — skip it there.
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+  //
+  // /astrology/**/print pages are captured headlessly by Playwright for PDF
+  // export (see lib/astrology/pdf.ts). Headless Chromium never paints frames
+  // for a backgrounded tab, so the entrance animation's initial (invisible,
+  // blurred) state never advances — Chromium then rasterizes the whole page
+  // as one blank layer, producing an empty PDF. Skip the wrapper there too.
+  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.endsWith("/print")) {
     return <>{children}</>;
   }
 

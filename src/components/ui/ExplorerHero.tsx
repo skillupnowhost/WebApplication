@@ -39,6 +39,7 @@ export function ExplorerHero({
   eyebrowText,
   titleLead,
   titleGradient,
+  titleAs: TitleTag = "h1",
   description,
   chips,
   ctaHref,
@@ -57,6 +58,8 @@ export function ExplorerHero({
   eyebrowText: string;
   titleLead: string;
   titleGradient: string;
+  /** Heading level for the title — defaults to h1; pass "h2" when embedding this hero mid-page (e.g. below another h1). */
+  titleAs?: "h1" | "h2";
   description: string;
   chips: HeroChip[];
   ctaHref: string;
@@ -95,10 +98,10 @@ export function ExplorerHero({
             {eyebrowText}
           </motion.span>
 
-          <h1 className="cinematic-title mt-6 font-semibold text-foreground">
+          <TitleTag className="cinematic-title mt-6 font-semibold text-foreground">
             <AnimatedText text={titleLead} delay={0.1} />{" "}
             <AnimatedText text={titleGradient} wordClassName="shimmer-text-ink" delay={0.3} />
-          </h1>
+          </TitleTag>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}

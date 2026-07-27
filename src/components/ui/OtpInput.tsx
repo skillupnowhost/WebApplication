@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { motion } from "framer-motion";
+import { motion, useAnimationControls } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 type OtpInputProps = {
@@ -16,13 +16,37 @@ type OtpInputProps = {
 export function OtpInput({ length = 6, value, onChange, onComplete, error, disabled }: OtpInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Tracks whether the user has started correcting the code since the
+  // current `error` was set — lets the red border/shake clear the moment
+  // they resume typing, instead of staying lit (or re-shaking on every
+  // keystroke re-render) until the parent's next verify attempt resolves.
+  const [editedSinceError, setEditedSinceError] = useState(false);
   const digits = Array.from({ length }, (_, i) => value[i] ?? "");
+  const showError = Boolean(error) && !editedSinceError;
+
+  const shakeControls = useAnimationControls();
+  const prevErrorRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!error) inputsRef.current[Math.min(value.length, length - 1)]?.focus();
   }, [value, error, length]);
 
+  // Play the shake exactly once per *new* error, driven by imperative
+  // controls rather than an inline keyframes array on `animate` — the
+  // latter replays on every re-render (e.g. each digit typed) as long as
+  // `error` stays truthy, which is what made the shake feel "stuck".
+  useEffect(() => {
+    if (error && error !== prevErrorRef.current) {
+      setEditedSinceError(false);
+      shakeControls.start({ x: [0, -8, 8, -6, 6, -3, 3, 0], transition: { duration: 0.4 } });
+    } else if (!error) {
+      shakeControls.start({ x: 0, transition: { duration: 0.15 } });
+    }
+    prevErrorRef.current = error;
+  }, [error, shakeControls]);
+
   function setDigit(index: number, char: string) {
+    if (error) setEditedSinceError(true);
     const next = digits.slice();
     next[index] = char;
     const joined = next.join("").slice(0, length);
@@ -54,6 +78,7 @@ export function OtpInput({ length = 6, value, onChange, onComplete, error, disab
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
     if (!pasted) return;
     e.preventDefault();
+    if (error) setEditedSinceError(true);
     onChange(pasted);
     if (pasted.length === length) onComplete?.(pasted);
     const nextIndex = Math.min(pasted.length, length - 1);
@@ -62,11 +87,7 @@ export function OtpInput({ length = 6, value, onChange, onComplete, error, disab
   }
 
   return (
-    <motion.div
-      animate={error ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col gap-1.5"
-    >
+    <motion.div animate={shakeControls} className="flex flex-col gap-1.5">
       <div className="flex justify-between gap-2 sm:gap-3">
         {digits.map((digit, i) => (
           <motion.input
@@ -75,6 +96,7 @@ export function OtpInput({ length = 6, value, onChange, onComplete, error, disab
               inputsRef.current[i] = el;
             }}
             inputMode="numeric"
+            pattern="[0-9]*"
             autoComplete={i === 0 ? "one-time-code" : "off"}
             maxLength={1}
             value={digit}
@@ -86,7 +108,7 @@ export function OtpInput({ length = 6, value, onChange, onComplete, error, disab
             initial={false}
             animate={{
               scale: digit ? [1.15, 1] : 1,
-              borderColor: error
+              borderColor: showError
                 ? "var(--danger)"
                 : activeIndex === i
                 ? "var(--brand-400)"
@@ -95,13 +117,13 @@ export function OtpInput({ length = 6, value, onChange, onComplete, error, disab
             transition={{ duration: 0.18 }}
             className={cn(
               "h-12 w-full max-w-12 flex-1 rounded-xl border bg-surface text-center text-lg font-semibold text-foreground outline-none transition-shadow sm:h-14 sm:text-xl",
-              activeIndex === i && !error && "ring-4 ring-brand-100 dark:ring-brand-900/30",
+              activeIndex === i && !showError && "ring-4 ring-brand-100 dark:ring-brand-900/30",
               disabled && "opacity-50"
             )}
           />
         ))}
       </div>
-      {error && <span className="text-xs font-medium text-danger">{error}</span>}
+      {showError && <span className="text-xs font-medium text-danger">{error}</span>}
     </motion.div>
   );
 }

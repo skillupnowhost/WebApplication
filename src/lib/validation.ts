@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { MUHURTHAM_EVENTS } from "./astrology/constants";
+import { COLOR_THEME_VALUES } from "./astrology/report";
 
 export const phoneSchema = z
   .string()
@@ -98,7 +99,7 @@ export type SignupInput = z.input<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type LeadInput = z.infer<typeof leadSchema>;
 
-const astrologyLanguageEnum = z.enum(["en", "ta", "hi", "te", "ml"]);
+const astrologyLanguageEnum = z.enum(["en", "ta", "hi", "te", "ml", "kn", "bn", "mr", "gu", "pa", "ur"]);
 const optionalShortText = z.string().trim().max(120).optional().or(z.literal(""));
 
 export const astrologyProfileSchema = z.object({
@@ -137,6 +138,7 @@ export const astrologyReportRequestSchema = z.object({
   chartStyle: z.enum(["NORTH_INDIAN", "SOUTH_INDIAN", "EAST_INDIAN"]),
   language: astrologyLanguageEnum,
   reportStyle: z.enum(["PROFESSIONAL", "TRADITIONAL", "MODERN"]).default("PROFESSIONAL"),
+  colorTheme: z.enum(COLOR_THEME_VALUES).default("DEFAULT"),
 });
 
 export const astrologyMatchRequestSchema = z.object({
@@ -159,6 +161,7 @@ export const astrologyNamingQuerySchema = z.object({
   gender: z.enum(["boy", "girl", "both"]).default("both"),
   letter: z.string().trim().max(4).optional().or(z.literal("")),
   lang: astrologyLanguage,
+  count: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().min(1).max(5000).optional()),
 });
 
 export const astrologyNumerologyQuerySchema = z.object({

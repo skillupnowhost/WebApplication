@@ -13,9 +13,9 @@ import { AnimatedBriefcase } from "@/components/ui/icons/AnimatedBriefcase";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
 import { AnimatedInstagram } from "@/components/ui/icons/AnimatedInstagram";
 import { AnimatedFacebook } from "@/components/ui/icons/AnimatedFacebook";
-import { Monogram, MonogramWatermark } from "@/components/ui/Monogram";
 import { toWhatsAppLink } from "@/lib/whatsapp";
-import { CONTACT_EMAILS, CONTACT_PHONES, WHATSAPP_PHONE, SOCIAL_LINKS } from "@/lib/contactInfo";
+import { CONTACT_EMAILS, CONTACT_PHONES, WHATSAPP_PHONE, SOCIAL_LINKS, COMPANY_NAME } from "@/lib/contactInfo";
+import { cn } from "@/lib/cn";
 import logo from "@/images/Loginn Logo.png";
 
 const socialIcons = { instagram: AnimatedInstagram, facebook: AnimatedFacebook } as const;
@@ -77,9 +77,8 @@ export function Footer() {
         />
         <div className="pointer-events-none absolute -top-20 right-[10%] h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-[5%] h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        <MonogramWatermark className="pointer-events-none absolute -bottom-20 -right-6 text-[13rem] leading-none sm:text-[17rem]" />
 
-        <Reveal scale className="relative mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+        <Reveal scale className="relative mx-auto max-w-[1400px] px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
           <div className="flex flex-col items-start gap-7 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-2xl font-bold tracking-tight sm:text-3xl">Ready to level up your skills?</p>
@@ -100,43 +99,34 @@ export function Footer() {
         </Reveal>
       </div>
 
+      {/* Ambient backdrop for the wide desktop canvas */}
+      <div className="bg-dot-grid pointer-events-none absolute inset-0 opacity-[0.5]" aria-hidden />
+      <div className="aurora-blob pointer-events-none absolute -top-32 right-[6%] h-80 w-80 bg-[color-mix(in_srgb,var(--brand-400)_20%,transparent)]" aria-hidden />
+      <div className="aurora-blob aurora-blob-alt pointer-events-none absolute bottom-0 left-[2%] h-72 w-72 bg-[color-mix(in_srgb,var(--brand-300)_16%,transparent)]" aria-hidden />
+
       {/* Main content */}
-      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="grid gap-x-10 gap-y-14 py-16 md:grid-cols-[minmax(0,1.2fr)_minmax(0,2.4fr)]">
+      <div className="relative mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
+        <RevealGroup
+          className="grid grid-cols-2 gap-x-6 gap-y-12 py-20 sm:gap-x-8 sm:gap-y-14 lg:grid-cols-12"
+          stagger={0.12}
+        >
           {/* Brand */}
-          <Reveal direction="up" className="md:border-r md:border-border-soft md:pr-10">
+          <RevealItem className="col-span-2 border-b border-border-soft pb-9 lg:col-span-3 lg:border-0 lg:pb-0">
             <Link
               href="/"
               className="inline-flex items-center gap-3 transition-transform duration-300 hover:scale-[1.03]"
             >
-              <Monogram size="sm" />
               <Image src={logo} alt="MyLoginn" className="h-14 w-auto select-none object-contain" />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
               AI-powered learning, tutoring, internships and growth services &mdash; built for students,
               professionals and businesses.
             </p>
+            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/60">
+              {COMPANY_NAME}
+            </p>
 
-            <div className="mt-7 flex flex-col gap-4">
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center gap-3 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground"
-              >
-                <AnimatedChat className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
-                WhatsApp us
-              </a>
-              <a
-                href={`tel:${CONTACT_PHONES[0].tel}`}
-                className="group inline-flex items-center gap-3 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground"
-              >
-                <AnimatedPhone className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
-                +91 {CONTACT_PHONES[0].display}
-              </a>
-            </div>
-
-            <div className="mt-7 flex items-center gap-4">
+            <div className="mt-7 flex items-center gap-5">
               {SOCIAL_LINKS.map((s) => {
                 const Icon = socialIcons[s.key];
                 return (
@@ -150,73 +140,102 @@ export function Footer() {
                     whileTap={{ scale: 0.9 }}
                     className="inline-flex"
                   >
-                    <Icon className="h-8 w-8" />
+                    <Icon className="h-9 w-9" />
                   </motion.a>
                 );
               })}
             </div>
-          </Reveal>
+          </RevealItem>
 
           {/* Link columns */}
-          <RevealGroup
-            className="grid gap-x-8 gap-y-10 [grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr))]"
-            stagger={0.12}
-          >
-            {columns.map((col) => (
-              <RevealItem key={col.title}>
-                <div className="flex items-center gap-2">
-                  <col.Icon className="h-5 w-5 shrink-0" />
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] brand-gradient-text">{col.title}</p>
-                </div>
-                <ul className="mt-5 flex flex-col gap-3">
-                  {col.links.map((link) => (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="group inline-flex items-center gap-0 text-sm text-muted transition-colors duration-200 hover:text-foreground"
-                      >
-                        <span className="h-1.5 w-0 rounded-full brand-gradient-bg opacity-0 transition-all duration-300 group-hover:mr-2 group-hover:w-1.5 group-hover:opacity-100" />
-                        <span className="transition-transform duration-300 group-hover:translate-x-0.5">
-                          {link.label}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </RevealItem>
-            ))}
-
-            <RevealItem className="[grid-column:1/-1] sm:[grid-column:auto] min-w-0">
+          {columns.map((col) => (
+            <RevealItem key={col.title} className="lg:col-span-2">
               <div className="flex items-center gap-2">
-                <AnimatedMail className="h-5 w-5 shrink-0" />
-                <p className="text-xs font-bold uppercase tracking-[0.16em] brand-gradient-text">Get in touch</p>
+                <col.Icon className="h-5 w-5 shrink-0" />
+                <p className="text-xs font-bold uppercase tracking-[0.16em] brand-gradient-text">{col.title}</p>
               </div>
-              <ul className="mt-5 flex flex-col gap-4">
-                {CONTACT_EMAILS.map((c) => (
-                  <li key={c.key}>
-                    <a
-                      href={`mailto:${c.email}`}
-                      className="group flex flex-col gap-0.5"
+              <ul className="mt-5 flex flex-col gap-3">
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="group inline-flex items-center gap-0 text-sm text-muted transition-colors duration-200 hover:text-foreground"
                     >
-                      <span className="text-[11px] font-semibold uppercase tracking-wide text-foreground/70 transition-colors duration-200 group-hover:text-brand-500">
-                        {c.label}
+                      <span className="h-1.5 w-0 rounded-full brand-gradient-bg opacity-0 transition-all duration-300 group-hover:mr-2 group-hover:w-1.5 group-hover:opacity-100" />
+                      <span className="transition-transform duration-300 group-hover:translate-x-0.5">
+                        {link.label}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 break-all text-sm text-muted transition-colors duration-200 group-hover:text-foreground">
-                        <AnimatedArrow className="h-3 w-3 shrink-0 opacity-0 transition-all duration-300 -ml-4 group-hover:ml-0 group-hover:opacity-100" />
-                        {c.email}
-                      </span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
             </RevealItem>
-          </RevealGroup>
-        </div>
+          ))}
+
+          {/* Contact card */}
+          <RevealItem className="col-span-2 lg:col-span-3">
+            <div className="card-shine relative overflow-hidden rounded-3xl border border-border-soft bg-surface p-6 shadow-[var(--shadow-soft)] sm:p-7">
+              <div className="absolute inset-x-0 top-0 h-1 brand-gradient-bg" aria-hidden />
+              <div className="flex items-center gap-2">
+                <AnimatedChat className="h-5 w-5 shrink-0" />
+                <p className="text-xs font-bold uppercase tracking-[0.16em] brand-gradient-text">Get in touch</p>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-4">
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-3 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground"
+                >
+                  <AnimatedChat className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
+                  WhatsApp us
+                </a>
+
+                <div className="flex flex-col gap-1.5">
+                  {CONTACT_PHONES.map((p, i) => (
+                    <a
+                      key={p.tel}
+                      href={`tel:${p.tel}`}
+                      className={cn(
+                        "group inline-flex items-center gap-3 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground",
+                        i > 0 && "pl-9"
+                      )}
+                    >
+                      {i === 0 && (
+                        <AnimatedPhone className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
+                      )}
+                      +91 {p.display}
+                    </a>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  {CONTACT_EMAILS.map((c, i) => (
+                    <a
+                      key={c.key}
+                      href={`mailto:${c.email}`}
+                      className={cn(
+                        "group inline-flex items-center gap-3 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground",
+                        i > 0 && "pl-9"
+                      )}
+                    >
+                      {i === 0 && (
+                        <AnimatedMail className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
+                      )}
+                      <span className="break-all">{c.email}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </RevealItem>
+        </RevealGroup>
 
         {/* Bottom bar */}
         <Reveal direction="none" duration={0.9}>
-          <div className="flex flex-col items-center gap-4 border-t border-border-soft py-7 text-xs text-muted sm:flex-row sm:justify-between">
-            <p>&copy; {new Date().getFullYear()} MyLoginn. All rights reserved.</p>
+          <div className="flex flex-col items-center gap-4 border-t border-border-soft py-7 text-center text-xs text-muted sm:flex-row sm:justify-between sm:text-left">
+            <p>&copy; {new Date().getFullYear()} {COMPANY_NAME}. All rights reserved.</p>
 
             <p className="inline-flex items-center gap-1.5">
               Made with

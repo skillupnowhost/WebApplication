@@ -2,16 +2,18 @@ import { Section, Container, Eyebrow } from "@/components/ui/Section";
 import { BirthDetailsForm } from "@/components/astrology/BirthDetailsForm";
 import { AstroBreadcrumbs } from "@/components/astrology/AstroBreadcrumbs";
 import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
+import { parseAstrologyLanguage } from "@/lib/astrology/i18n";
 
 export const metadata = { title: "Generate your horoscope — MyLoginn Astrology" };
 
 export default async function AstrologyNewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ depth?: string }>;
+  searchParams: Promise<{ depth?: string; lang?: string }>;
 }) {
-  const { depth } = await searchParams;
-  const defaultDepth = depth === "FULL" ? "FULL" : "SUMMARY";
+  const { depth, lang } = await searchParams;
+  const defaultDepth = depth === "FULL" ? depth : "SUMMARY";
+  const language = parseAstrologyLanguage(lang);
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
       <div className="starfield-celestial" aria-hidden />
@@ -31,7 +33,7 @@ export default async function AstrologyNewPage({
             One page, four required fields. Every calculation is computed live from your exact birth instant — nothing here is templated.
           </p>
         </div>
-        <BirthDetailsForm defaultDepth={defaultDepth} />
+        <BirthDetailsForm defaultDepth={defaultDepth} language={language} />
       </Container>
     </Section>
   );

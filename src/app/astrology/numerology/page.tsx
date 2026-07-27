@@ -2,10 +2,13 @@ import { Section, Container, Eyebrow } from "@/components/ui/Section";
 import { NumerologyForm } from "@/components/astrology/NumerologyForm";
 import { AstroBreadcrumbs } from "@/components/astrology/AstroBreadcrumbs";
 import { AnimatedSparkle } from "@/components/ui/icons/AnimatedSparkle";
+import { parseAstrologyLanguage } from "@/lib/astrology/i18n";
 
 export const metadata = { title: "Numerology — MyLoginn Astrology" };
 
-export default function AstrologyNumerologyPage() {
+export default async function AstrologyNumerologyPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const { lang } = await searchParams;
+  const language = parseAstrologyLanguage(lang);
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
       <div className="starfield-celestial" aria-hidden />
@@ -26,7 +29,7 @@ export default function AstrologyNumerologyPage() {
             Chaldean method from your name and birth date.
           </p>
         </div>
-        <NumerologyForm />
+        <NumerologyForm language={language} />
       </Container>
     </Section>
   );

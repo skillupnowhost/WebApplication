@@ -1,11 +1,13 @@
 /** Single source of truth for MyLoginn contact details (used by the contact page and footer). */
 
+export const COMPANY_NAME = "MyLoginn Tech Private Limited";
+
 export const CONTACT_EMAIL = "mailloginn@gmail.com";
 
 export const CONTACT_PHONES = [
   { display: "96555 60555", tel: "+919655560555" },
-  { display: "8489 202020", tel: "+918489202020" },
   { display: "63817 21061", tel: "+916381721061" },
+  { display: "8489 202020", tel: "+918489202020" },
 ] as const;
 
 /** Primary line, also used for WhatsApp. */
@@ -40,5 +42,5 @@ export const CONTACT_EMAILS = [
 
 export const SOCIAL_LINKS = [
   { key: "instagram", label: "Instagram", handle: "@myloginntech", href: "https://instagram.com/myloginntech" },
-  { key: "facebook", label: "Facebook", handle: "MyLoginn Tech", href: "https://facebook.com/MyLoginnTech" },
+  { key: "facebook", label: "Facebook", handle: "@myloginntech", href: "https://facebook.com/MyLoginnTech" },
 ] as const;

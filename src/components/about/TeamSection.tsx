@@ -7,12 +7,9 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { AnimatedUser } from "@/components/ui/icons/AnimatedUser";
 import { AnimatedCrown } from "@/components/ui/icons/AnimatedCrown";
 import { AnimatedClock } from "@/components/ui/icons/AnimatedClock";
-import { AnimatedMail } from "@/components/ui/icons/AnimatedMail";
-import { AnimatedPhone } from "@/components/ui/icons/AnimatedPhone";
-import { AnimatedInstagram } from "@/components/ui/icons/AnimatedInstagram";
+import { AnimatedStar } from "@/components/ui/icons/AnimatedStar";
 import { PillBadge } from "@/components/about/PillBadge";
 import { CornerTechIcons } from "@/components/about/CornerTechIcons";
-import { CONTACT_EMAILS, CONTACT_PHONES, SOCIAL_LINKS } from "@/lib/contactInfo";
 
 export type Leader = {
   id: string;
@@ -25,7 +22,7 @@ export type Leader = {
   linkedinUrl: string;
 };
 
-function LinkedinBadge({ href }: { href: string }) {
+export function LinkedinBadge({ href }: { href: string }) {
   const id = "lb" + useId().replace(/[^a-zA-Z0-9]/g, "");
   return (
     <a
@@ -92,34 +89,46 @@ function ConnectingLine() {
   );
 }
 
-function LeaderCard({ leader, featured }: { leader: Leader; featured?: boolean }) {
+function LeaderCard({
+  leader,
+  featured,
+  badgeLabel,
+  badgeIcon: BadgeIcon = AnimatedCrown,
+}: {
+  leader: Leader;
+  featured?: boolean;
+  badgeLabel?: string;
+  badgeIcon?: typeof AnimatedCrown;
+}) {
   return (
     <motion.div
       whileHover={{ y: -8 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative flex h-full flex-col items-center rounded-[24px] border bg-surface p-7 text-center shadow-[var(--shadow-soft)] transition-all duration-300 hover:shadow-[var(--shadow-lift)] ${
-        featured
-          ? "border-brand-200 hover:border-brand-400 lg:scale-[1.06]"
-          : "border-border-soft hover:border-brand-300"
+      className={`group relative isolate flex h-full flex-col items-center p-7 pb-8 text-center transition-all duration-300 ${
+        featured ? "lg:scale-[1.06]" : ""
       }`}
     >
-      {featured && (
-        <span className="absolute -top-3.5 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full brand-gradient-bg px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-[var(--shadow-lift)]">
-          <AnimatedCrown className="h-3.5 w-3.5" />
-          Leadership
+      {badgeLabel && (
+        <span className="absolute -top-3.5 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full brand-gradient-bg px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-[var(--shadow-lift)]">
+          <BadgeIcon className="h-3.5 w-3.5" />
+          {badgeLabel}
         </span>
       )}
 
-      {/* Portrait with soft ivory disc behind it */}
-      <div className="relative mt-2">
+      {/* Portrait with soft blue glow, docked into an overlapping name tag */}
+      <div className="relative z-10 mt-3 flex flex-col items-center">
         <div
-          className={`absolute inset-0 -z-10 scale-[1.12] rounded-full ${
-            featured ? "bg-brand-50 dark:bg-brand-900/20" : "bg-[#F3EEE4] dark:bg-surface-2"
-          }`}
+          className="absolute left-1/2 top-1/2 -z-10 h-[150%] w-[150%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-80 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+          style={{
+            background:
+              "radial-gradient(circle, color-mix(in srgb, var(--accent-400) 45%, transparent) 0%, transparent 70%)",
+          }}
         />
         <div
-          className={`relative overflow-hidden rounded-full ${
-            featured ? "h-36 w-36 ring-4 ring-brand-400/50 sm:h-40 sm:w-40" : "h-28 w-28 sm:h-32 sm:w-32"
+          className={`relative overflow-hidden rounded-full ring-1 ring-offset-2 ring-offset-transparent transition-all duration-300 group-hover:ring-accent-400/60 ${
+            featured
+              ? "h-32 w-32 ring-accent-400/45 sm:h-36 sm:w-36"
+              : "h-28 w-28 ring-accent-400/30 sm:h-32 sm:w-32"
           }`}
         >
           {leader.photoUrl ? (
@@ -130,20 +139,27 @@ function LeaderCard({ leader, featured }: { leader: Leader; featured?: boolean }
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-brand-50 dark:bg-brand-900/20">
+            <div className="flex h-full w-full items-center justify-center bg-accent-400/10">
               <AnimatedUser className="h-14 w-14 opacity-50" />
             </div>
           )}
         </div>
+
+        {/* Name tag: rounded rectangle docked under the circle */}
+        <div className="-mt-9 w-[calc(100%+1.25rem)] rounded-2xl border border-border-soft bg-surface-2 px-4 pb-3 pt-11 shadow-[var(--shadow-soft)]">
+          <h3 className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-foreground sm:text-sm">
+            {leader.name}
+          </h3>
+          <p className="mt-0.5 text-[11px] font-medium tracking-wide text-brand-600 dark:text-brand-300 sm:text-xs">
+            {leader.role}
+          </p>
+        </div>
       </div>
 
-      <h3 className="mt-5 text-xl font-bold tracking-tight text-foreground sm:text-[22px]">{leader.name}</h3>
-      <p className="mt-1 text-sm font-semibold text-brand-600 dark:text-brand-300 sm:text-base">{leader.role}</p>
-
-      {leader.bio && <p className="mt-3 text-sm leading-[1.7] text-muted">{leader.bio}</p>}
+      {leader.bio && <p className="relative z-10 mt-4 text-sm leading-[1.7] text-muted">{leader.bio}</p>}
 
       {(leader.experienceYears != null || leader.linkedinUrl) && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="relative z-10 mt-4 flex flex-wrap items-center justify-center gap-2.5">
           {leader.experienceYears != null && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600 dark:bg-brand-900/25 dark:text-brand-300">
               <AnimatedClock className="h-3.5 w-3.5" />
@@ -157,8 +173,8 @@ function LeaderCard({ leader, featured }: { leader: Leader; featured?: boolean }
   );
 }
 
-export function TeamSection({ leaders }: { leaders: Leader[] }) {
-  if (leaders.length === 0) return null;
+export function TeamSection({ founders, ceo }: { founders: Leader[]; ceo: Leader[] }) {
+  if (founders.length === 0 && ceo.length === 0) return null;
 
   return (
     <Section className="relative overflow-hidden bg-[#FBF9F5] dark:bg-surface-2">
@@ -183,50 +199,47 @@ export function TeamSection({ leaders }: { leaders: Leader[] }) {
           </Reveal>
         </div>
 
-        <div className="relative mt-16">
-          <ConnectingLine />
-          <RevealGroup className="grid grid-cols-1 items-start gap-8 sm:grid-cols-2 lg:grid-cols-3" stagger={0.15}>
-            {leaders.map((leader) => {
-              const featured = leader.category === "CEO";
-              return (
-                <RevealItem
-                  key={leader.id}
-                  className={featured ? "order-last sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-sm lg:order-none lg:col-span-1" : ""}
-                >
-                  <LeaderCard leader={leader} featured={featured} />
-                </RevealItem>
-              );
-            })}
-          </RevealGroup>
-        </div>
-
-        <Reveal delay={0.1}>
-          <div className="mx-auto mt-20 max-w-xl text-center">
-            <p className="text-lg font-bold tracking-tight text-foreground">MyLoginn Tech Private Limited</p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-              Intelligence &bull; Innovation &bull; Integrity &bull; Impact
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted">
-              <a href={`mailto:${CONTACT_EMAILS[0].email}`} className="inline-flex items-center gap-2 hover:text-brand-600 dark:hover:text-brand-300">
-                <AnimatedMail className="h-4.5 w-4.5" />
-                {CONTACT_EMAILS[0].email}
-              </a>
-              <a href={`tel:${CONTACT_PHONES[0].tel}`} className="inline-flex items-center gap-2 hover:text-brand-600 dark:hover:text-brand-300">
-                <AnimatedPhone className="h-4.5 w-4.5" />
-                {CONTACT_PHONES[0].display}
-              </a>
-              <a
-                href={SOCIAL_LINKS[0].href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 hover:text-brand-600 dark:hover:text-brand-300"
+        {founders.length > 0 && (
+          <div className="relative mt-16">
+            <Reveal>
+              <p className="text-center text-[11px] font-bold uppercase tracking-[0.26em] text-brand-600 dark:text-brand-300">
+                Founders
+              </p>
+            </Reveal>
+            <div className="relative mt-8">
+              <ConnectingLine />
+              <RevealGroup
+                className={`grid grid-cols-1 items-start gap-8 sm:grid-cols-2 ${
+                  founders.length >= 3 ? "lg:grid-cols-3" : "mx-auto lg:max-w-3xl"
+                }`}
+                stagger={0.15}
               >
-                <AnimatedInstagram className="h-4.5 w-4.5" />
-                {SOCIAL_LINKS[0].handle}
-              </a>
+                {founders.map((leader) => (
+                  <RevealItem key={leader.id}>
+                    <LeaderCard leader={leader} featured badgeLabel="Founder" badgeIcon={AnimatedCrown} />
+                  </RevealItem>
+                ))}
+              </RevealGroup>
             </div>
           </div>
-        </Reveal>
+        )}
+
+        {ceo.length > 0 && (
+          <div className="relative mt-20">
+            <Reveal>
+              <p className="text-center text-[11px] font-bold uppercase tracking-[0.26em] text-brand-600 dark:text-brand-300">
+                Executive Leadership
+              </p>
+            </Reveal>
+            <RevealGroup className="mx-auto mt-8 flex flex-wrap items-start justify-center gap-8" stagger={0.15}>
+              {ceo.map((leader) => (
+                <RevealItem key={leader.id} className="w-full max-w-sm">
+                  <LeaderCard leader={leader} featured badgeLabel="CEO" badgeIcon={AnimatedStar} />
+                </RevealItem>
+              ))}
+            </RevealGroup>
+          </div>
+        )}
       </Container>
     </Section>
   );

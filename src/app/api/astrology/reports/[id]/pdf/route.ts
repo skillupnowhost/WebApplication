@@ -22,7 +22,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const filename = pdfFileName(report.chartData.profile.fullName, report.depth === "FULL" ? "Full_Horoscope" : "Single_Horoscope");
 
   try {
-    const pdf = await renderPrintPdf(printUrl, size);
+    // FULL reports are multi-page (dasha tree, divisional charts, etc.) — show footer page numbers.
+    // SUMMARY reports are single-page, so page numbers would just add clutter.
+    const pdf = await renderPrintPdf(printUrl, size, { pageNumbers: report.depth === "FULL" });
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",

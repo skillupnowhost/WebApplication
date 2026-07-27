@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { INDIAN_PLACES, KULAM_NAMES_TA, KULAM_NAMES_EN } from "./seedData";
 
 const prisma = new PrismaClient();
 
@@ -522,6 +523,44 @@ async function main() {
     });
   }
 
+  for (const s of INDIAN_PLACES) {
+    const state = await prisma.indianState.upsert({
+      where: { name: s.name },
+      update: { nameLocal: s.nameLocal ?? {} },
+      create: { name: s.name, nameLocal: s.nameLocal ?? {} },
+    });
+    for (const c of s.cities) {
+      await prisma.indianCity.upsert({
+        where: { stateId_name: { stateId: state.id, name: c.name } },
+        update: { nameLocal: c.nameLocal ?? {}, latitude: c.lat, longitude: c.lon, timezone: "Asia/Kolkata" },
+        create: {
+          stateId: state.id,
+          name: c.name,
+          nameLocal: c.nameLocal ?? {},
+          latitude: c.lat,
+          longitude: c.lon,
+          timezone: "Asia/Kolkata",
+        },
+      });
+    }
+  }
+
+  for (const [i, name] of KULAM_NAMES_TA.entries()) {
+    const alias = KULAM_NAMES_EN[i];
+    await prisma.kulamSuggestion.upsert({
+      where: { name_language: { name, language: "ta" } },
+      update: { alias },
+      create: { name, alias, language: "ta" },
+    });
+  }
+  for (const name of KULAM_NAMES_EN) {
+    await prisma.kulamSuggestion.upsert({
+      where: { name_language: { name, language: "en" } },
+      update: { alias: name },
+      create: { name, alias: name, language: "en" },
+    });
+  }
+
   console.log("Seed complete:", {
     admin: admin.email,
     mentor: mentor.email,
@@ -530,6 +569,8 @@ async function main() {
     tutors: tutorRecords.length,
     internships: internships.length,
     showcaseProjects: showcaseProjects.length,
+    indianStates: INDIAN_PLACES.length,
+    kulamNames: KULAM_NAMES_TA.length + KULAM_NAMES_EN.length,
   });
 }
 

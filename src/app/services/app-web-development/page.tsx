@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { Section, Container } from "@/components/ui/Section";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Reveal } from "@/components/ui/Reveal";
@@ -7,7 +8,7 @@ import { FeatureBentoGrid, type Feature } from "@/components/services/FeatureBen
 import { PillRow } from "@/components/services/PillRow";
 import { HowItWorksTimeline, type TimelineStep } from "@/components/services/HowItWorksTimeline";
 import { EngagementTiers, type EngagementTier } from "@/components/services/EngagementTiers";
-import { FaqAccordion } from "@/components/ui/FaqAccordion";
+import { FaqAccordion, type FaqAccordionItem } from "@/components/ui/FaqAccordion";
 
 export const metadata = { title: "App & Website Development — MyLoginn" };
 
@@ -74,28 +75,16 @@ const tiers: EngagementTier[] = [
   },
 ];
 
-const faqs = [
-  {
-    question: "What's your typical project timeline?",
-    answer:
-      "It depends on scope — a focused MVP is usually a matter of weeks, larger products take longer. We share a realistic timeline after the discovery call, before any commitment.",
-  },
-  {
-    question: "Do we own the source code?",
-    answer: "Yes — full source code and IP ownership transfers to you at project handover.",
-  },
-  {
-    question: "Can you work with our existing codebase?",
-    answer:
-      "Yes — we regularly join existing Next.js, React Native and Node.js projects for feature builds, audits and maintenance.",
-  },
-  {
-    question: "Do you sign NDAs?",
-    answer: "Yes, on request, before any detailed discussion of your product.",
-  },
-];
+/** Page-relevant FAQ categories for App & Website Development — see FAQ_CATEGORIES for the full admin list. */
+const FAQ_PAGE_CATEGORIES = ["Project Assistance", "Technical Support", "AI Services"];
 
-export default function AppWebDevelopmentPage() {
+export default async function AppWebDevelopmentPage() {
+  const faqItems = await prisma.faqItem.findMany({
+    where: { category: { in: FAQ_PAGE_CATEGORIES } },
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+  });
+  const faqs: FaqAccordionItem[] = faqItems.map((f) => ({ question: f.question, answer: f.answer }));
+
   return (
     <Section className="overflow-hidden pt-14 sm:pt-14">
       <Container>

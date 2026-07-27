@@ -11,6 +11,7 @@ export type NamingView = {
   language: AstrologyLanguage;
   genderFilter: BabyGenderFilter;
   preferredLetter?: string;
+  requestedCount?: number;
   birthLocalIso: string;
   birthPlace: string;
   placeLabel: string;
@@ -34,6 +35,8 @@ export async function buildNamingView(params: {
   genderFilter: BabyGenderFilter;
   preferredLetter?: string;
   language: AstrologyLanguage;
+  /** How many names the user asked for (500/1000/5000, or a manually entered count). Unset = the small curated birth-pada list. */
+  count?: number;
 }): Promise<NamingView | null> {
   const geocoded = await geocodePlace(params.place);
   if (!geocoded) return null;
@@ -54,13 +57,15 @@ export async function buildNamingView(params: {
     psychicNumber: chart.numerology.psychicNumber,
     destinyNumber: chart.numerology.destinyNumber,
     preferredLetter: params.preferredLetter,
-    limitPerGender: 40,
+    limitPerGender: params.count,
+    expandNames: !!params.count,
   });
 
   return {
     language: params.language,
     genderFilter: params.genderFilter,
     preferredLetter: params.preferredLetter?.trim() || undefined,
+    requestedCount: params.count,
     birthLocalIso: DateTime.fromJSDate(birthInstant, { zone: geocoded.timezone }).toISO()!,
     birthPlace: params.place,
     placeLabel: geocoded.label,

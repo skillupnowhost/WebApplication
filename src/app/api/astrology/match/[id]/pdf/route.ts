@@ -8,7 +8,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const url = new URL(req.url);
   const size = pdfPageSize(url.searchParams.get("size"));
-  const printUrl = `${url.origin}/astrology/match/${id}/print?size=${size}`;
+  const style = url.searchParams.get("style");
+  const printUrl = `${url.origin}/astrology/match/${id}/print?size=${size}${style ? `&style=${style}` : ""}`;
 
   const view = await loadMatchView(id);
   if (!view) {

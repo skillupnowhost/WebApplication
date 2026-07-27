@@ -18,16 +18,23 @@ import {
   astrologyMatchConfig,
   offeringConfig,
   teamConfig,
+  milestoneConfig,
+  galleryConfig,
+  faqConfig,
   partnerConfig,
   clientConfig,
   testimonialConfig,
   eventConfig,
+  notificationConfig,
 } from "@/components/admin/entityConfigs";
 
 const configs: Record<string, EntityConfig> = {
   courses: courseConfig,
   offerings: offeringConfig,
   team: teamConfig,
+  milestones: milestoneConfig,
+  gallery: galleryConfig,
+  faq: faqConfig,
   partners: partnerConfig,
   clients: clientConfig,
   testimonials: testimonialConfig,
@@ -45,6 +52,7 @@ const configs: Record<string, EntityConfig> = {
   payments: paymentConfig,
   astrologyReports: astrologyReportConfig,
   astrologyMatches: astrologyMatchConfig,
+  notifications: notificationConfig,
 };
 
 /** Server pages pass just the entity key; all config stays client-side. */

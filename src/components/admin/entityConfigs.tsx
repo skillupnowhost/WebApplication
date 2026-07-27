@@ -714,6 +714,15 @@ const TEAM_CATEGORY_OPTIONS = [
   { label: "Staff", value: "STAFF" },
 ];
 
+const TEAM_DEPARTMENT_OPTIONS = [
+  { label: "— None —", value: "" },
+  { label: "Development Team", value: "DEVELOPMENT" },
+  { label: "Tutoring Team", value: "TUTORING" },
+  { label: "Astrology Team", value: "ASTROLOGY" },
+  { label: "Operations & Support Team", value: "OPERATIONS" },
+  { label: "Administration Team", value: "ADMINISTRATION" },
+];
+
 export const offeringConfig: EntityConfig = {
   entity: "offerings",
   titleSingular: "Offering",
@@ -741,14 +750,15 @@ export const teamConfig: EntityConfig = {
   titleSingular: "Team member",
   titlePlural: "Team",
   description:
-    "Founders and the CEO appear as cinematic cards; staff are listed with their specialization. Photos should be cropped from hip to shoulders.",
+    "Founders and the CEO appear as cinematic cards; staff are grouped into departments (Development, Tutoring, Astrology, Operations & Support, Administration). Photos should be cropped from hip to shoulders.",
   nameKey: "name",
   columns: [
     { key: "photoUrl", label: "Photo", render: thumbCell("photoUrl") },
     { key: "name", label: "Name", className: "font-medium" },
     { key: "role", label: "Role" },
     { key: "category", label: "Category", render: (r) => <StatusBadge status={String(r.category ?? "").toLowerCase()} /> },
-    { key: "specialization", label: "Specialization", hideBelow: "md" },
+    { key: "department", label: "Department", hideBelow: "md" },
+    { key: "specialization", label: "Specialization", hideBelow: "lg" },
     { key: "experienceYears", label: "Exp (yrs)", align: "right", hideBelow: "lg" },
     { key: "sortOrder", label: "Order", align: "right", hideBelow: "xl" },
   ] as Column[],
@@ -756,6 +766,7 @@ export const teamConfig: EntityConfig = {
     { name: "name", label: "Full name", type: "text", required: true },
     { name: "role", label: "Role / title", type: "text", required: true, placeholder: "Co-Founder, CEO, Full-Stack Developer…" },
     { name: "category", label: "Category", type: "select", options: TEAM_CATEGORY_OPTIONS, required: true },
+    { name: "department", label: "Department (staff only)", type: "select", options: TEAM_DEPARTMENT_OPTIONS, hint: "Groups staff cards into a sub-team section on the About page." },
     { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60 },
     { name: "specialization", label: "Specialization", type: "text", placeholder: "e.g. Full-stack development" },
     { name: "photoUrl", label: "Photo", type: "image", hint: "PNG cropped from hip to shoulders works best for founder/CEO cards." },
@@ -766,6 +777,7 @@ export const teamConfig: EntityConfig = {
     { name: "name", label: "Full name", type: "text", required: true },
     { name: "role", label: "Role / title", type: "text", required: true },
     { name: "category", label: "Category", type: "select", options: TEAM_CATEGORY_OPTIONS, required: true },
+    { name: "department", label: "Department (staff only)", type: "select", options: TEAM_DEPARTMENT_OPTIONS, hint: "Groups staff cards into a sub-team section on the About page." },
     { name: "experienceYears", label: "Experience (years)", type: "number", min: 0, max: 60 },
     { name: "specialization", label: "Specialization", type: "text" },
     { name: "photoUrl", label: "Photo", type: "image", hint: "PNG cropped from hip to shoulders works best for founder/CEO cards." },
@@ -774,6 +786,105 @@ export const teamConfig: EntityConfig = {
     { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
   ],
   createDefaults: { category: "STAFF" },
+};
+
+export const milestoneConfig: EntityConfig = {
+  entity: "milestones",
+  titleSingular: "Milestone",
+  titlePlural: "Company Milestones",
+  description: "Steps in the company timeline shown on the About page (e.g. Login → Login Square → MyLoginn Tech Private Limited).",
+  nameKey: "title",
+  columns: [
+    { key: "year", label: "Year", className: "font-medium" },
+    { key: "title", label: "Title" },
+    { key: "description", label: "Description", className: "text-muted", hideBelow: "md" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  createFields: [
+    { name: "year", label: "Year / period", type: "text", required: true, placeholder: "e.g. 2003 or 2018–2021" },
+    { name: "title", label: "Title", type: "text", required: true, placeholder: "e.g. Founded as Login" },
+    { name: "description", label: "Description", type: "textarea", full: true },
+  ],
+  editFields: [
+    { name: "year", label: "Year / period", type: "text", required: true },
+    { name: "title", label: "Title", type: "text", required: true },
+    { name: "description", label: "Description", type: "textarea", full: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+};
+
+const GALLERY_CATEGORY_OPTIONS = [
+  { label: "Event", value: "Event" },
+  { label: "Workshop", value: "Workshop" },
+  { label: "Office", value: "Office" },
+  { label: "Team Activity", value: "Team Activity" },
+  { label: "Certificate & Achievement", value: "Certificate & Achievement" },
+];
+
+export const galleryConfig: EntityConfig = {
+  entity: "gallery",
+  titleSingular: "Gallery item",
+  titlePlural: "Gallery",
+  description: "Photos shown at the bottom of the public About page — events, workshops, office life, team activities and certificates.",
+  nameKey: "caption",
+  columns: [
+    { key: "imageUrl", label: "Photo", render: thumbCell("imageUrl") },
+    { key: "caption", label: "Caption", className: "font-medium" },
+    { key: "category", label: "Category", hideBelow: "md" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  createFields: [
+    { name: "imageUrl", label: "Photo", type: "image", required: true, imageAspect: 4 / 3 },
+    { name: "caption", label: "Caption", type: "text", placeholder: "Short description shown on hover" },
+    { name: "category", label: "Category", type: "select", options: GALLERY_CATEGORY_OPTIONS, required: true },
+  ],
+  editFields: [
+    { name: "imageUrl", label: "Photo", type: "image", imageAspect: 4 / 3 },
+    { name: "caption", label: "Caption", type: "text" },
+    { name: "category", label: "Category", type: "select", options: GALLERY_CATEGORY_OPTIONS, required: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+  createDefaults: { category: "Event" },
+  bulkFields: [{ name: "category", label: "Category", type: "select", options: GALLERY_CATEGORY_OPTIONS }],
+};
+
+const FAQ_CATEGORY_OPTIONS = [
+  { label: "Courses & Training", value: "Courses & Training" },
+  { label: "Internship Programs", value: "Internship Programs" },
+  { label: "Certification", value: "Certification" },
+  { label: "Payments & EMI", value: "Payments & EMI" },
+  { label: "Technical Support", value: "Technical Support" },
+  { label: "Account & Login", value: "Account & Login" },
+  { label: "Project Assistance", value: "Project Assistance" },
+  { label: "Placement Guidance", value: "Placement Guidance" },
+  { label: "AI Services", value: "AI Services" },
+  { label: "General Company Information", value: "General Company Information" },
+];
+
+export const faqConfig: EntityConfig = {
+  entity: "faq",
+  titleSingular: "FAQ",
+  titlePlural: "FAQs",
+  description: "Questions and answers shown in the searchable FAQ section on the Contact page, grouped by category.",
+  nameKey: "question",
+  columns: [
+    { key: "question", label: "Question", className: "font-medium" },
+    { key: "category", label: "Category", hideBelow: "md" },
+    { key: "sortOrder", label: "Order", align: "right", hideBelow: "lg" },
+  ] as Column[],
+  createFields: [
+    { name: "question", label: "Question", type: "text", required: true, full: true },
+    { name: "answer", label: "Answer", type: "textarea", required: true, full: true },
+    { name: "category", label: "Category", type: "select", options: FAQ_CATEGORY_OPTIONS, required: true },
+  ],
+  editFields: [
+    { name: "question", label: "Question", type: "text", required: true, full: true },
+    { name: "answer", label: "Answer", type: "textarea", required: true, full: true },
+    { name: "category", label: "Category", type: "select", options: FAQ_CATEGORY_OPTIONS, required: true },
+    { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
+  ],
+  createDefaults: { category: "General Company Information" },
+  bulkFields: [{ name: "category", label: "Category", type: "select", options: FAQ_CATEGORY_OPTIONS }],
 };
 
 export const partnerConfig: EntityConfig = {
@@ -890,7 +1001,7 @@ export const eventConfig: EntityConfig = {
     { name: "startsAt", label: "Starts at", type: "datetime-local", required: true },
     { name: "endsAt", label: "Ends at", type: "datetime-local" },
     { name: "location", label: "Location", type: "text", placeholder: "Venue address or meeting link" },
-    { name: "coverImageUrl", label: "Cover image", type: "image" },
+    { name: "coverImageUrl", label: "Cover image", type: "image", imageAspect: 16 / 9 },
     { name: "registerUrl", label: "Register URL", type: "text", placeholder: "https://…" },
   ],
   editFields: [
@@ -901,7 +1012,7 @@ export const eventConfig: EntityConfig = {
     { name: "startsAt", label: "Starts at", type: "datetime-local", required: true },
     { name: "endsAt", label: "Ends at", type: "datetime-local" },
     { name: "location", label: "Location", type: "text" },
-    { name: "coverImageUrl", label: "Cover image", type: "image" },
+    { name: "coverImageUrl", label: "Cover image", type: "image", imageAspect: 16 / 9 },
     { name: "registerUrl", label: "Register URL", type: "text" },
     { name: "sortOrder", label: "Sort order", type: "number", min: 0 },
   ],
@@ -940,5 +1051,31 @@ export const astrologyMatchConfig: EntityConfig = {
     { key: "verdict", label: "Verdict", hideBelow: "sm" },
     { key: "language", label: "Language", hideBelow: "md" },
     { key: "createdAt", label: "Checked", hideBelow: "lg", render: dateCell("createdAt") },
+  ] as Column[],
+};
+
+export const notificationConfig: EntityConfig = {
+  entity: "notifications",
+  titleSingular: "Notification",
+  titlePlural: "Notifications",
+  description: "Every in-app notification ever sent, most recent first. Use the compose panel above to send a new one; delete here for cleanup.",
+  nameKey: "title",
+  canDelete: true,
+  columns: [
+    { key: "recipient", label: "Recipient", className: "font-medium" },
+    { key: "email", label: "Email", hideBelow: "lg", className: "text-muted" },
+    { key: "title", label: "Title" },
+    {
+      key: "body",
+      label: "Message",
+      hideBelow: "md",
+      className: "text-muted",
+      render: (r) => {
+        const text = String(r.body ?? "");
+        return <span className="block max-w-xs truncate">{text}</span>;
+      },
+    },
+    { key: "read", label: "Read", hideBelow: "sm", render: boolCell("read") },
+    { key: "createdAt", label: "Sent", hideBelow: "lg", render: dateCell("createdAt") },
   ] as Column[],
 };

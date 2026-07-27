@@ -3,18 +3,21 @@
 import { useId } from "react";
 import { NORTH_INDIAN_HOUSE_POLYGONS, buildHouses } from "@/lib/astrology/chartLayout";
 import { rashiLabel } from "@/lib/astrology/chartLayout";
-import { PLANET_ABBR } from "@/lib/astrology/constants";
 import type { SiderealPlanet } from "@/lib/astrology/chart";
 import type { AstrologyLanguage } from "@/lib/astrology/i18n";
+import { planetAbbr, retrogradeAbbr, retrogradeLabel } from "@/lib/astrology/reportL10n";
+import { MANDI_ABBR, type MandiPosition } from "@/lib/astrology/mandi";
 
 export function NorthIndianChart({
   ascendantRashiIndex,
   planets,
   language = "en",
+  mandi,
 }: {
   ascendantRashiIndex: number;
   planets: SiderealPlanet[];
   language?: AstrologyLanguage;
+  mandi?: MandiPosition | null;
 }) {
   const uid = useId().replace(/[:]/g, "");
   const houses = buildHouses(ascendantRashiIndex, planets);
@@ -47,10 +50,27 @@ export function NorthIndianChart({
             </text>
             {house.planets.map((p, i) => (
               <text key={p.planet} x={poly.labelX} y={poly.labelY + i * 9} textAnchor="middle" fontSize="9" fontWeight="600" fill="currentColor">
-                {PLANET_ABBR[p.planet]}
-                {p.isRetrograde ? "℞" : ""}
+                {planetAbbr(language, p.planet)}
+                {p.isRetrograde && (
+                  <tspan dx="1" dy="-3" fontSize="6" fontWeight="700" fill="var(--color-rose-500, #f43f5e)">
+                    <title>{retrogradeLabel(language)}</title>
+                    {retrogradeAbbr(language)}
+                  </tspan>
+                )}
               </text>
             ))}
+            {mandi && mandi.rashi.index === house.rashiIndex && (
+              <text
+                x={poly.labelX}
+                y={poly.labelY + house.planets.length * 9}
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="600"
+                fill="var(--color-rose-500, #f43f5e)"
+              >
+                {MANDI_ABBR[language]}
+              </text>
+            )}
           </g>
         );
       })}

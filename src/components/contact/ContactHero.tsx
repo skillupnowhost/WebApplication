@@ -12,7 +12,7 @@ import { AnimatedInstagram } from "@/components/ui/icons/AnimatedInstagram";
 import { AnimatedFacebook } from "@/components/ui/icons/AnimatedFacebook";
 import { LiveStatusBadge } from "@/components/contact/LiveStatusBadge";
 import { toWhatsAppLink } from "@/lib/whatsapp";
-import { CONTACT_EMAILS, CONTACT_PHONES, WHATSAPP_PHONE, SOCIAL_LINKS } from "@/lib/contactInfo";
+import { CONTACT_EMAILS, CONTACT_PHONES, WHATSAPP_PHONE, SOCIAL_LINKS, COMPANY_NAME } from "@/lib/contactInfo";
 
 const socialIcons = { instagram: AnimatedInstagram, facebook: AnimatedFacebook } as const;
 import { useParallax } from "@/hooks/useParallax";
@@ -69,7 +69,16 @@ export function ContactHero({ learnerCount }: { learnerCount: number }) {
           <LiveStatusBadge />
         </motion.div>
 
-        <h1 className="mt-6 max-w-3xl text-[clamp(2rem,1rem+4vw,3.75rem)] font-semibold leading-[1.07] tracking-tight text-foreground">
+        <motion.p
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.16, ease: EASE }}
+          className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-muted"
+        >
+          {COMPANY_NAME}
+        </motion.p>
+
+        <h1 className="mt-4 max-w-3xl text-[clamp(2rem,1rem+4vw,3.75rem)] font-semibold leading-[1.07] tracking-tight text-foreground">
           <AnimatedText text="Let's start a" delay={0.1} />{" "}
           <AnimatedText text="conversation" wordClassName="shimmer-text-ink" delay={0.3} />
         </h1>

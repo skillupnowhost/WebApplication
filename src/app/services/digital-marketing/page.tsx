@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { Section, Container } from "@/components/ui/Section";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Reveal } from "@/components/ui/Reveal";
@@ -7,7 +8,7 @@ import { FeatureBentoGrid } from "@/components/services/FeatureBentoGrid";
 import { HowItWorksTimeline } from "@/components/services/HowItWorksTimeline";
 import { PillRow } from "@/components/services/PillRow";
 import { EngagementTiers, type EngagementTier } from "@/components/services/EngagementTiers";
-import { FaqAccordion } from "@/components/ui/FaqAccordion";
+import { FaqAccordion, type FaqAccordionItem } from "@/components/ui/FaqAccordion";
 
 export const metadata = { title: "Digital Marketing Services — MyLoginn" };
 
@@ -52,30 +53,16 @@ const tiers: EngagementTier[] = [
   },
 ];
 
-const faqs = [
-  {
-    question: "How is pricing structured?",
-    answer:
-      "There's no one-size-fits-all rate card — pricing depends on channels, ad spend and scope. Share your goals in the form and we'll follow up with a tailored quote within one business day.",
-  },
-  {
-    question: "Do you manage the ad spend or just the strategy?",
-    answer:
-      "Both — we handle strategy, creative, targeting and day-to-day optimization. Ad spend is billed directly by the platforms (Meta, Google, etc.) and is separate from our management fee.",
-  },
-  {
-    question: "Can I see results before committing long-term?",
-    answer:
-      "Yes — most engagements start with a focused pilot period so you can review real performance data before scaling up.",
-  },
-  {
-    question: "Is the WhatsApp automation compliant?",
-    answer:
-      "Yes — all WhatsApp flows run on the official WhatsApp Business Platform and follow opt-in messaging guidelines.",
-  },
-];
+/** Page-relevant FAQ categories for Digital Marketing — see FAQ_CATEGORIES for the full admin list. */
+const FAQ_PAGE_CATEGORIES = ["AI Services", "General Company Information", "Payments & EMI"];
 
-export default function DigitalMarketingServicesPage() {
+export default async function DigitalMarketingServicesPage() {
+  const faqItems = await prisma.faqItem.findMany({
+    where: { category: { in: FAQ_PAGE_CATEGORIES } },
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+  });
+  const faqs: FaqAccordionItem[] = faqItems.map((f) => ({ question: f.question, answer: f.answer }));
+
   return (
     <Section className="overflow-hidden pt-14 sm:pt-14">
       <Container>

@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Section, Container } from "@/components/ui/Section";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Reveal } from "@/components/ui/Reveal";
-import { FaqAccordion } from "@/components/ui/FaqAccordion";
+import { FaqAccordion, type FaqAccordionItem } from "@/components/ui/FaqAccordion";
 import { TutoringExplorer, type TutorData } from "@/components/tutoring/TutoringExplorer";
 import { TutoringHero } from "@/components/tutoring/TutoringHero";
 import { UpcomingClasses } from "@/components/tutoring/UpcomingClasses";
@@ -44,34 +44,21 @@ const bookingSteps: TimelineStep[] = [
   { title: "Track progress", description: "Review session notes and progress on your dashboard after every class." },
 ];
 
-const faqs = [
-  {
-    question: "How is a session priced?",
-    answer:
-      "Tutoring is paid 1:1 mentorship — the fee depends on the subject and tutor. Once you request a booking, the tutor confirms the exact fee and schedule with you directly before your first session.",
-  },
-  {
-    question: "Which boards and grades are covered?",
-    answer:
-      "Our tutors cover CBSE and State Board curricula from 1st grade through 12th. Each tutor's profile lists the specific boards and grades they teach.",
-  },
-  {
-    question: "Can I switch tutors if it's not the right fit?",
-    answer: "Yes — you're free to book with a different tutor at any time. There's no long-term lock-in.",
-  },
-  {
-    question: "How do live classes work?",
-    answer:
-      "Sessions run over video with live screen share and whiteboarding. Confirmed classes also appear under Upcoming Live Classes on this page and on your dashboard.",
-  },
-];
+/** Page-relevant FAQ categories for Tutoring — see FAQ_CATEGORIES for the full admin list. */
+const FAQ_PAGE_CATEGORIES = ["Courses & Training", "Account & Login", "Payments & EMI"];
 
 export default async function TutoringPage() {
-  const [user, tutors, sessionsBooked] = await Promise.all([
+  const [user, tutors, sessionsBooked, faqItems] = await Promise.all([
     getCurrentUser(),
     prisma.tutor.findMany({ orderBy: { name: "asc" } }),
     prisma.tutoringBooking.count(),
+    prisma.faqItem.findMany({
+      where: { category: { in: FAQ_PAGE_CATEGORIES } },
+      orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+    }),
   ]);
+
+  const faqs: FaqAccordionItem[] = faqItems.map((f) => ({ question: f.question, answer: f.answer }));
 
   const tutorCards: TutorData[] = tutors.map((t) => ({
     id: t.id,

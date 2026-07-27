@@ -2,10 +2,13 @@ import { Section, Container, Eyebrow } from "@/components/ui/Section";
 import { MuhurthamForm } from "@/components/astrology/MuhurthamForm";
 import { AstroBreadcrumbs } from "@/components/astrology/AstroBreadcrumbs";
 import { AnimatedCelestialWheel } from "@/components/ui/icons/AnimatedCelestialWheel";
+import { parseAstrologyLanguage } from "@/lib/astrology/i18n";
 
 export const metadata = { title: "Shubha Muhurtham — MyLoginn Astrology" };
 
-export default function AstrologyMuhurthamPage() {
+export default async function AstrologyMuhurthamPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const { lang } = await searchParams;
+  const language = parseAstrologyLanguage(lang);
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
       <div className="starfield-celestial" aria-hidden />
@@ -26,7 +29,7 @@ export default function AstrologyMuhurthamPage() {
             best dates with time slots clear of Rahu Kalam, Yamagandam, and Gulikai.
           </p>
         </div>
-        <MuhurthamForm />
+        <MuhurthamForm language={language} />
       </Container>
     </Section>
   );

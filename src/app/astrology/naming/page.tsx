@@ -2,10 +2,13 @@ import { Section, Container, Eyebrow } from "@/components/ui/Section";
 import { NamingForm } from "@/components/astrology/NamingForm";
 import { AstroBreadcrumbs } from "@/components/astrology/AstroBreadcrumbs";
 import { AnimatedOm } from "@/components/ui/icons/AnimatedOm";
+import { parseAstrologyLanguage } from "@/lib/astrology/i18n";
 
 export const metadata = { title: "Baby Naming — MyLoginn Astrology" };
 
-export default function AstrologyNamingPage() {
+export default async function AstrologyNamingPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const { lang } = await searchParams;
+  const language = parseAstrologyLanguage(lang);
   return (
     <Section className="celestial-hero pt-14 sm:pt-14">
       <div className="starfield-celestial" aria-hidden />
@@ -26,7 +29,7 @@ export default function AstrologyNamingPage() {
             classical name books.
           </p>
         </div>
-        <NamingForm />
+        <NamingForm language={language} />
       </Container>
     </Section>
   );

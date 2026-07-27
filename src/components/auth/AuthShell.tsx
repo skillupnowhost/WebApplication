@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { AnimatedShield } from "@/components/ui/icons/AnimatedShield";
+import { COMPANY_NAME } from "@/lib/contactInfo";
 
 export type AuthFeature = {
   icon: ReactNode;
@@ -73,6 +75,15 @@ export function AuthShell({ badge, heading, subline, features, stats, children }
             {badge}
           </motion.span>
 
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.03, ease: easeOut }}
+            className="mt-4 text-xs font-semibold tracking-[0.16em] text-muted uppercase"
+          >
+            {COMPANY_NAME}
+          </motion.p>
+
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -125,6 +136,24 @@ export function AuthShell({ badge, heading, subline, features, stats, children }
               ))}
             </motion.div>
           )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.6,
+              delay: 0.28 + features.length * 0.12 + (stats && stats.length > 0 ? 0.14 : 0),
+              ease: easeOut,
+            }}
+            className="mt-10 flex items-center gap-4 rounded-2xl border border-border-soft bg-surface/50 p-4 backdrop-blur"
+          >
+            <AnimatedShield className="h-9 w-9 shrink-0" />
+            <p className="text-xs leading-relaxed text-muted">
+              <span className="font-semibold text-foreground">Secure, fast, enterprise-grade.</span> Encrypted
+              sessions and OTP-verified access, backed by infrastructure built to keep up with thousands of
+              learners across India.
+            </p>
+          </motion.div>
         </div>
 
         {/* Form column */}

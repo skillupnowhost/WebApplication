@@ -2,9 +2,11 @@
 
 import { useId } from "react";
 import { SOUTH_INDIAN_GRID, rashiLabel } from "@/lib/astrology/chartLayout";
-import { PLANET_ABBR, RASHIS } from "@/lib/astrology/constants";
+import { RASHIS } from "@/lib/astrology/constants";
 import type { SiderealPlanet } from "@/lib/astrology/chart";
 import type { AstrologyLanguage } from "@/lib/astrology/i18n";
+import { planetAbbr, retrogradeAbbr, retrogradeLabel } from "@/lib/astrology/reportL10n";
+import { MANDI_ABBR, type MandiPosition } from "@/lib/astrology/mandi";
 
 const CELL = 75;
 
@@ -19,11 +21,13 @@ export function SouthIndianChart({
   planets,
   language = "en",
   center,
+  mandi,
 }: {
   ascendantRashiIndex: number;
   planets: SiderealPlanet[];
   language?: AstrologyLanguage;
   center?: ChartCenterInfo;
+  mandi?: MandiPosition | null;
 }) {
   const uid = useId().replace(/[:]/g, "");
 
@@ -79,10 +83,27 @@ export function SouthIndianChart({
             </text>
             {occupants.map((p, i) => (
               <text key={p.planet} x={x + CELL / 2} y={y + CELL / 2 + i * 11} textAnchor="middle" fontSize="9" fontWeight="600" fill="currentColor">
-                {PLANET_ABBR[p.planet]}
-                {p.isRetrograde ? "℞" : ""}
+                {planetAbbr(language, p.planet)}
+                {p.isRetrograde && (
+                  <tspan dx="1" dy="-3" fontSize="6" fontWeight="700" fill="var(--color-rose-500, #f43f5e)">
+                    <title>{retrogradeLabel(language)}</title>
+                    {retrogradeAbbr(language)}
+                  </tspan>
+                )}
               </text>
             ))}
+            {mandi && mandi.rashi.index === rashi.index && (
+              <text
+                x={x + CELL / 2}
+                y={y + CELL / 2 + occupants.length * 11}
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="600"
+                fill="var(--color-rose-500, #f43f5e)"
+              >
+                {MANDI_ABBR[language]}
+              </text>
+            )}
           </g>
         );
       })}

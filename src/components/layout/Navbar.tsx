@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   ChevronDown,
@@ -28,6 +28,7 @@ import { AnimatedUsers } from "@/components/ui/icons/AnimatedUsers";
 import { AnimatedCalendar } from "@/components/ui/icons/AnimatedCalendar";
 import { AnimatedVideoCamera } from "@/components/ui/icons/AnimatedVideoCamera";
 import { AnimatedMoonStar } from "@/components/ui/icons/AnimatedMoonStar";
+import { AnimatedLayers } from "@/components/ui/icons/AnimatedLayers";
 import { ProfileMenu, type ProfileUser } from "./ProfileMenu";
 import { NotificationBell } from "./NotificationBell";
 import { Button } from "@/components/ui/Button";
@@ -35,56 +36,140 @@ import { cn } from "@/lib/cn";
 import logo from "@/images/Loginn Logo.png";
 
 type NavUser = ProfileUser | null;
+type IconComponent = ComponentType<{ className?: string; style?: CSSProperties }>;
 
-const primaryLinks = [
+/* ── Top-level structural nav (client spec order: Home, About, Courses,
+   Internships, Services, Projects, Gallery, Contact) ─────────────────── */
+
+const beforeServiceLinks = [
+  { href: "/about", label: "About Us" },
   { href: "/courses", label: "Courses" },
   { href: "/internships", label: "Internships" },
-  { href: "/projects", label: "Projects" },
-  { href: "/astrology", label: "Astrology" },
-  { href: "/about", label: "About" },
 ];
 
-const serviceLinks = [
-  { href: "/tutoring", label: "Tutoring", desc: "1:1 mentor sessions, live classes" },
-  { href: "/mentoring", label: "Mentoring", desc: "Meet the mentors behind our projects" },
-  { href: "/events", label: "Events", desc: "Live workshops, webinars & meetups" },
-  { href: "/services/digital-marketing", label: "Digital Marketing", desc: "AI-driven growth campaigns" },
-  { href: "/services/app-web-development", label: "App & Web Development", desc: "Full-stack builds, premium UX" },
+const afterServiceLinks = [{ href: "/projects", label: "Projects" }];
+
+/* ── Services mega-menu content ────────────────────────────────────────
+   Grouped into "Learning" (tutoring/mentoring/events) and "Digital
+   Services" (marketing/dev), plus a featured Astrology entry. There is no
+   dedicated Blog/News feature in this codebase — intentionally omitted
+   rather than linking to a fake route. */
+
+type MegaItem = { href: string; label: string; desc: string; icon: IconComponent };
+type MegaColumn = { title: string; items: MegaItem[] };
+
+const megaColumns: MegaColumn[] = [
+  {
+    title: "Learning",
+    items: [
+      { href: "/tutoring", label: "Tutoring", desc: "1:1 mentor sessions, live classes", icon: AnimatedGraduation },
+      { href: "/mentoring", label: "Mentoring", desc: "Meet the mentors behind our projects", icon: AnimatedUsers },
+      { href: "/events", label: "Events", desc: "Live workshops, webinars & meetups", icon: AnimatedCalendar },
+    ],
+  },
+  {
+    title: "Digital Services",
+    items: [
+      {
+        href: "/services/digital-marketing",
+        label: "Digital Marketing",
+        desc: "AI-driven growth campaigns",
+        icon: AnimatedMegaphone,
+      },
+      {
+        href: "/services/app-web-development",
+        label: "App & Web Development",
+        desc: "Full-stack builds, premium UX",
+        icon: AnimatedCode,
+      },
+    ],
+  },
 ];
+
+const megaFeature: MegaItem = {
+  href: "/astrology",
+  label: "Astrology",
+  desc: "Your divine horoscope, guided by our astrologers",
+  icon: AnimatedMoonStar,
+};
+
+/** Stable visual order of every focusable mega-menu link, used for arrow-key cycling. */
+const MEGA_ITEM_ORDER = [
+  ...megaColumns.flatMap((col) => col.items.map((item) => item.href)),
+  megaFeature.href,
+  "/services",
+];
+
+const isServicesPath = (p: string) =>
+  p.startsWith("/services") || p === "/tutoring" || p === "/mentoring" || p === "/events" || p === "/astrology";
+
+/* ── Mobile menu content (mirrors the desktop mega-menu grouping) ─────── */
 
 type MobileLink = {
   href: string;
   label: string;
   desc?: string;
-  icon: ComponentType<{ className?: string; style?: CSSProperties }>;
+  icon: IconComponent;
 };
 
-const mobileMainLinks: MobileLink[] = [
+const mobileTopLinks: MobileLink[] = [
   { href: "/", label: "Home", desc: "Back to the start", icon: AnimatedHome },
+  { href: "/about", label: "About Us", desc: "Our story, team & partners", icon: AnimatedUsers },
   { href: "/courses", label: "Courses", desc: "Learn job-ready skills", icon: AnimatedBook },
   { href: "/internships", label: "Internships", desc: "Real-world experience", icon: AnimatedBriefcase },
-  { href: "/projects", label: "Projects", desc: "Build your portfolio", icon: AnimatedFolder },
-  { href: "/astrology", label: "Astrology", desc: "Your divine horoscope", icon: AnimatedMoonStar },
-  { href: "/about", label: "About", desc: "Our story, team & partners", icon: AnimatedUsers },
 ];
 
-const mobileServiceLinks: MobileLink[] = [
-  { href: "/tutoring", label: "Tutoring", desc: "1:1 mentor sessions, live classes", icon: AnimatedGraduation },
-  { href: "/mentoring", label: "Mentoring", desc: "Meet the mentors behind our projects", icon: AnimatedUsers },
-  { href: "/events", label: "Events", desc: "Live workshops, webinars & meetups", icon: AnimatedCalendar },
+const mobileAfterLinks: MobileLink[] = [
+  { href: "/projects", label: "Projects", desc: "Build your portfolio", icon: AnimatedFolder },
+];
+
+type MobileGroup = { id: string; label: string; icon: IconComponent; items: MobileLink[] };
+
+const mobileMegaGroups: MobileGroup[] = [
   {
-    href: "/services/digital-marketing",
-    label: "Digital Marketing",
-    desc: "AI-driven growth campaigns",
-    icon: AnimatedMegaphone,
+    id: "learning",
+    label: "Learning",
+    icon: AnimatedGraduation,
+    items: [
+      { href: "/tutoring", label: "Tutoring", desc: "1:1 mentor sessions, live classes", icon: AnimatedGraduation },
+      { href: "/mentoring", label: "Mentoring", desc: "Meet the mentors behind our projects", icon: AnimatedUsers },
+      { href: "/events", label: "Events", desc: "Live workshops, webinars & meetups", icon: AnimatedCalendar },
+    ],
   },
   {
-    href: "/services/app-web-development",
-    label: "App & Web Development",
-    desc: "Full-stack builds, premium UX",
+    id: "digital",
+    label: "Digital Services",
     icon: AnimatedCode,
+    items: [
+      {
+        href: "/services/digital-marketing",
+        label: "Digital Marketing",
+        desc: "AI-driven growth campaigns",
+        icon: AnimatedMegaphone,
+      },
+      {
+        href: "/services/app-web-development",
+        label: "App & Web Development",
+        desc: "Full-stack builds, premium UX",
+        icon: AnimatedCode,
+      },
+    ],
   },
 ];
+
+const mobileAstrologyLink: MobileLink = {
+  href: "/astrology",
+  label: "Astrology",
+  desc: "Your divine horoscope",
+  icon: AnimatedMoonStar,
+};
+
+const mobileServicesIndexLink: MobileLink = {
+  href: "/services",
+  label: "All services",
+  desc: "See everything we offer",
+  icon: AnimatedLayers,
+};
 
 const mobileContactLink: MobileLink = {
   href: "/contact",
@@ -97,7 +182,6 @@ export function Navbar({ user }: { user: NavUser }) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [servicesOpen, setServicesOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -142,53 +226,19 @@ export function Navbar({ user }: { user: NavUser }) {
             Home
           </NavHeaderLink>
 
-          {primaryLinks.map((link) => (
+          {beforeServiceLinks.map((link) => (
             <NavHeaderLink key={link.href} href={link.href} active={pathname === link.href}>
               {link.label}
             </NavHeaderLink>
           ))}
 
-          <div
-            className="group relative"
-            onMouseEnter={() => setServicesOpen(true)}
-            onMouseLeave={() => setServicesOpen(false)}
-          >
-            <button
-              className="relative flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors duration-200 hover:text-foreground cursor-pointer"
-              onClick={() => setServicesOpen((s) => !s)}
-            >
-              More
-              <ChevronDown className={cn("h-4 w-4 transition-transform duration-300", servicesOpen && "rotate-180")} />
-              <span
-                className={cn(
-                  "pointer-events-none absolute inset-x-3.5 -bottom-0.5 h-[3px] origin-center rounded-full brand-gradient-bg transition-transform duration-300 ease-out",
-                  servicesOpen ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                )}
-              />
-            </button>
-            <AnimatePresence>
-              {servicesOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute left-0 top-full mt-2 w-72 rounded-2xl border border-border-soft bg-surface p-2 shadow-[var(--shadow-lift)]"
-                >
-                  {serviceLinks.map((s) => (
-                    <Link
-                      key={s.href}
-                      href={s.href}
-                      className="block rounded-xl px-3.5 py-2.5 transition-colors duration-150 hover:bg-surface-2"
-                    >
-                      <p className="text-sm font-medium">{s.label}</p>
-                      <p className="text-xs text-muted">{s.desc}</p>
-                    </Link>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <ServicesMegaMenu pathname={pathname} />
+
+          {afterServiceLinks.map((link) => (
+            <NavHeaderLink key={link.href} href={link.href} active={pathname === link.href}>
+              {link.label}
+            </NavHeaderLink>
+          ))}
 
           <NavHeaderLink href="/contact" active={pathname === "/contact"}>
             Contact
@@ -234,6 +284,186 @@ export function Navbar({ user }: { user: NavUser }) {
 
       <MobileMenu open={mobileOpen} pathname={pathname} user={user} onClose={() => setMobileOpen(false)} />
     </header>
+  );
+}
+
+/* ── Desktop services mega-menu ─────────────────────────────────────────
+   Keyboard-accessible: Enter/Space (native button behavior) or ArrowDown
+   opens and focuses the first item; Escape closes and returns focus to
+   the trigger; ArrowUp/ArrowDown cycle through menu items. Hover keeps the
+   existing open-on-hover feel for mouse users. */
+
+function ServicesMegaMenu({ pathname }: { pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // Keyed by href rather than a reset-every-render array, so registration only
+  // ever happens inside ref callbacks (mount/unmount), never during render.
+  const itemNodes = useRef<Map<string, HTMLAnchorElement>>(new Map());
+
+  const orderedItems = () => MEGA_ITEM_ORDER.map((href) => itemNodes.current.get(href)).filter(
+    (el): el is HTMLAnchorElement => Boolean(el)
+  );
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [open]);
+
+  const close = (focusTrigger = false) => {
+    setOpen(false);
+    if (focusTrigger) triggerRef.current?.focus();
+  };
+
+  const active = isServicesPath(pathname);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="group relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-controls="services-mega-menu"
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+            requestAnimationFrame(() => orderedItems()[0]?.focus());
+          } else if (e.key === "Escape") {
+            close();
+          }
+        }}
+        className={cn(
+          "relative flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer",
+          active ? "text-brand-500" : "text-foreground/80 hover:text-foreground"
+        )}
+      >
+        Services
+        <ChevronDown className={cn("h-4 w-4 transition-transform duration-300", open && "rotate-180")} />
+        <span
+          className={cn(
+            "pointer-events-none absolute inset-x-3.5 -bottom-0.5 h-[3px] origin-center rounded-full brand-gradient-bg transition-transform duration-300 ease-out",
+            open || active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+          )}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            id="services-mega-menu"
+            role="menu"
+            aria-label="Services"
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            onKeyDown={(e) => {
+              const items = orderedItems();
+              if (items.length === 0) return;
+              const idx = items.findIndex((el) => el === document.activeElement);
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                items[(idx + 1 + items.length) % items.length]?.focus();
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                items[(idx - 1 + items.length) % items.length]?.focus();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                close(true);
+              }
+            }}
+            className="absolute left-1/2 top-full mt-2 w-[38rem] max-w-[92vw] -translate-x-[38%] rounded-3xl border border-border-soft bg-surface p-5 shadow-[var(--shadow-lift)]"
+          >
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 sm:col-span-2 sm:grid-cols-2">
+                {megaColumns.map((col) => (
+                  <div key={col.title}>
+                    <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                      {col.title}
+                    </p>
+                    <div className="flex flex-col gap-1">
+                      {col.items.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            role="menuitem"
+                            ref={(el) => {
+                              if (el) itemNodes.current.set(item.href, el);
+                              else itemNodes.current.delete(item.href);
+                            }}
+                            onClick={() => setOpen(false)}
+                            className="group/item flex items-start gap-3 rounded-xl px-2.5 py-2.5 transition-colors duration-150 hover:bg-surface-2 focus:outline-none focus-visible:bg-surface-2"
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 transition-transform duration-300 group-hover/item:scale-110">
+                              <Icon className="h-6 w-6" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-sm font-medium">{item.label}</span>
+                              <span className="block text-xs text-muted">{item.desc}</span>
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">Astrology</p>
+                <Link
+                  href={megaFeature.href}
+                  role="menuitem"
+                  ref={(el) => {
+                    if (el) itemNodes.current.set(megaFeature.href, el);
+                    else itemNodes.current.delete(megaFeature.href);
+                  }}
+                  onClick={() => setOpen(false)}
+                  className="group/item relative flex h-[calc(100%-1.75rem)] min-h-[8.5rem] flex-col justify-end overflow-hidden rounded-2xl border border-border-soft bg-gradient-to-br from-brand-50 to-surface-2 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 dark:from-brand-900/20 dark:to-surface-2"
+                >
+                  <AnimatedMoonStar className="absolute -right-3 -top-3 h-16 w-16 opacity-70 transition-transform duration-500 group-hover/item:scale-110 group-hover/item:-rotate-6" />
+                  <span className="text-sm font-semibold">{megaFeature.label}</span>
+                  <span className="mt-1 block text-xs text-muted">{megaFeature.desc}</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-border-soft pt-3">
+              <Link
+                href="/services"
+                role="menuitem"
+                ref={(el) => {
+                  if (el) itemNodes.current.set("/services", el);
+                  else itemNodes.current.delete("/services");
+                }}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between rounded-xl px-2.5 py-2 text-sm font-medium text-brand-500 transition-colors duration-150 hover:bg-surface-2 focus:outline-none focus-visible:bg-surface-2"
+              >
+                Explore all services
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -338,19 +568,31 @@ function MobileMenu({
               </motion.p>
 
               <div className="flex flex-col gap-1">
-                {mobileMainLinks.map((link) => (
+                {mobileTopLinks.map((link) => (
                   <MobileNavItem key={link.href} link={link} active={pathname === link.href} />
                 ))}
               </div>
 
               <motion.div variants={itemVariants} className="my-3 flex items-center gap-3 px-2">
                 <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-soft to-transparent" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.16em] brand-gradient-text">More</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] brand-gradient-text">Services</span>
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-soft to-transparent" />
+              </motion.div>
+
+              <div className="flex flex-col gap-1.5">
+                {mobileMegaGroups.map((group) => (
+                  <MobileAccordionGroup key={group.id} group={group} pathname={pathname} />
+                ))}
+                <MobileNavItem link={mobileAstrologyLink} active={pathname === mobileAstrologyLink.href} />
+                <MobileNavItem link={mobileServicesIndexLink} active={pathname === mobileServicesIndexLink.href} />
+              </div>
+
+              <motion.div variants={itemVariants} className="my-3 flex items-center gap-3 px-2">
                 <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-soft to-transparent" />
               </motion.div>
 
               <div className="flex flex-col gap-1">
-                {mobileServiceLinks.map((link) => (
+                {mobileAfterLinks.map((link) => (
                   <MobileNavItem key={link.href} link={link} active={pathname === link.href} />
                 ))}
                 <MobileNavItem link={mobileContactLink} active={pathname === mobileContactLink.href} />
@@ -375,6 +617,85 @@ function MobileMenu({
         </div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** Accordion for a mega-menu category inside the mobile sheet — tap the
+ * header to expand/collapse its sub-links, touch-friendly hit targets throughout. */
+function MobileAccordionGroup({ group, pathname }: { group: MobileGroup; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const Icon = group.icon;
+  const hasActive = group.items.some((i) => i.href === pathname);
+
+  return (
+    <motion.div variants={itemVariants}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={cn(
+          "flex w-full cursor-pointer items-center gap-3.5 rounded-2xl px-3 py-2.5 transition-all duration-200 active:scale-[0.98]",
+          hasActive
+            ? "bg-brand-50 ring-1 ring-brand-200 dark:bg-brand-900/25 dark:ring-brand-700/50"
+            : "hover:bg-surface-2"
+        )}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+          <Icon className="h-8 w-8" />
+        </span>
+        <span className="min-w-0 flex-1 text-left">
+          <span className={cn("block text-sm font-semibold", hasActive && "text-brand-500")}>{group.label}</span>
+          <span className="block truncate text-xs text-muted">{group.items.length} services</span>
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted transition-transform duration-300",
+            open && "rotate-180",
+            hasActive && "text-brand-500"
+          )}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-1 py-1 pl-4">
+              {group.items.map((link) => (
+                <MobileSubNavItem key={link.href} link={link} active={pathname === link.href} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function MobileSubNavItem({ link, active }: { link: MobileLink; active: boolean }) {
+  const Icon = link.icon;
+  return (
+    <Link
+      href={link.href}
+      className={cn(
+        "group flex items-center gap-3 rounded-xl px-3 py-2 transition-all duration-200 active:scale-[0.98]",
+        active
+          ? "bg-brand-50 ring-1 ring-brand-200 dark:bg-brand-900/25 dark:ring-brand-700/50"
+          : "hover:bg-surface-2"
+      )}
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-110">
+        <Icon className="h-6 w-6" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={cn("block text-sm font-medium", active && "text-brand-500")}>{link.label}</span>
+        {link.desc && <span className="block truncate text-xs text-muted">{link.desc}</span>}
+      </span>
+    </Link>
   );
 }
 

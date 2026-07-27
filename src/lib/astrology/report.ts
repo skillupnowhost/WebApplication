@@ -16,9 +16,51 @@ import { computePlanetStrengths, type PlanetStrength } from "./strength";
 import { computeAvakahada, type AvakahadaProfile } from "./avakahada";
 import { computeLuckyProfile, type LuckyProfile } from "./lucky";
 import { predictBabyNames, type BabyNamePrediction } from "./babyNames";
+import { computeMandi, type MandiPosition } from "./mandi";
+import { VARGA_CALCULATORS, type VargaKey } from "./vargas";
+import { computeAshtakavarga, contributorRashiFromChart, type AshtakavargaResult } from "./ashtakavarga";
+import { detectYogas, type YogaResult } from "./yogas";
+import { computeCurrentTransits, type TransitPosition } from "./transit";
+import { RASHIS, type PlanetName } from "./constants";
 
 export type ChartStyleValue = "NORTH_INDIAN" | "SOUTH_INDIAN" | "EAST_INDIAN";
 export type ReportStyleValue = "PROFESSIONAL" | "TRADITIONAL" | "MODERN";
+
+/** Colour theme is independent of report style — it only swaps the `--jd-*` CSS custom properties,
+ * layered on top of whichever structural style (Professional/Traditional/Modern) is active. Unlike
+ * reportStyle it never changes narrative content, so it isn't part of the report's cache key — it's
+ * a plain mutable column updated in place via /switch-theme. */
+export const COLOR_THEME_VALUES = [
+  "DEFAULT",
+  "GOLD",
+  "ROYAL_BLUE",
+  "EMERALD",
+  "PURPLE",
+  "MAROON",
+  "ORANGE",
+  "TEAL",
+  "CLASSIC_BLACK",
+  "PREMIUM_WHITE",
+  "MULTI_TRADITIONAL",
+] as const;
+export type ColorThemeValue = (typeof COLOR_THEME_VALUES)[number];
+
+/** Maps a colorTheme value to the `.jd-theme-*` class applied alongside `.jd-style-*` on the
+ * `.jathagam-doc` root — `null` for DEFAULT means "no extra class", i.e. use the active style's
+ * own built-in palette untouched. */
+export const COLOR_THEME_CLASS: Record<ColorThemeValue, string | null> = {
+  DEFAULT: null,
+  GOLD: "jd-theme-gold",
+  ROYAL_BLUE: "jd-theme-royal-blue",
+  EMERALD: "jd-theme-emerald",
+  PURPLE: "jd-theme-purple",
+  MAROON: "jd-theme-maroon",
+  ORANGE: "jd-theme-orange",
+  TEAL: "jd-theme-teal",
+  CLASSIC_BLACK: "jd-theme-classic-black",
+  PREMIUM_WHITE: "jd-theme-premium-white",
+  MULTI_TRADITIONAL: "jd-theme-multi",
+};
 
 export async function computeAndStoreChart(profileId: string) {
   const profile = await prisma.astrologyProfile.findUniqueOrThrow({ where: { id: profileId } });
@@ -56,8 +98,9 @@ export async function getOrCreateReport(params: {
   chartStyle: ChartStyleValue;
   language: AstrologyLanguage;
   reportStyle?: ReportStyleValue;
+  colorTheme?: ColorThemeValue;
 }) {
-  const { profileId, depth, chartStyle, language, reportStyle = "PROFESSIONAL" } = params;
+  const { profileId, depth, chartStyle, language, reportStyle = "PROFESSIONAL", colorTheme = "DEFAULT" } = params;
   const { profile, chart, chartData } = await computeAndStoreChart(profileId);
 
   const existing = await prisma.horoscopeReport.findUnique({
@@ -70,11 +113,13 @@ export async function getOrCreateReport(params: {
 
   const narrative = await generateNarrative({ chart, fullName: profile.fullName, depth, language });
   const report = await prisma.horoscopeReport.create({
-    data: { chartDataId: chartData.id, depth, chartStyle, language, reportStyle, narrativeJson: JSON.stringify(narrative) },
+    data: { chartDataId: chartData.id, depth, chartStyle, language, reportStyle, colorTheme, narrativeJson: JSON.stringify(narrative) },
   });
 
   return { report, chart, profile, chartData };
 }
+
+export type VargaTableRow = { subject: PlanetName | "Lagna"; rashiByVarga: Record<VargaKey, number> };
 
 export type CurrentDashaInfo = {
   mahaLord: string;
@@ -103,6 +148,7 @@ export type ReportView = {
   gothram: string | null;
   system: AstrologySystem;
   reportStyle: ReportStyleValue;
+  colorTheme: ColorThemeValue;
   birthPlace: string;
   latitude: number;
   longitude: number;
@@ -125,6 +171,7 @@ export type ReportView = {
   ayana: { english: string; tamil: string };
   udayadi: { nazhigai: number; vinadi: number } | null;
   muhurta: DayMuhurta | null;
+  mandi: MandiPosition | null;
   dashaPeriods: DashaPeriod[];
   dashaBalance: DashaBalance;
   currentDasha: CurrentDashaInfo | null;
@@ -138,6 +185,10 @@ export type ReportView = {
   houses: ChartHouse[];
   narrative: ReportNarrative;
   createdAt: string;
+  vargaTable: VargaTableRow[];
+  ashtakavarga: AshtakavargaResult;
+  yogas: YogaResult[];
+  transits: TransitPosition[];
 };
 
 function dashaBalanceOf(first: DashaPeriod): DashaBalance {
@@ -183,9 +234,51 @@ export async function loadReportView(reportId: string): Promise<ReportView | nul
   const riseSet = computeRiseSetTimes(profile.birthDate, profile.latitude, profile.longitude, profile.timezone);
   const tamilDate = computeTamilDate(profile.birthDate, profile.timezone, profile.latitude, profile.longitude);
   const muhurta = riseSet.sunrise && riseSet.sunset ? computeDayMuhurta(riseSet.sunrise, riseSet.sunset) : null;
+  const mandi = muhurta
+    ? computeMandi({
+        gulikaStartIso: muhurta.gulikai.start,
+        latitude: profile.latitude,
+        longitude: profile.longitude,
+        ayanamsaUsed: chartData.ayanamsaUsed,
+        ascendantRashiIndex: ascendantRashi.index,
+      })
+    : null;
 
   const navamsaIndices: Record<string, number> = {};
   for (const p of planets) navamsaIndices[p.planet] = navamsaRashiIndex(p.siderealLongitude);
+
+  // Shodasavarga table: D2/D3/D7/D10/D12/D30 rashi for every planet + Lagna (D9 reuses navamsaIndices above).
+  const vargaTable: VargaTableRow[] = [
+    ...planets.map((p) => ({
+      subject: p.planet,
+      rashiByVarga: Object.fromEntries(
+        (Object.keys(VARGA_CALCULATORS) as (keyof typeof VARGA_CALCULATORS)[]).map((key) => [key, VARGA_CALCULATORS[key](p.siderealLongitude)])
+      ) as Record<VargaKey, number>,
+    })),
+    {
+      subject: "Lagna" as const,
+      rashiByVarga: Object.fromEntries(
+        (Object.keys(VARGA_CALCULATORS) as (keyof typeof VARGA_CALCULATORS)[]).map((key) => [key, VARGA_CALCULATORS[key](ascendant.siderealLongitude)])
+      ) as Record<VargaKey, number>,
+    },
+  ];
+
+  const ashtakavarga = computeAshtakavarga(
+    contributorRashiFromChart(
+      planets.map((p) => ({ planet: p.planet, rashiIndex: p.rashi.index })),
+      ascendantRashi.index
+    )
+  );
+
+  const strengths = computePlanetStrengths(planets);
+  const yogas = detectYogas({
+    planets,
+    strengths,
+    ascendantRashiIndex: ascendantRashi.index,
+    rashiOfIndex: (i) => RASHIS[i],
+  });
+
+  const transits = computeCurrentTransits(moon.rashi.index, profile.system as AstrologySystem);
 
   const birthLocal = DateTime.fromJSDate(profile.birthDate, { zone: profile.timezone });
 
@@ -207,6 +300,7 @@ export async function loadReportView(reportId: string): Promise<ReportView | nul
     gothram: profile.gothram,
     system: profile.system as AstrologySystem,
     reportStyle: (report.reportStyle ?? "PROFESSIONAL") as ReportStyleValue,
+    colorTheme: (report.colorTheme ?? "DEFAULT") as ColorThemeValue,
     birthPlace: profile.birthPlace,
     latitude: profile.latitude,
     longitude: profile.longitude,
@@ -229,12 +323,13 @@ export async function loadReportView(reportId: string): Promise<ReportView | nul
     ayana: ayanaFromSolarMonth(tamilDate.monthIndex),
     udayadi: udayadiNazhigai(profile.birthDate, riseSet.sunrise),
     muhurta,
+    mandi,
     dashaPeriods,
     dashaBalance: dashaBalanceOf(dashaPeriods[0]),
     currentDasha: currentDashaOf(dashaPeriods),
     ageBands: ageBandPredictions(dashaPeriods, profile.birthDate),
     numerology,
-    strengths: computePlanetStrengths(planets),
+    strengths,
     avakahada: computeAvakahada({
       moonRashiIndex: moon.rashi.index,
       nakshatraIndex: moon.nakshatra.index,
@@ -256,6 +351,10 @@ export async function loadReportView(reportId: string): Promise<ReportView | nul
     doshas: JSON.parse(chartData.doshaJson),
     houses: buildHouses(ascendantRashi.index, planets),
     narrative: JSON.parse(report.narrativeJson),
+    vargaTable,
+    ashtakavarga,
+    yogas,
+    transits,
     createdAt: report.createdAt.toISOString(),
   };
 }

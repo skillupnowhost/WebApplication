@@ -16,6 +16,7 @@ import { useLiveData } from "@/components/admin/useLiveData";
 import { CategoryPicker } from "@/components/admin/CategoryPicker";
 import { DataTable, LiveIndicator, type Column, type Row } from "@/components/admin/DataTable";
 import { Modal, ConfirmDialog, useToast, type ConfirmState } from "@/components/ui/Modal";
+import { ImageCropModal } from "@/components/admin/ImageCropModal";
 
 export type FieldDef = {
   name: string;
@@ -34,6 +35,8 @@ export type FieldDef = {
   suggestionsFrom?: string;
   /** For "select" fields: an API endpoint returning `{ options: {label,value}[] }`, fetched once when the form opens. */
   optionsEndpoint?: string;
+  /** For "image" fields: crop frame width/height ratio. Defaults to 1 (circular guide). */
+  imageAspect?: number;
 };
 
 export type EntityConfig = {
@@ -182,22 +185,37 @@ function SuggestField({
   );
 }
 
-/** Uploads to /api/admin/upload and stores the returned URL as the field value. */
+/** Opens the crop/rotate editor, then uploads the edited result to /api/admin/upload and stores the returned URL. */
 function ImageField({ field, value, onChange }: { field: FieldDef; value: unknown; onChange: (v: unknown) => void }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ file: File; url: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const url = String(value ?? "");
 
-  async function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
+  function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    setError(null);
+    setPending({ file, url: URL.createObjectURL(file) });
+  }
+
+  function closePending() {
+    if (pending) URL.revokeObjectURL(pending.url);
+    setPending(null);
+  }
+
+  async function handleCropped(blob: Blob) {
+    const editedFile = new File([blob], `${pending?.file.name.replace(/\.[^.]+$/, "") || "photo"}.png`, {
+      type: "image/png",
+    });
+    closePending();
     setUploading(true);
     setError(null);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", editedFile);
       const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
       const json = await res.json();
       if (!res.ok) {
@@ -246,6 +264,15 @@ function ImageField({ field, value, onChange }: { field: FieldDef; value: unknow
           onChange={handlePick}
         />
       </div>
+      {pending && (
+        <ImageCropModal
+          file={pending.file}
+          imageUrl={pending.url}
+          aspect={field.imageAspect}
+          onCancel={closePending}
+          onConfirm={handleCropped}
+        />
+      )}
     </div>
   );
 }

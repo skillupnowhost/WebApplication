@@ -1,0 +1,105 @@
+/* Self-hosted Indic + handwriting font system for the astrology module's three
+   report/PDF styles (Professional / Traditional-Handwritten / Modern). Fonts are
+   self-hosted (see astrology-fonts.generated.css) rather than pulled from
+   next/font/google because the PDF pipeline renders through Playwright's own
+   bundled Chromium (src/lib/astrology/pdf.ts) — that process has no access to
+   whatever fonts happen to be installed on the host OS, so relying on system
+   font names (as the old "Segoe Script"/"Lucida Handwriting" traditional style
+   did) silently produces plain-serif or tofu-box output in production. */
+@import "./astrology-fonts.generated.css";
+
+.jathagam-doc,
+.astro-doc {
+  --astro-font-pro: inherit;
+  --astro-font-hand: "Astro-hand-en", cursive;
+  --astro-font-modern: "Astro-modern-en", sans-serif;
+}
+
+[data-astro-lang="ta"] {
+  --astro-font-pro: "Astro-pro-ta", "Noto Sans Tamil", sans-serif;
+  --astro-font-hand: "Astro-hand-ta", cursive;
+  --astro-font-modern: "Astro-modern-ta", sans-serif;
+}
+[data-astro-lang="hi"] {
+  --astro-font-pro: "Astro-pro-hi", "Noto Sans Devanagari", sans-serif;
+  --astro-font-hand: "Astro-hand-hi", cursive;
+  --astro-font-modern: "Astro-modern-hi", sans-serif;
+}
+[data-astro-lang="mr"] {
+  --astro-font-pro: "Astro-pro-mr", "Noto Sans Devanagari", sans-serif;
+  --astro-font-hand: "Astro-hand-mr", cursive;
+  --astro-font-modern: "Astro-modern-mr", sans-serif;
+}
+[data-astro-lang="te"] {
+  --astro-font-pro: "Astro-pro-te", "Noto Sans Telugu", sans-serif;
+  --astro-font-hand: "Astro-hand-te", cursive;
+  --astro-font-modern: "Astro-modern-te", sans-serif;
+}
+[data-astro-lang="ml"] {
+  --astro-font-pro: "Astro-pro-ml", "Noto Sans Malayalam", sans-serif;
+  --astro-font-hand: "Astro-hand-ml", cursive;
+  --astro-font-modern: "Astro-modern-ml", sans-serif;
+}
+[data-astro-lang="kn"] {
+  --astro-font-pro: "Astro-pro-kn", "Noto Sans Kannada", sans-serif;
+  --astro-font-hand: "Astro-hand-kn", cursive;
+  --astro-font-modern: "Astro-modern-kn", sans-serif;
+}
+[data-astro-lang="bn"] {
+  --astro-font-pro: "Astro-pro-bn", "Noto Sans Bengali", sans-serif;
+  --astro-font-hand: "Astro-hand-bn", cursive;
+  --astro-font-modern: "Astro-modern-bn", sans-serif;
+}
+[data-astro-lang="gu"] {
+  --astro-font-pro: "Astro-pro-gu", "Noto Sans Gujarati", sans-serif;
+  --astro-font-hand: "Astro-hand-gu", cursive;
+  --astro-font-modern: "Astro-modern-gu", sans-serif;
+}
+[data-astro-lang="pa"] {
+  --astro-font-pro: "Astro-pro-pa", "Noto Sans Gurmukhi", sans-serif;
+  /* No genuine handwriting-style Gurmukhi webfont exists on Google Fonts today;
+     the word-jitter effect (HandwrittenText) is what carries the "handwritten"
+     feel here rather than a dedicated calligraphic face. */
+  --astro-font-hand: "Astro-hand-pa", cursive;
+  --astro-font-modern: "Astro-modern-pa", sans-serif;
+}
+[data-astro-lang="ur"] {
+  --astro-font-pro: "Astro-pro-ur", "Noto Nastaliq Urdu", serif;
+  /* Nastaliq is inherently calligraphic/cursive by script design — reusing the
+     same face for "handwritten" (with jitter disabled, see HandwrittenText)
+     instead of forcing an unrelated face that would break Arabic-script
+     shaping/ligatures. */
+  --astro-font-hand: "Astro-pro-ur", "Noto Nastaliq Urdu", serif;
+  --astro-font-modern: "Astro-modern-ur", "Noto Nastaliq Urdu", serif;
+}
+
+.jathagam-doc,
+.astro-doc {
+  font-family: var(--astro-font-pro);
+}
+.jathagam-doc.jd-style-traditional,
+.astro-doc.jd-style-traditional {
+  font-family: var(--astro-font-hand);
+}
+.jathagam-doc.jd-style-modern,
+.astro-doc.jd-style-modern {
+  font-family: var(--astro-font-modern);
+}
+
+/* ---- Deterministic handwriting jitter (HandwrittenText.tsx) ----
+   Applied per WORD, never per character: Indic scripts rely on conjunct/vowel-
+   sign shaping that only the font's own shaping engine can render correctly, so
+   splitting a word into per-character spans would break ligatures and produce
+   garbled glyphs. Word-level rotation/baseline offsets are enough to avoid the
+   "every letter identically robotic" look while staying script-safe. The class
+   cycle is fixed (not Math.random()) so the on-screen preview and the
+   Playwright-rendered PDF always match. */
+.hw-word {
+  display: inline-block;
+}
+.hw-jit-0 { transform: rotate(-1.1deg) translateY(0); }
+.hw-jit-1 { transform: rotate(0.6deg) translateY(0.5px); }
+.hw-jit-2 { transform: rotate(-0.4deg) translateY(-0.5px); }
+.hw-jit-3 { transform: rotate(1.3deg) translateY(0.3px); }
+.hw-jit-4 { transform: rotate(-1.6deg) translateY(0.4px); }
+.hw-jit-5 { transform: rotate(0.9deg) translateY(-0.4px); }

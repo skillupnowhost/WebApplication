@@ -143,6 +143,10 @@ const teamMemberCreate = z.object({
   name: z.string().trim().min(2),
   role: z.string().trim().min(2),
   category: z.enum(["FOUNDER", "CEO", "STAFF"]),
+  department: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.enum(["DEVELOPMENT", "TUTORING", "ASTROLOGY", "OPERATIONS", "ADMINISTRATION"]).nullable()
+  ).optional(),
   bio: z.string().trim().optional().default(""),
   experienceYears: z.coerce.number().int().min(0).max(60).optional().nullable(),
   specialization: z.string().trim().optional().nullable(),
@@ -150,6 +154,46 @@ const teamMemberCreate = z.object({
   linkedinUrl: z.string().trim().optional().nullable(),
 });
 const teamMemberUpdate = teamMemberCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const milestoneCreate = z.object({
+  year: z.string().trim().min(1),
+  title: z.string().trim().min(2),
+  description: z.string().trim().optional().default(""),
+});
+const milestoneUpdate = milestoneCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const galleryItemCreate = z.object({
+  imageUrl: z.string().trim().min(1),
+  caption: z.string().trim().optional().default(""),
+  category: z.enum(["Event", "Workshop", "Office", "Team Activity", "Certificate & Achievement"]).default("Event"),
+});
+const galleryItemUpdate = galleryItemCreate.partial().extend({
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+const FAQ_CATEGORY_VALUES = [
+  "Courses & Training",
+  "Internship Programs",
+  "Certification",
+  "Payments & EMI",
+  "Technical Support",
+  "Account & Login",
+  "Project Assistance",
+  "Placement Guidance",
+  "AI Services",
+  "General Company Information",
+] as const;
+
+const faqItemCreate = z.object({
+  question: z.string().trim().min(5),
+  answer: z.string().trim().min(5),
+  category: z.enum(FAQ_CATEGORY_VALUES).default("General Company Information"),
+});
+const faqItemUpdate = faqItemCreate.partial().extend({
   sortOrder: z.coerce.number().int().optional(),
 });
 
@@ -204,6 +248,13 @@ const leadUpdate = z.object({
 
 const paymentUpdate = z.object({
   status: z.enum(["created", "paid", "failed", "refunded"]),
+});
+
+export const notificationBroadcastCreate = z.object({
+  title: z.string().trim().min(2),
+  body: z.string().trim().min(2),
+  audience: z.enum(["ALL", "STUDENT", "MENTOR", "USER"]),
+  userId: z.string().trim().optional().nullable(),
 });
 
 /* ── Registry ───────────────────────────────────────────────────────── */
@@ -690,6 +741,7 @@ export const adminEntities: Record<string, EntityDef> = {
         name: t.name,
         role: t.role,
         category: t.category,
+        department: t.department ?? "",
         bio: t.bio,
         experienceYears: t.experienceYears,
         specialization: t.specialization ?? "",
@@ -844,6 +896,104 @@ export const adminEntities: Record<string, EntityDef> = {
     },
     remove: async (id) => {
       await prisma.payment.delete({ where: { id } });
+    },
+  },
+
+  milestones: {
+    list: async () => {
+      const rows = await prisma.companyMilestone.findMany({ orderBy: [{ sortOrder: "asc" }, { year: "asc" }] });
+      return rows.map((m) => ({
+        id: m.id,
+        year: m.year,
+        title: m.title,
+        description: m.description,
+        sortOrder: m.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = milestoneCreate.parse(body);
+      return prisma.companyMilestone.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = milestoneUpdate.parse(body);
+      return prisma.companyMilestone.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.companyMilestone.delete({ where: { id } });
+    },
+  },
+
+  gallery: {
+    list: async () => {
+      const rows = await prisma.galleryItem.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] });
+      return rows.map((g) => ({
+        id: g.id,
+        imageUrl: g.imageUrl,
+        caption: g.caption,
+        category: g.category,
+        sortOrder: g.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = galleryItemCreate.parse(body);
+      return prisma.galleryItem.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = galleryItemUpdate.parse(body);
+      return prisma.galleryItem.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.galleryItem.delete({ where: { id } });
+    },
+  },
+
+  faq: {
+    list: async () => {
+      const rows = await prisma.faqItem.findMany({ orderBy: [{ category: "asc" }, { sortOrder: "asc" }] });
+      return rows.map((f) => ({
+        id: f.id,
+        question: f.question,
+        answer: f.answer,
+        category: f.category,
+        sortOrder: f.sortOrder,
+      }));
+    },
+    create: async (body) => {
+      const data = faqItemCreate.parse(body);
+      return prisma.faqItem.create({ data, select: { id: true } });
+    },
+    update: async (id, body) => {
+      const data = faqItemUpdate.parse(body);
+      return prisma.faqItem.update({ where: { id }, data, select: { id: true } });
+    },
+    remove: async (id) => {
+      await prisma.faqItem.delete({ where: { id } });
+    },
+  },
+
+  notifications: {
+    // Read-only history of every in-app notification ever sent, plus delete for cleanup.
+    // Creating notifications happens through the bespoke compose/broadcast action
+    // (POST /api/admin/notifications/broadcast), not this generic entity — a broadcast
+    // fans out to many users at once, which doesn't fit the single-row create() shape.
+    list: async () => {
+      const rows = await prisma.notification.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 300,
+        include: { user: { select: { name: true, email: true } } },
+      });
+      return rows.map((n) => ({
+        id: n.id,
+        recipient: n.user.name,
+        email: n.user.email,
+        title: n.title,
+        body: n.body,
+        read: n.read,
+        createdAt: iso(n.createdAt),
+      }));
+    },
+    remove: async (id) => {
+      await prisma.notification.delete({ where: { id } });
     },
   },
 };

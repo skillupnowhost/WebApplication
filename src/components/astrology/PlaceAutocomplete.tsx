@@ -10,12 +10,19 @@ export type PlacePick = {
   latitude: number;
   longitude: number;
   timezone: string;
+  country?: string;
+  state?: string;
+  district?: string;
+  placeId?: string;
 };
 
 /**
- * Free-text place input with live Nominatim suggestions. Selecting a suggestion
- * also hands back coordinates + timezone so the server can skip geocoding.
- * Typing freely (no selection) still works — the API geocodes the raw text.
+ * Free-text place input with live Nominatim suggestions (worldwide — any city,
+ * town, or village). Selecting a suggestion also hands back coordinates +
+ * timezone (+ country/state/district where available) so the server can skip
+ * geocoding. Typing freely (no selection) still works — the API geocodes the
+ * raw text. `lang` (if given) is forwarded to Nominatim's accept-language so
+ * results prefer native-script names in the active report language.
  */
 export function PlaceAutocomplete({
   label,
@@ -26,6 +33,7 @@ export function PlaceAutocomplete({
   placeholder,
   searchingText,
   noResultsText,
+  lang,
 }: {
   label: string;
   value: string;
@@ -35,6 +43,7 @@ export function PlaceAutocomplete({
   placeholder?: string;
   searchingText: string;
   noResultsText: string;
+  lang?: string;
 }) {
   const [suggestions, setSuggestions] = useState<PlacePick[]>([]);
   const [open, setOpen] = useState(false);
@@ -57,7 +66,8 @@ export function PlaceAutocomplete({
     setSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/astrology/geocode?q=${encodeURIComponent(q)}`);
+        const langParam = lang ? `&lang=${encodeURIComponent(lang)}` : "";
+        const res = await fetch(`/api/astrology/geocode?q=${encodeURIComponent(q)}${langParam}`);
         const json = (await res.json()) as { suggestions: PlacePick[] };
         setSuggestions(json.suggestions);
         setOpen(true);

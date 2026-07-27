@@ -8,13 +8,26 @@ export function pdfPageSize(param: string | null): PdfPageSize {
   return param === "A5" || param === "A3" ? param : "A4";
 }
 
-export async function renderPrintPdf(printUrl: string, format: PdfPageSize = "A4"): Promise<Uint8Array<ArrayBuffer>> {
+export async function renderPrintPdf(printUrl: string, format: PdfPageSize = "A4", options?: { pageNumbers?: boolean }): Promise<Uint8Array<ArrayBuffer>> {
   let browser;
   try {
     browser = await chromium.launch();
     const page = await browser.newPage();
     await page.goto(printUrl, { waitUntil: "networkidle" });
-    const pdf = await page.pdf({ format, printBackground: true });
+    const pdf = await page.pdf({
+      format,
+      printBackground: true,
+      // Always explicit — Chromium's own print-margin defaults would otherwise silently
+      // apply whenever pageNumbers/header-footer isn't requested, giving inconsistent margins.
+      margin: { top: "12mm", bottom: "16mm", left: "12mm", right: "12mm" },
+      ...(options?.pageNumbers && {
+        displayHeaderFooter: true,
+        headerTemplate: "<span></span>",
+        footerTemplate:
+          '<div style="width:100%;font-size:8px;text-align:center;color:#7a6338;font-family:Georgia,serif;">' +
+          '<span class="pageNumber"></span> / <span class="totalPages"></span></div>',
+      }),
+    });
     return new Uint8Array(pdf);
   } finally {
     await browser?.close();
